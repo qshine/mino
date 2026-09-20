@@ -8,9 +8,11 @@ Deliver one runnable chapter at a time. Planned topics include terminal conversa
 
 ## Project Structure & Module Organization
 
-The repository currently has no implementation or Go module. Use this initial layout as code is introduced:
+Chapter 01 is implemented with Go 1.27.1 and the standard library, targeting macOS terminals. The current layout is:
 
-- Root: `go.mod`, a minimal `main.go`, and `AGENTS.md`.
+- Root: `go.mod`, a minimal `main.go`, `config.go`, `config_prompt.go`, `terminal.go`, `responses.go`, `README.md`, and `AGENTS.md`.
+- User configuration: startup creates `~/.mino/` with mode `0700`; completed settings are saved to `~/.mino/config.json` with mode `0600`. Resolve this path from the user home directory, never the working directory. Only missing fields are prompted; a complete config starts chat immediately. Cancellation leaves existing settings unchanged. Do not read project-local configuration or `OPENAI_*` environment variables. Tests must use isolated temporary home directories, never the developer's real configuration.
+- All application prompts and error messages must be in English. Only the API URL has a default; the model name and API key require explicit input.
 - `docs/chapters/`: numbered lessons and illustrative assets, such as `01-terminal-chat.md`.
 - Tests: `*_test.go` beside the code they exercise; fixtures in nearby `testdata/` directories.
 
@@ -18,7 +20,7 @@ Keep early chapters simple. Extract packages when their responsibilities become 
 
 ## Build, Test, and Development Commands
 
-After adding `go.mod` and the root executable, run from the repository root:
+Run from the repository root, where the application reads `AGENTS.md`:
 
 - `go run .`: start the terminal application.
 - `go build ./...`: compile all packages.
@@ -36,7 +38,7 @@ Use Go's standard `testing` package and `TestXxx` names. Cover changed behavior 
 
 ## Commit & Pull Request Guidelines
 
-There is no Git history or established message convention. Use focused commits such as `docs: explain agent loop` or `feat: add session persistence`. PRs should identify the chapter, explain behavior changes, report verification, and link relevant issues. Include terminal examples when interaction changes.
+Use focused commits such as `docs: explain agent loop` or `feat: add session persistence`. PRs should identify the chapter, explain behavior changes, report verification, and link relevant issues. Include terminal examples when interaction changes.
 
 ## Security & Agent Instructions
 

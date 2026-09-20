@@ -1,0 +1,14 @@
+/miniagent
+/bin/
+/miniagent.json
+/.mino/
+/.miniagent-config-*.tmp
+.DS_Store
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log
