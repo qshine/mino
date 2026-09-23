@@ -4,7 +4,9 @@
 
 模型不会直接读取你的键盘，也不会自动把回答显示在终端。我们先搭通一条完整路径：终端读取一行问题，Go 构造 HTTP 请求，模型生成回答，Go 解析回答并打印，然后等待下一次输入。
 
-本章交付一个能在 macOS 终端运行的程序，使用 Go 1.27.1 和标准库。首次启动交互填写缺失的 `base_url`、`api_key`、`model`，保存到用户主目录 `~/.mino/config.json`，之后自动复用。启动时读取根目录 `AGENTS.md`，每轮传入 Responses API 的 `instructions`。每个请求仅包含当前问题，各轮之间没有上下文关联，也不创建本地聊天记录。内存历史会在第 02 章加入。
+本章交付一个能在 macOS 终端运行的程序，使用 Go 1.27.1 和标准库。首次启动交互填写缺失的 `base_url`、`api_key`、`model`，保存到用户主目录 `~/.mino/config.json`，之后自动复用。启动时可选读取当前目录的 `AGENTS.md`，每轮传入 Responses API 的 `instructions`。每个请求仅包含当前问题，各轮之间没有上下文关联，也不创建本地聊天记录。内存历史会在第 02 章加入。
+
+安装版使用方法见[中文介绍](../../README.zh-CN.md)，支持一行安装、`mino version` 和 `mino update`。本章下面保留从源码学习的步骤。
 
 ## 1. 准备 macOS 和 Go
 
@@ -46,7 +48,7 @@ Settings saved. Next time, chat will start immediately.
 
 程序的配置、聊天和错误提示全部使用英文。上面的 `your-model` 是占位示例，请填写实际模型名称。只有 API 地址提供默认值，模型名称和密钥都必须由用户填写。
 
-启动时自动创建 `~/.mino/` 目录；填写完成后，程序会先保存 `config.json` 再进入问答。下一次运行 `go run .` 或 `./miniagent` 时，配置完整就直接进入对话；如果只缺少 `api_key`，就只询问密钥。配置文件结构如下，示例中的密钥是占位符：
+启动时自动创建 `~/.mino/` 目录；填写完成后，程序会先保存 `config.json` 再进入问答。下一次运行 `go run .` 或 `./bin/mino` 时，配置完整就直接进入对话；如果只缺少 `api_key`，就只询问密钥。配置文件结构如下，示例中的密钥是占位符：
 
 ```json
 {
@@ -67,14 +69,14 @@ Settings saved. Next time, chat will start immediately.
 整个过程可以沿着以下源文件阅读：
 
 ```text
-main.go：读取 AGENTS.md，加载或补全配置，监听 Ctrl+C
+main.go / cli.go：处理版本与升级命令，可选读取 AGENTS.md，加载或补全配置，监听 Ctrl+C
   ├─ config.go / config_prompt.go：读取 JSON → 只询问缺失项 → 保存 JSON
   └─ terminal.go：读入一行非空问题
        └─ responses.go：POST {base_url}/responses
             └─ 提取回答 → 终端打印 → 再读一行
 ```
 
-### 入口与配置：`main.go`、`config.go`、`config_prompt.go`
+### 入口与配置：`main.go`、`cli.go`、`config.go`、`config_prompt.go`
 
 `configPath` 通过 `os.UserHomeDir()` 定位用户主目录，创建或保护 `.mino` 目录，不允许目录是普通文件或符号链接。`loadConfig` 从该目录读取 JSON，保留已有字段，再依次补全缺失的地址、模型和密钥。只有地址提示中的方括号显示默认值，空输入会采用该地址；模型和密钥没有默认值，必须填写。URL 和必填项校验通过后，在同一个 `.mino` 目录中使用权限为 `0600` 的临时文件写入，再重命名为 `config.json`，避免写入中断留下半份配置。读取时拒绝目录和符号链接，已有文件的权限也会收紧到 `0600`。
 
@@ -99,7 +101,7 @@ main.go：读取 AGENTS.md，加载或补全配置，监听 Ctrl+C
 
 `instructions` 是 Responses API 提供的高优先级指令字段；`input` 字符串表示当前用户问题。请求中没有历史消息、`previous_response_id` 或 `conversation`，因此下一轮无法从程序获得上一轮内容。`store: false` 请求服务不要保存可供后续查询的响应对象；它不等于对服务端所有日志或数据保留策略的承诺。协议参见 [Responses 创建接口](https://developers.openai.com/api/reference/python/resources/responses/methods/create)。
 
-程序只将 `AGENTS.md` 与当前问题发送给你配置的服务。`AGENTS.md` 是你主动提供的项目指令，请不要在其中放密钥。本章没有 Bash、文件修改或其他工具执行能力；模型回答仅被显示为文本。
+程序将当前问题和可选的 `AGENTS.md` 内容发送给你配置的服务。当前目录没有 `AGENTS.md` 时也能启动；存在但无法读取时会报错。`AGENTS.md` 是你主动提供的项目指令，请不要在其中放密钥。本章没有 Bash、文件修改或其他工具执行能力；模型回答仅被显示为文本。
 
 ### 解析回答
 
@@ -129,7 +131,7 @@ Responses API 的 `output` 是一个数组，里面可能先出现推理条目�
 下面是交互形式的示意，真实措辞由模型决定：
 
 ```text
-Miniagent - Chapter 01: Terminal Chat
+Mino - Chapter 01: Terminal Chat
 Each question is independent. Use /exit, Ctrl+D, or Ctrl+C to quit.
 
 You> 本项目只支持哪一种模型 API？
@@ -153,8 +155,8 @@ Goodbye.
 编译后可以直接运行二进制，仍须保留根目录为当前目录：
 
 ```zsh
-go build -o miniagent .
-./miniagent
+go build -o bin/mino .
+./bin/mino
 ```
 
 配置完成后，也支持按行的管道输入。配置不完整时必须先在交互终端补全，程序会报错，避免把管道里的聊天问题误存为密钥：
@@ -186,7 +188,7 @@ go vet ./...
 | 提示配置不完整且需要交互终端 | 先直接运行 `go run .` 补全配置，再使用管道输入 |
 | `~/.mino/config.json` 格式错误 | 检查 JSON 引号、逗号和字段类型；原文件不会被覆盖 |
 | 修改模型或密钥 | 编辑 `~/.mino/config.json`，或把相应字段设为空字符串后重启 |
-| 读取 `AGENTS.md` 失败 | 切回仓库根目录，再运行 `go run .` 或 `./miniagent` |
+| 读取 `AGENTS.md` 失败 | 检查当前目录的该文件是否可读、是否误建为目录；文件不存在时可以直接启动 |
 | HTTP 401/403 | 检查密钥、模型权限以及密钥是否属于当前服务 |
 | HTTP 404 | 检查 API 前缀与模型名，确认服务支持 Responses API |
 | HTTP 429 | 检查额度或限流，稍后手动重试 |

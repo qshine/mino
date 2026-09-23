@@ -1,18 +1,42 @@
-# Miniagent
+# Mino
 
-用 Go 从零实现终端 Agent 的分章教程。当前已实现[第 01 章：与模型对话](docs/chapters/01-terminal-chat.md)，通过 OpenAI Responses API 完成独立的一问一答，并读取项目根目录的 `AGENTS.md` 作为模型指令。
+English | [简体中文](README.zh-CN.md)
 
-## 在 macOS 终端启动
+A small terminal agent built chapter by chapter in Go. Chapter 01 provides
+independent conversations through the OpenAI Responses API. Runs on **macOS 13+**,
+with downloads for **Apple Silicon and Intel**.
 
-要求 macOS 13 或更新版本，支持 Apple Silicon 和 Intel Mac。项目使用 **Go 1.27.1**（2026-09-20 核实的[最新稳定版](https://go.dev/dl/)），没有第三方依赖。
+## Install
 
-在项目根目录打开终端，直接启动：
+No Go installation is needed. While this repository is private, you need a GitHub
+account with access to `qshine/mino` and [GitHub CLI](https://cli.github.com/).
+If you use Homebrew, install the CLI with `brew install gh`, then sign in once:
 
-```zsh
-go run .
+```bash
+gh auth login --hostname github.com
 ```
 
-第一次启动时，程序会询问缺失的配置：
+Run this **one-line command** in Bash or zsh:
+
+```bash
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+```
+
+The installer selects your Mac architecture, downloads the latest release,
+verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
+It adds that directory to your zsh or Bash login configuration; the final
+`export` also makes the command available in your current terminal. No `sudo`
+is needed. Existing settings are preserved.
+
+## Start
+
+From any directory:
+
+```bash
+mino
+```
+
+On the first launch, enter the missing settings:
 
 ```text
 API URL [https://api.openai.com/v1]:
@@ -20,38 +44,68 @@ Model:
 API Key (input hidden):
 ```
 
-程序提示全部使用英文。地址可直接按回车使用 OpenAI 官方默认值，也可以填写自己的服务地址。模型名称没有默认值，必须填写；留空会重新询问。API Key 同样必填，输入时不会回显。启动时自动创建用户主目录下的 `~/.mino/`，配置齐全后保存到 `~/.mino/config.json`，立即进入对话；以后直接 `go run .` 就会读取配置并进入对话。仅缺部分字段时，只询问缺失项。
+Press Enter to accept the official OpenAI API URL. **The model has no default**
+and must be entered. The API key is required and hidden while you type.
+Complete settings are saved in `~/.mino/config.json`; subsequent launches go
+straight to chat. Only missing fields are requested.
 
-`~/.mino/config.json` 中保存 `base_url`、`api_key`、`model` 三个字段。密钥以明文保存在本地；目录权限为 `0700`，文件权限为 `0600`，仅当前用户可访问。配置位置不随工作目录变化，升级或替换项目代码也不会覆盖它。修改配置可直接编辑该文件；将某字段设为空字符串，重启时会再次询问。程序以此文件为准，不读取工作目录中的配置、`OPENAI_*` 环境变量或 `.env` 文件。取消首次设置时会保留目录，但不写入不完整的配置。
+Settings contain `base_url`, `api_key`, and `model`. The key is stored locally
+in plain text, with directory permissions `0700` and file permissions `0600`.
+Edit the file to change settings, or clear a field to be asked for it again.
+Project-local configuration, `.env`, and `OPENAI_*` variables are not read.
+Older project-local `miniagent.json` files can be moved to the new location if
+no user configuration exists yet.
 
-如果此前使用项目内的 `miniagent.json`，可以在新配置尚不存在时将原文件迁移到 `~/.mino/config.json`；否则首次启动会重新询问。不要用旧文件覆盖已配置好的新文件。
+A custom API URL must support `/responses`; enter its API prefix, usually
+ending in `/v1`. Remote services require HTTPS. If the current directory has an
+`AGENTS.md`, Mino loads it as model instructions; it is optional.
 
-自定义地址必须支持 `/responses`，`base_url` 填 API 前缀（通常以 `/v1` 结尾），程序会追加 `/responses`。模型名称请填写服务实际支持且账户有权限使用的名称。
+Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
+to quit. Chapter 01 does not retain conversation history.
 
-若尚未安装 Go，从[官方安装页](https://go.dev/doc/install)安装对应架构的 macOS 包。已安装 Go 1.21+ 且保持默认 `GOTOOLCHAIN=auto` 时，首次运行会根据 `go.mod` 自动下载所需工具链，需要网络；这不会替换系统原有的 Go 安装。
+## Version and updates
 
-输入问题后按回车；空行跳过；输入 `/exit`、在空输入行按 Ctrl+D，或按 Ctrl+C 退出。每次问题独立，不保留聊天历史。也可以编译后启动：
-
-```zsh
-go build -o miniagent .
-./miniagent
+```bash
+mino version          # Show the installed version
+mino update           # Install the latest published release
+mino update v0.1.0    # Install a specific release, including a rollback
 ```
 
-两种方式均须从项目根目录运行，以读取这里的 `AGENTS.md`。
+Updates manage `~/.mino/bin/mino`, reuse your GitHub login, and preserve your
+configuration. A failed download or verification keeps the existing executable.
 
-## 开发与学习
+| Progress | Version | Git tag |
+| --- | --- | --- |
+| Chapter 01 | `0.1.0` | `v0.1.0` |
+| Chapter 01 fixes | `0.1.1`, `0.1.2` | `v0.1.1`, `v0.1.2` |
+| Chapter 02 | `0.2.0` | `v0.2.0` |
+| Chapter 02 fixes | `0.2.1` | `v0.2.1` |
 
-```zsh
-go fmt ./...
-go build ./...
-go test ./...
-go test -race ./...
-go vet ./...
+A push to `main` runs CI. A version tag runs tests, builds both macOS packages,
+and publishes a GitHub Release with checksums. Git tags provide the version
+embedded in release binaries; source builds report `dev`. Published tags and
+assets stay unchanged. See [release instructions](docs/releases.md) and the
+[changelog](CHANGELOG.md).
+
+## Build and learn
+
+Source development uses **Go 1.27.1** and the standard library, with no
+third-party Go dependencies. An existing Go 1.21+ installation with the default
+`GOTOOLCHAIN=auto` can download the required toolchain.
+
+From the repository root:
+
+```bash
+go run .
+bash scripts/check.sh
 ```
 
-测试使用本机模拟 HTTP 服务，不需要真实密钥，不调用付费模型。工具链下载完成后，测试不需要外部网络。
+The check script verifies formatting and shell syntax, runs `go vet` and tests
+with the race detector, then builds `bin/mino`. Tests use fake keys, temporary
+home directories, local mock HTTP servers, and fake release downloads. They do
+not call a paid model or modify your real configuration.
 
-- [第一章：问题、实现、演示与验证](docs/chapters/01-terminal-chat.md)
-- [全部章节规划及完成状态](docs/plan-todo-chapters.md)
-- 代码阅读顺序：`main.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`；所有文件属于同一个 `main` 包。
-- 贡献约定见 [AGENTS.md](AGENTS.md)。请勿提交真实密钥、会话数据库或私密日志。
+- [Chapter 01: terminal chat (Chinese)](docs/chapters/01-terminal-chat.md)
+- [Chapter plan (Chinese)](docs/plan-todo-chapters.md)
+- Reading order: `main.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
+- [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)

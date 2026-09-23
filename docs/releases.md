@@ -1,0 +1,77 @@
+# Releasing Mino
+
+[English introduction](../README.md) · [中文介绍](../README.zh-CN.md)
+
+## Version policy
+
+During the tutorial, use `0.<chapter>.<patch>`: `0.1.0` for Chapter 01,
+`0.1.1` for its first fix, and `0.2.0` for Chapter 02. Git tags include `v`.
+The release workflow passes the tag version into the binary with Go linker
+flags. Development builds display `dev`; no source constant needs bumping.
+
+## Publish a version
+
+1. Finish the chapter or fix, add its entry to `CHANGELOG.md`, and commit it.
+2. Run `bash scripts/check.sh`. Review the change and push it to `main`.
+3. Create and push the next version tag, for example:
+
+   ```bash
+   git tag -a v0.1.1 -m 'Mino v0.1.1'
+   git push origin v0.1.1
+   ```
+
+The [Release workflow](../.github/workflows/release.yml) runs the checks again,
+then builds `darwin/arm64` and `darwin/amd64` with CGO disabled. A native Apple
+Silicon executable is checked during packaging; Intel binaries are cross-built.
+Release assets contain the executable and the MIT license:
+
+```text
+mino_0.1.1_darwin_arm64.tar.gz
+mino_0.1.1_darwin_amd64.tar.gz
+checksums.txt
+```
+
+The workflow uploads to a draft release first and publishes only after the
+uploads succeed. Users then receive the version through `mino update`.
+The changelog entry supplies the release notes. Tags without a matching entry
+fail packaging. Normal branch pushes run [CI](../.github/workflows/ci.yml)
+and do not publish a release.
+
+GitHub provides the build machines and download storage; no personal server is
+required. Private repositories consume the account's GitHub Actions allowance.
+The publishing job uses its built-in `GITHUB_TOKEN` with `contents: write`;
+no personal access token or model API key needs to be added to Actions secrets.
+
+## Local packaging and recovery
+
+To inspect packages before publishing:
+
+```bash
+bash scripts/package.sh v0.1.1
+```
+
+Choose a version already described in `CHANGELOG.md`. Output goes into the
+ignored `dist/` directory. Local packaging does not create a tag or a release.
+
+If a run fails, inspect its logs. A failed asset upload can leave a draft;
+inspect and remove that draft before rerunning the failed publishing job.
+Do not move a published tag or replace a published asset. Fixes receive a new
+patch tag instead.
+
+Users can reinstall an earlier release with `mino update v0.1.0`. This replaces
+only the executable; it does not roll back or erase `~/.mino/config.json`.
+
+## Private repository installation
+
+The bootstrap command in the README uses authenticated `gh api` to read
+`install.sh` from `main`. The installer and the embedded updater use `gh` to
+retrieve releases and assets from `github.com/qshine/mino`. Users must sign in
+with an account that can read that repository. Tokens remain managed by GitHub
+CLI and are not copied into Mino's configuration.
+
+Installation creates `~/.mino/bin/mino`. First launch asks for model settings
+and creates `~/.mino/config.json` only when they are complete. The installer
+adds a PATH entry to `.zshrc` (respecting `ZDOTDIR`) or `.bash_profile`; it does
+not overwrite a profile. If the profile is a symlink or cannot be written, it
+prints the line to add manually. The bootstrap command updates the current
+terminal's PATH as well.
