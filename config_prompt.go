@@ -13,7 +13,7 @@ import (
 func promptConfigValue(ctx context.Context, input *os.File, reader *bufio.Reader, output io.Writer, label, fallback string, secret bool) (value string, err error) {
 	state, err := stty(input, "-g")
 	if err != nil {
-		return "", fmt.Errorf("Config is incomplete. Run go run . in an interactive terminal to finish setup before using piped input.")
+		return "", fmt.Errorf("Config is incomplete. Start Mino in an interactive terminal to finish setup before using piped input.")
 	}
 	if secret {
 		// 恢复操作不用已取消的 context，确保 Ctrl+C 后终端仍能正常回显。

@@ -59,7 +59,7 @@ func loadConfig(prompt func(label, fallback string, secret bool) (string, error)
 			continue
 		}
 		if prompt == nil {
-			return config{}, fmt.Errorf("Missing %s. Run go run . in a terminal to complete setup.", field.label)
+			return config{}, fmt.Errorf("Missing %s. Start Mino in a terminal to complete setup.", field.label)
 		}
 		value, err := prompt(field.label, field.fallback, field.secret)
 		if err != nil {
@@ -188,8 +188,11 @@ func saveConfig(cfg config) error {
 
 func loadInstructions() (string, error) {
 	data, err := os.ReadFile("AGENTS.md")
+	if errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
 	if err != nil {
-		return "", fmt.Errorf("Failed to read AGENTS.md. Run from the project root: %w", err)
+		return "", fmt.Errorf("Failed to read AGENTS.md: %w", err)
 	}
 	return string(data), nil
 }

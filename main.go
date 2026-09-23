@@ -12,7 +12,7 @@ import (
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := run(ctx, os.Stdin, os.Stdout, os.Stderr)
+	err := runCLI(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	stop()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: "+terminalText(err.Error()))
@@ -31,7 +31,7 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) er
 	cfg, err := loadConfig(func(label, fallback string, secret bool) (string, error) {
 		file, ok := input.(*os.File)
 		if !ok {
-			return "", fmt.Errorf("Config is incomplete. Run go run . in a terminal to finish setup.")
+			return "", fmt.Errorf("Config is incomplete. Start Mino in a terminal to finish setup.")
 		}
 		if !setup {
 			fmt.Fprintln(output, "Complete the missing settings. Press Enter to accept a value in brackets, or Ctrl+C to cancel. Settings will be saved to "+configLocation+".")

@@ -56,19 +56,24 @@ func TestRunFromProjectRoot(t *testing.T) {
 func TestRunReportsStartupErrors(t *testing.T) {
 	path := isolateConfig(t)
 	var output bytes.Buffer
-	if err := run(context.Background(), strings.NewReader(""), &output, &output); err == nil || !strings.Contains(err.Error(), "AGENTS.md") {
-		t.Fatalf("instructions error = %v", err)
-	}
-	if output.Len() != 0 {
-		t.Fatal("terminal started despite invalid configuration")
-	}
-	if err := os.WriteFile("AGENTS.md", []byte("instructions"), 0600); err != nil {
-		t.Fatal(err)
-	}
 	if err := run(context.Background(), strings.NewReader("这是一条聊天输入\n"), &output, &output); err == nil || !strings.Contains(err.Error(), "terminal") {
 		t.Fatalf("missing config with piped input error = %v", err)
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatal("piped chat input was saved as configuration")
+	}
+}
+
+func TestRunWithoutProjectInstructions(t *testing.T) {
+	isolateConfig(t)
+	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model"}); err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	if err := run(context.Background(), strings.NewReader("/exit\n"), &output, &output); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "Goodbye.") {
+		t.Fatal("chat did not start outside a project")
 	}
 }

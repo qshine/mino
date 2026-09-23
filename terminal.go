@@ -12,7 +12,7 @@ import (
 func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Writer, respond func(context.Context, string) (string, error)) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	fmt.Fprintln(output, "Miniagent - Chapter 01: Terminal Chat")
+	fmt.Fprintln(output, "Mino - Chapter 01: Terminal Chat")
 	fmt.Fprintln(output, "Each question is independent. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	lines := scanLines(ctx, input)
 	for {

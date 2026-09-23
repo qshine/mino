@@ -48,8 +48,8 @@ func TestValidateConfig(t *testing.T) {
 
 func TestLoadInstructions(t *testing.T) {
 	t.Chdir(t.TempDir())
-	if _, err := loadInstructions(); err == nil || !strings.Contains(err.Error(), "AGENTS.md") {
-		t.Fatalf("missing file error = %v", err)
+	if got, err := loadInstructions(); err != nil || got != "" {
+		t.Fatalf("missing optional instructions = %q, error = %v", got, err)
 	}
 	want := "# 项目指令\n请用中文回答。\n"
 	if err := os.WriteFile(filepath.Join(".", "AGENTS.md"), []byte(want), 0600); err != nil {
@@ -58,5 +58,15 @@ func TestLoadInstructions(t *testing.T) {
 	got, err := loadInstructions()
 	if err != nil || got != want {
 		t.Fatalf("instructions = %q, error = %v", got, err)
+	}
+}
+
+func TestLoadInstructionsReportsUnreadableFile(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.Mkdir("AGENTS.md", 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadInstructions(); err == nil {
+		t.Fatal("invalid AGENTS.md must not be silently ignored")
 	}
 }
