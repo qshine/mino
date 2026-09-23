@@ -28,7 +28,7 @@ Your GitHub login downloads the program. The model API key entered later accesse
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer verifies the package's SHA-256 checksum and executable version, installs `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
@@ -68,6 +68,8 @@ mino update
 
 Updates still require GitHub access to the repository. Download or asset-verification failures preserve the existing executable, and your model settings remain unchanged.
 
+Chapter 01 was reset to a new `v0.1.0` baseline with the SDK and directory layout described in this book. If you installed the earlier `v0.1.0` or `v0.1.1`, run `mino update v0.1.0` to install the reissued build. If the earlier updater fails, use the installation command above; existing configuration is preserved. See the [release reset note](./releases.md#chapter-01-baseline-reset).
+
 ## Optional project instructions
 
 An `AGENTS.md` in the current working directory can supply instructions to the model. Mino reads it once at startup, without searching parent directories; restart after editing it. The file is optional, so an installed Mino can start in a directory with no project files. Its contents are sent to the configured model service: do not put credentials in it.
@@ -79,8 +81,12 @@ To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clon
 ```bash
 gh repo clone qshine/mino
 cd mino
-go run .
+go run ./cmd/mino
 ```
+
+`cmd/mino/main.go` is the executable entry point. Application code and its tests live together in the `mino` package under `internal/mino/`; `app.go` connects startup to the terminal loop. The installer lives there too so `cli.go` can embed it for `mino update`. Start with `app.go`, then follow `terminal.go` into `responses.go`.
+
+The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 
 Downloaded and source builds share your home-directory settings. Automated tests use temporary directories and mock model services; no real API key is needed:
 

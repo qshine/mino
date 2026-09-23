@@ -22,16 +22,16 @@ fi
 
 staging_directory=$(mktemp -d "${TMPDIR:-/tmp}/mino-package.XXXXXX")
 trap 'rm -rf "$staging_directory"' EXIT
-cp LICENSE "$staging_directory/LICENSE"
+cp LICENSE THIRD_PARTY_NOTICES.txt "$staging_directory/"
 native_arch=$(go env GOARCH)
 for architecture in arm64 amd64; do
   CGO_ENABLED=0 GOOS=darwin GOARCH="$architecture" go build -trimpath \
-    -ldflags "-s -w -X main.version=$release_version" -o "$staging_directory/mino" .
+    -ldflags "-s -w -X main.version=$release_version" -o "$staging_directory/mino" ./cmd/mino
   if [[ $(uname -s) == Darwin && $architecture == "$native_arch" ]]; then
     [[ $("$staging_directory/mino" version) == "mino $release_version" ]]
   fi
   COPYFILE_DISABLE=1 tar -czf "dist/mino_${release_version}_darwin_${architecture}.tar.gz" \
-    -C "$staging_directory" mino LICENSE
+    -C "$staging_directory" mino LICENSE THIRD_PARTY_NOTICES.txt
 done
 (
   cd dist

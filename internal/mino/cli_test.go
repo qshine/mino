@@ -1,4 +1,4 @@
-package main
+package mino
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ func TestCLIInformationDoesNotRequireSetup(t *testing.T) {
 		t.Run(arg, func(t *testing.T) {
 			path := isolateConfig(t)
 			var output bytes.Buffer
-			if err := runCLI(context.Background(), []string{arg}, strings.NewReader(""), &output, io.Discard); err != nil {
+			if err := runCLI(context.Background(), "dev", []string{arg}, strings.NewReader(""), &output, io.Discard); err != nil {
 				t.Fatal(err)
 			}
 			if !strings.Contains(output.String(), "mino") {
@@ -29,21 +29,18 @@ func TestCLIInformationDoesNotRequireSetup(t *testing.T) {
 }
 
 func TestCLIVersionMatchesBuildVersion(t *testing.T) {
-	previous := version
-	version = "0.1.1"
-	t.Cleanup(func() { version = previous })
 	var output bytes.Buffer
-	if err := runCLI(context.Background(), []string{"version"}, nil, &output, io.Discard); err != nil {
+	if err := runCLI(context.Background(), "0.1.0", []string{"version"}, nil, &output, io.Discard); err != nil {
 		t.Fatal(err)
 	}
-	if output.String() != "mino 0.1.1\n" {
+	if output.String() != "mino 0.1.0\n" {
 		t.Fatalf("version output = %q", output.String())
 	}
 }
 
 func TestCLIRejectsUnexpectedArguments(t *testing.T) {
 	for _, args := range [][]string{{"unknown"}, {"version", "extra"}, {"help", "extra"}, {"update", "v0.1.0", "extra"}} {
-		if err := runCLI(context.Background(), args, nil, io.Discard, io.Discard); err == nil {
+		if err := runCLI(context.Background(), "dev", args, nil, io.Discard, io.Discard); err == nil {
 			t.Fatalf("accepted arguments %q", args)
 		}
 	}
@@ -55,7 +52,7 @@ func TestCLIUpdateRunsOutsideProjectWithoutChangingSettings(t *testing.T) {
 	writeTestConfig(t, path, `{"api_key":"keep-settings"}`)
 	t.Chdir(t.TempDir())
 	var output bytes.Buffer
-	if err := runCLI(context.Background(), []string{"update", "v0.1.0"}, nil, &output, &output); err != nil {
+	if err := runCLI(context.Background(), "dev", []string{"update", "v0.1.0"}, nil, &output, &output); err != nil {
 		t.Fatalf("update: %v\n%s", err, output.String())
 	}
 	if !strings.Contains(output.String(), "Installed mino 0.1.0") {

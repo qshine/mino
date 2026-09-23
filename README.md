@@ -19,7 +19,7 @@ gh auth login --hostname github.com
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads the latest release,
@@ -77,9 +77,9 @@ configuration. A failed download or verification keeps the existing executable.
 | Progress | Version | Git tag |
 | --- | --- | --- |
 | Chapter 01 | `0.1.0` | `v0.1.0` |
-| Chapter 01 fixes | `0.1.1`, `0.1.2` | `v0.1.1`, `v0.1.2` |
-| Chapter 02 | `0.2.0` | `v0.2.0` |
-| Chapter 02 fixes | `0.2.1` | `v0.2.1` |
+| Future Chapter 01 fixes (examples) | `0.1.1`, `0.1.2` | `v0.1.1`, `v0.1.2` |
+| Planned Chapter 02 | `0.2.0` | `v0.2.0` |
+| Future Chapter 02 fixes (example) | `0.2.1` | `v0.2.1` |
 
 A push to `main` runs CI. A version tag runs tests, builds both macOS packages,
 and publishes a GitHub Release with checksums. Git tags provide the version
@@ -89,14 +89,15 @@ assets stay unchanged. See [release instructions](docs/books/en/releases.md) and
 
 ## Build and learn
 
-Source development uses **Go 1.27.1** and the standard library, with no
-third-party Go dependencies. An existing Go 1.21+ installation with the default
+Source development uses **Go 1.27.1** and the official
+[OpenAI Go SDK](https://github.com/openai/openai-go), pinned in `go.mod`.
+An existing Go 1.21+ installation with the default
 `GOTOOLCHAIN=auto` can download the required toolchain.
 
 From the repository root:
 
 ```bash
-go run .
+go run ./cmd/mino
 bash scripts/check.sh
 ```
 
@@ -108,7 +109,9 @@ not call a paid model or modify your real configuration.
 - [Read the illustrated book](docs/books/en/index.md) · [简体中文](docs/books/zh/index.md)
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
-- Reading order: `main.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
+- Entry point: `cmd/mino/main.go`; application code and tests: `internal/mino/`.
+- Reading order inside `internal/mino/`: `app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
+- The SDK handles API communication. Mino owns the terminal flow; tool execution and the Agent loop remain future chapters.
 - [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)
 
 ## Preview the tutorial book

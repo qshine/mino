@@ -12,11 +12,25 @@ During the tutorial, use `0.<chapter>.<patch>`: `0.1.0` for Chapter 01,
 The release workflow passes the tag version into the binary with Go linker
 flags. Development builds display `dev`; no source constant needs bumping.
 
+## Chapter 01 baseline reset
+
+At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the original
+`v0.1.0` and `v0.1.1` releases and tags. The new baseline introduces the official
+OpenAI Go SDK, `cmd/mino` entry point, and `internal/mino` application package.
+It also retains the private-download fix from the earlier `v0.1.1`.
+
+If you used either earlier build, run `mino update v0.1.0` to install this baseline;
+if its embedded updater fails, reinstall with the current
+[README installation command](https://github.com/qshine/mino#install).
+Both paths preserve your configuration. The version string alone cannot distinguish
+the two `0.1.0` builds. This is a one-time reset; subsequent fixes use new patch tags
+and leave published tags and assets unchanged.
+
 ## Publish a version
 
 1. Finish the chapter or fix, add its entry to `CHANGELOG.md`, and commit it.
 2. Run `bash scripts/check.sh`. Review the change and push it to `main`.
-3. Create and push the next version tag, for example:
+3. Create and push the next version tag. For a future patch after the reset, for example:
 
    ```bash
    git tag -a v0.1.2 -m 'Mino v0.1.2'
@@ -24,9 +38,12 @@ flags. Development builds display `dev`; no source constant needs bumping.
    ```
 
 The [Release workflow](https://github.com/qshine/mino/blob/main/.github/workflows/release.yml) runs the checks again,
-then builds `darwin/arm64` and `darwin/amd64` with CGO disabled. A native Apple
-Silicon executable is checked during packaging; Intel binaries are cross-built.
-Release assets contain the executable and the MIT license:
+then builds `darwin/arm64` and `darwin/amd64` with CGO disabled. On macOS,
+packaging runs the executable for the host architecture to check its version
+and cross-builds the other macOS architecture.
+Each archive contains `mino`, `LICENSE`, and `THIRD_PARTY_NOTICES.txt`, which
+includes the Go runtime, SDK, and dependency licenses. A release has two archives
+and a checksum file:
 
 ```text
 mino_0.1.2_darwin_arm64.tar.gz
@@ -50,7 +67,7 @@ no personal access token or model API key needs to be added to Actions secrets.
 To inspect packages before publishing:
 
 ```bash
-bash scripts/package.sh v0.1.1
+bash scripts/package.sh v0.1.0
 ```
 
 Choose a version already described in `CHANGELOG.md`. Output goes into the
@@ -61,13 +78,13 @@ inspect and remove that draft before rerunning the failed publishing job.
 Do not move a published tag or replace a published asset. Fixes receive a new
 patch tag instead.
 
-Users can reinstall a specific release with `mino update v0.1.1`. This replaces
+Users can reinstall the Chapter 01 baseline with `mino update v0.1.0`. This replaces
 only the executable; it does not roll back or erase `~/.mino/config.json`.
 
 ## Private repository installation
 
 The bootstrap command in the README uses authenticated `gh api` to read
-`install.sh` from `main`. The installer and the embedded updater use `gh` to
+`internal/mino/install.sh` from `main`. The installer and the embedded updater use `gh` to
 resolve release IDs and download files through GitHub's dedicated release-assets
 API, so an incomplete embedded asset list does not block installation. Users
 must sign in with an account that can read that repository. Tokens remain managed by GitHub

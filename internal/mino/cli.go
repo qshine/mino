@@ -1,4 +1,4 @@
-package main
+package mino
 
 import (
 	"context"
@@ -10,13 +10,10 @@ import (
 	"time"
 )
 
-// Release builds set this from the Git tag with -ldflags; source builds say dev.
-var version = "dev"
-
 //go:embed install.sh
 var installScript string
 
-func runCLI(ctx context.Context, args []string, input io.Reader, output, errorOutput io.Writer) error {
+func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
 	if len(args) == 0 {
 		return run(ctx, input, output, errorOutput)
 	}

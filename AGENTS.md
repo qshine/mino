@@ -8,10 +8,10 @@ Deliver one runnable chapter at a time. Planned topics include terminal conversa
 
 ## Project Structure & Module Organization
 
-Chapter 01 is implemented with Go 1.27.1 and the standard library, targeting macOS terminals. The current layout is:
+Chapter 01 is implemented with Go 1.27.1 and the official OpenAI Go SDK, targeting macOS terminals. The current layout is:
 
-- Root: `go.mod`, `main.go`, `cli.go`, `config.go`, `config_prompt.go`, `terminal.go`, `responses.go`, and `install.sh`. `README.md` is English and links to `README.zh-CN.md`. All Go code remains in one `main` package.
-- Installation and releases: `install.sh` installs verified macOS packages to `~/.mino/bin/mino`; `mino update` runs its embedded copy. Release tags provide the version (`0.<chapter>.<patch>`); source builds report `dev`. `scripts/` contains checks and packaging, `.github/workflows/` contains CI and release automation, and `CHANGELOG.md` supplies version-specific release notes. Never change published tags or overwrite published assets.
+- Root: `go.mod` and `go.sum` define the application module and pinned dependencies. `cmd/mino/main.go` is the executable entry point; `internal/mino/` contains the application implementation, embedded `install.sh`, and tests in package `mino`. `README.md` is English and links to `README.zh-CN.md`.
+- Installation and releases: `internal/mino/install.sh` installs verified macOS packages to `~/.mino/bin/mino`; `mino update` runs its embedded copy. Release tags provide the version (`0.<chapter>.<patch>`); source builds report `dev`. `scripts/` contains checks and packaging, `.github/workflows/` contains CI and release automation, and `CHANGELOG.md` supplies version-specific release notes. Never change published tags or overwrite published assets.
 - User configuration: startup creates `~/.mino/` with mode `0700`; completed settings are saved to `~/.mino/config.json` with mode `0600`. Resolve this path from the user home directory, never the working directory. Only missing fields are prompted; a complete config starts chat immediately. Cancellation leaves existing settings unchanged. Do not read project-local configuration or `OPENAI_*` environment variables. Tests must use isolated temporary home directories, never the developer's real configuration.
 - All application prompts and error messages must be in English. Only the API URL has a default; the model name and API key require explicit input.
 - `docs/books/en/` and `docs/books/zh/`: matching English and Simplified Chinese book pages; numbered lessons live in each language's `chapters/` directory. Website configuration stays in `docs/.vitepress/`.
@@ -23,8 +23,8 @@ Keep early chapters simple. Extract packages when their responsibilities become 
 
 Run development commands from the repository root. The installed `mino` command works from any directory and optionally reads `AGENTS.md` from that directory:
 
-- `go run .`: start the terminal application.
-- `go build -o bin/mino .`: build a local executable.
+- `go run ./cmd/mino`: start the terminal application.
+- `go build -o bin/mino ./cmd/mino`: build a local executable.
 - `bash scripts/check.sh`: run formatting, syntax, vet, race tests, and build checks.
 - `bash scripts/package.sh v0.1.0`: package the named release locally (requires its changelog entry).
 - `go test ./...`: run automated tests.

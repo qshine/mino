@@ -1,4 +1,4 @@
-package main
+package mino
 
 import (
 	"bufio"
@@ -10,14 +10,16 @@ import (
 	"os/signal"
 )
 
-func main() {
+// Main runs the terminal application and returns its process exit code.
+func Main(version string) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	err := runCLI(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
+	err := runCLI(ctx, version, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	stop()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: "+terminalText(err.Error()))
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) error {

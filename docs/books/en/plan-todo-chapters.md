@@ -1,8 +1,8 @@
 # Mino Chapter Roadmap
 
-This tutorial builds a terminal agent from scratch in Go using the OpenAI Responses API. Each chapter follows one interaction: what the model receives, what the program does with the response, and how control or context reaches the next step. [Getting started](./getting-started.md) covers installation and API settings.
+This tutorial builds a terminal agent from scratch in Go using the OpenAI Responses API. The official OpenAI Go SDK handles API communication; Mino implements the interaction flow and, in later chapters, the Agent loop. Each chapter follows one interaction: what the model receives, what the program does with the response, and how control or context reaches the next step. [Getting started](./getting-started.md) covers installation and API settings.
 
-Chapter 01 has working code, a lesson, and local verification. The remaining chapters have not started. Statuses are **Not started**, **In progress**, and **Complete**. A chapter is complete only when its lesson, corresponding implementation, and necessary verification are all finished.
+Chapter 01 has working code, a lesson, and local verification for the reissued `v0.1.0`, with its entry point in `cmd/mino` and application in `internal/mino`. The remaining chapters have not started. Statuses are **Not started**, **In progress**, and **Complete**. A chapter is complete only when its lesson, corresponding implementation, and necessary verification are all finished.
 
 | Chapter | Status | Title | What it covers |
 | --- | --- | --- | --- |

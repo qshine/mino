@@ -1,4 +1,4 @@
-package main
+package mino
 
 import (
 	"context"
@@ -70,6 +70,8 @@ func TestRespondHandlesFailuresAndRefusal(t *testing.T) {
 		{"rate limited", 429, `{"error":{"message":"slow down"}}`, "", "HTTP 429"},
 		{"server error", 502, `<html>test-key</html>`, "", "HTTP 502"},
 		{"bad JSON", 200, `<html>test-key</html>`, "", "JSON"},
+		{"trailing JSON", 200, `{"status":"completed","output":[]} private-data`, "", "JSON"},
+		{"null response", 200, `null`, "", "incomplete"},
 		{"oversized response", 200, strings.Repeat("x", maxResponseBytes+1), "", "8 MiB"},
 		{"empty output", 200, `{"status":"completed","output":[]}`, "", "no text"},
 		{"failed", 200, `{"status":"failed","error":{"message":"test-key"}}`, "", "generation failed"},
@@ -96,6 +98,67 @@ func TestRespondHandlesFailuresAndRefusal(t *testing.T) {
 			}
 			if err != nil || got != tc.want {
 				t.Fatalf("response = %q, error = %v", got, err)
+			}
+		})
+	}
+}
+
+func TestRespondIgnoresEnvironmentConfiguration(t *testing.T) {
+	for name, value := range map[string]string{
+		"OPENAI_BASE_URL":       "http://127.0.0.1:1/unwanted",
+		"OPENAI_API_KEY":        "environment-key",
+		"OPENAI_ADMIN_KEY":      "environment-admin-key",
+		"OPENAI_ORG_ID":         "environment-org",
+		"OPENAI_PROJECT_ID":     "environment-project",
+		"OPENAI_MODEL":          "environment-model",
+		"OPENAI_WEBHOOK_SECRET": "environment-webhook-secret",
+		"OPENAI_CUSTOM_HEADERS": "X-Unwanted: environment-header",
+	} {
+		t.Setenv(name, value)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/custom/v1/responses" || r.Header.Get("Authorization") != "Bearer configured-key" {
+			t.Error("request did not use explicit settings")
+		}
+		for _, header := range []string{"OpenAI-Organization", "OpenAI-Project", "X-Unwanted"} {
+			if r.Header.Get(header) != "" {
+				t.Errorf("request inherited %s from the environment", header)
+			}
+		}
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Error(err)
+			return
+		}
+		if body["model"] != "configured-model" || body["instructions"] != "" || body["store"] != false {
+			t.Errorf("unexpected request settings: %#v", body)
+		}
+		fmt.Fprint(w, `{"status":"completed","error":null,"output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Hello"}]}]}`)
+	}))
+	defer server.Close()
+	client := newResponsesClient(config{server.URL + "/custom/v1", "configured-key", "configured-model"}, "")
+	if got, err := client.respond(context.Background(), "Hello"); err != nil || got != "Hello" {
+		t.Fatalf("response = %q, error = %v", got, err)
+	}
+}
+
+func TestRespondDoesNotRetry(t *testing.T) {
+	for _, status := range []int{408, 409, 429, 500} {
+		t.Run(fmt.Sprint(status), func(t *testing.T) {
+			requests := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.WriteHeader(status)
+				fmt.Fprint(w, `{"error":{"message":"private-data"}}`)
+			}))
+			defer server.Close()
+			client := newResponsesClient(config{server.URL, "test-key", "test-model"}, "")
+			_, err := client.respond(context.Background(), "Hello")
+			if err == nil || !strings.Contains(err.Error(), fmt.Sprint(status)) || strings.Contains(err.Error(), "private-data") {
+				t.Fatalf("unexpected API error: %v", err)
+			}
+			if requests != 1 {
+				t.Fatalf("sent %d requests, want one without retries", requests)
 			}
 		})
 	}

@@ -17,7 +17,7 @@ gh auth login --hostname github.com
 然后在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 安装程序会识别 Mac 架构，下载最新发布版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
@@ -68,24 +68,24 @@ mino update v0.1.0    # 安装指定版本，也可用于回退
 | 进度 | 版本号 | Git 标签 |
 | --- | --- | --- |
 | 第一章 | `0.1.0` | `v0.1.0` |
-| 第一章小修正 | `0.1.1`、`0.1.2` | `v0.1.1`、`v0.1.2` |
-| 第二章 | `0.2.0` | `v0.2.0` |
-| 第二章小修正 | `0.2.1` | `v0.2.1` |
+| 后续第一章修正（示例） | `0.1.1`、`0.1.2` | `v0.1.1`、`v0.1.2` |
+| 计划中的第二章 | `0.2.0` | `v0.2.0` |
+| 后续第二章修正（示例） | `0.2.1` | `v0.2.1` |
 
 推送 `main` 会触发 CI。推送版本标签会触发测试、两种 Mac 架构的编译和 GitHub Release 发布，
 同时上传校验文件。发布版的版本号来自 Git 标签，直接从源码运行时显示 `dev`。
 已经发布的标签和安装包保持不变，修复时发布新的补丁版本。
-详见[发布说明](docs/books/en/releases.md)和[更新记录](CHANGELOG.md)。
+详见[发布说明](docs/books/zh/releases.md)和[更新记录](CHANGELOG.md)。
 
 ## 开发与学习
 
-开发环境使用 **Go 1.27.1** 和标准库，没有第三方 Go 依赖。
+开发环境使用 **Go 1.27.1** 和 [OpenAI 官方 Go SDK](https://github.com/openai/openai-go)，SDK 版本固定在 `go.mod` 中。
 已安装 Go 1.21+ 且使用默认 `GOTOOLCHAIN=auto` 时，可以自动下载所需工具链。
 
 在仓库根目录执行：
 
 ```bash
-go run .
+go run ./cmd/mino
 bash scripts/check.sh
 ```
 
@@ -94,7 +94,9 @@ bash scripts/check.sh
 
 - [第一章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
-- 阅读顺序：`main.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
+- 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/mino/`。
+- `internal/mino/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
+- SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 
 ## 图文教程书
