@@ -54,8 +54,19 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 printf 'Downloading Mino %s for macOS %s...\n' "$release_version" "$architecture"
-gh release download "$release_tag" --repo "github.com/$repository" \
-  --pattern "$asset" --pattern checksums.txt --dir "$download_directory" || fail 'Download failed. Your existing installation has not been changed.'
+# The tag endpoint can omit embedded assets even when they are uploaded.
+# Resolve the release, then list and download assets through their own API.
+release_id=$(gh api --hostname github.com "repos/$repository/releases/tags/$release_tag" \
+  --jq 'select(.draft == false and .prerelease == false) | .id') || fail 'Cannot find this published release.'
+[[ $release_id =~ ^[0-9]+$ ]] || fail 'Invalid or unpublished release.'
+release_assets=$(gh api --hostname github.com --paginate "repos/$repository/releases/$release_id/assets" \
+  --jq '.[] | select(.state == "uploaded") | [.id, .name] | @tsv') || fail 'Cannot list release downloads.'
+for filename in "$asset" checksums.txt; do
+  asset_id=$(printf '%s\n' "$release_assets" | awk -F '\t' -v name="$filename" '$2 == name { print $1 }')
+  [[ $asset_id =~ ^[0-9]+$ ]] || fail "Missing or invalid release asset: $filename"
+  gh api --hostname github.com -H 'Accept: application/octet-stream' \
+    "repos/$repository/releases/assets/$asset_id" > "$download_directory/$filename" || fail 'Download failed. Your existing installation has not been changed.'
+done
 expected_checksum=$(awk -v name="$asset" '$2 == name { print $1 }' "$download_directory/checksums.txt")
 [[ $expected_checksum =~ ^[a-f0-9]{64}$ ]] || fail 'Missing or invalid SHA-256 checksum.'
 actual_checksum=$(shasum -a 256 "$download_directory/$asset")

@@ -33,16 +33,39 @@ func installerFixture(t *testing.T) (script, home, assets string) {
 	t.Setenv("MINO_TEST_ARCH", "arm64")
 	t.Setenv("MINO_TEST_OS", "Darwin")
 	t.Setenv("MINO_TEST_DOWNLOAD_FAIL", "")
+	t.Setenv("MINO_TEST_EMPTY_TAG_ASSETS", "")
+	t.Setenv("MINO_TEST_ASSET_LIST_FAIL", "")
+	t.Setenv("MINO_TEST_MISSING_ASSET", "")
 	mocks := map[string]string{
 		"uname":   "#!/bin/bash\nif [[ $1 == -s ]]; then echo \"$MINO_TEST_OS\"; else echo \"$MINO_TEST_ARCH\"; fi\n",
 		"sw_vers": "#!/bin/bash\necho 13.0\n",
 		"gh": `#!/bin/bash
 set -eu
 if [[ $1 == api ]]; then
-  echo v0.1.0
+  case "$*" in
+    *releases/latest*) echo v0.1.0 ;;
+    *releases/tags/v0.1.0*) echo 101 ;;
+    *releases/101/assets*)
+      [[ -z $MINO_TEST_ASSET_LIST_FAIL ]] || exit 1
+      printf '201\tmino_0.1.0_darwin_arm64.tar.gz\n202\tmino_0.1.0_darwin_amd64.tar.gz\n'
+      if [[ -z $MINO_TEST_MISSING_ASSET ]]; then printf '203\tchecksums.txt\n'; fi
+      ;;
+    *releases/assets/*)
+      [[ -z $MINO_TEST_DOWNLOAD_FAIL ]] || exit 1
+      case "$*" in
+        *releases/assets/201*) filename=mino_0.1.0_darwin_arm64.tar.gz ;;
+        *releases/assets/202*) filename=mino_0.1.0_darwin_amd64.tar.gz ;;
+        *releases/assets/203*) filename=checksums.txt ;;
+        *) exit 2 ;;
+      esac
+      cat "$MINO_TEST_ASSETS/$filename"
+      ;;
+    *) exit 2 ;;
+  esac
   exit 0
 fi
 [[ $1 == release && $2 == download ]] || exit 2
+[[ -z $MINO_TEST_EMPTY_TAG_ASSETS ]] || { echo "no assets to download" >&2; exit 1; }
 [[ -z $MINO_TEST_DOWNLOAD_FAIL ]] || exit 1
 shift 3
 assets=()
@@ -136,7 +159,7 @@ func TestInstallerInstallsBothArchitecturesAndPreservesSettings(t *testing.T) {
 }
 
 func TestInstallerFailureKeepsExistingBinary(t *testing.T) {
-	for _, failure := range []string{"checksum", "download", "version mismatch", "unsupported OS", "invalid version"} {
+	for _, failure := range []string{"checksum", "download", "asset list", "missing asset", "version mismatch", "unsupported OS", "invalid version"} {
 		t.Run(failure, func(t *testing.T) {
 			script, home, assets := installerFixture(t)
 			binDir := filepath.Join(home, ".mino", "bin")
@@ -155,6 +178,10 @@ func TestInstallerFailureKeepsExistingBinary(t *testing.T) {
 				}
 			case "download":
 				t.Setenv("MINO_TEST_DOWNLOAD_FAIL", "1")
+			case "asset list":
+				t.Setenv("MINO_TEST_ASSET_LIST_FAIL", "1")
+			case "missing asset":
+				t.Setenv("MINO_TEST_MISSING_ASSET", "1")
 			case "version mismatch":
 				writeInstallerAssets(t, assets, "0.0.1")
 			case "unsupported OS":
@@ -204,5 +231,19 @@ func TestFirstInstallationPreparesHomeWithoutInventingSettings(t *testing.T) {
 	}
 	if profile, err := os.ReadFile(filepath.Join(home, ".bash_profile")); err != nil || !strings.Contains(string(profile), `export PATH="$HOME/.mino/bin:$PATH"`) {
 		t.Fatal("Bash profile was not configured")
+	}
+}
+
+// GitHub can return assets from the dedicated endpoint while the release-by-tag
+// response has an empty embedded assets list. The download must still succeed.
+func TestInstallerDownloadsWhenTagMetadataOmitsAssets(t *testing.T) {
+	script, home, _ := installerFixture(t)
+	t.Setenv("MINO_TEST_EMPTY_TAG_ASSETS", "1")
+	output, err := exec.Command("/bin/bash", script, "v0.1.0").CombinedOutput()
+	if err != nil {
+		t.Fatalf("installation with incomplete tag metadata: %v\n%s", err, output)
+	}
+	if _, err := os.Stat(filepath.Join(home, ".mino", "bin", "mino")); err != nil {
+		t.Fatal(err)
 	}
 }

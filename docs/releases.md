@@ -65,8 +65,9 @@ only the executable; it does not roll back or erase `~/.mino/config.json`.
 
 The bootstrap command in the README uses authenticated `gh api` to read
 `install.sh` from `main`. The installer and the embedded updater use `gh` to
-retrieve releases and assets from `github.com/qshine/mino`. Users must sign in
-with an account that can read that repository. Tokens remain managed by GitHub
+resolve release IDs and download files through GitHub's dedicated release-assets
+API, so an incomplete embedded asset list does not block installation. Users
+must sign in with an account that can read that repository. Tokens remain managed by GitHub
 CLI and are not copied into Mino's configuration.
 
 Installation creates `~/.mino/bin/mino`. First launch asks for model settings
