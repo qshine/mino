@@ -1,14 +1,36 @@
+# Go executables and build directories
 /miniagent
+/mino
 /bin/
+/build/
+/dist/
+*.exe
+*.exe~
+*.test
+*.dSYM/
+
+# Test coverage and profiling output
+/coverage/
+/coverage.out
+/coverage.html
+/*.prof
+
+# Local settings and credentials (including legacy project configuration)
 /miniagent.json
+/config.json
 /.mino/
 /.miniagent-config-*.tmp
-.DS_Store
 .env
 .env.*
 !.env.example
+
+# Runtime data
 *.db
 *.db-*
 *.sqlite
 *.sqlite-*
 *.log
+
+# macOS metadata
+.DS_Store
+._*
