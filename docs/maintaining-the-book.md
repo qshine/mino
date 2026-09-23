@@ -4,9 +4,9 @@ The book lives beside the application in this repository. English is the default
 
 ## The dedicated writer
 
-The project defines a Codex custom agent named **`book_writer`** in [`.codex/agents/book_writer.toml`](https://github.com/qshine/mino/blob/main/.codex/agents/book_writer.toml). It inherits the parent task's model and permissions. Open this repository as a trusted Codex project; start a new task if an existing session has not discovered the new agent definition.
+The project defines a Codex custom agent named **`book_writer`** in [`.codex/agents/book_writer.toml`](https://github.com/qshine/mino/blob/main/.codex/agents/book_writer.toml). Supported Codex clients discover this standalone definition in trusted projects; no explicit registration in `.codex/config.toml` is needed. It inherits the parent task's model and permissions. Open this repository as a trusted Codex project; start a new task if an existing session has not discovered the agent definition.
 
-The [repository instructions](https://github.com/qshine/mino/blob/main/AGENTS.md) ask the primary coding agent to ask this writer to review documentation impact after every code change. The writer reads the change and actual implementation, updates both languages and their diagrams, and returns its work for the primary agent to review.
+The [repository instructions](https://github.com/qshine/mino/blob/main/AGENTS.md) require the primary coding agent to invoke the writer after code changes and relevant checks, before final handoff and before committing the completed change. Every code change receives a documentation-impact review, including new features, changes to existing functionality, bug fixes, and refactors; no separate documentation request is needed. The writer reads the diff and implementation, updates affected English and Chinese chapters, examples, diagrams, setup instructions, and the roadmap in the same change, then returns its work for review.
 
 This is part of the **Codex development workflow**. It does not run as an independent background service or on every manual Git push. GitHub Actions builds the written pages; it does not call a model or generate prose. No additional cloud AI key or scheduled task is required.
 
@@ -40,7 +40,7 @@ The primary agent is responsible for the final factual review. A successful webs
 
 The writer must distinguish implemented behavior from planned work. Examples of model output are marked as illustrative unless they were actually observed. Source links refer to the version being explained, and no real API keys, private configuration, or conversation logs belong in the book.
 
-A small fix updates its existing chapter. A new capability can begin the next chapter. If a change has no impact on readers, the writer reports why no content change is needed.
+A small fix updates its existing chapter. A new feature explains its purpose, principles, usage, limitations, and newly completed capabilities in the appropriate chapter; add a chapter when the roadmap calls for one. The writer edits `docs/`; the primary agent handles any required README and changelog updates. If a change has no impact on readers, the writer reports why no content change is needed.
 
 ## Preview and check locally
 

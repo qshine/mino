@@ -51,7 +51,11 @@ Before responding or editing, consider the user's intent and alternative approac
 
 ## Tutorial Book Workflow
 
-For the primary coding agent: after completing a code change, delegate a documentation-impact review to the project custom agent `book_writer` before final handoff. Provide the relevant diff, behavior changes, verification evidence, and applicable version. Its definition is `.codex/agents/book_writer.toml`; if the current client cannot select custom roles, pass that file's writing instructions to a dedicated subagent. The writer itself must not recursively delegate.
+For the primary coding agent: after completing code changes and relevant checks, automatically invoke `book_writer` before final handoff and before committing the completed change. Do not wait for a separate request to update documentation. This applies to new features, changes to existing functionality, bug fixes, and refactors that affect the implementation explained in a lesson; every code change receives a documentation-impact review.
+
+Provide the writer with the relevant diff, behavior changes, verification evidence, and applicable version. It must update the affected English and Chinese chapters, examples, diagrams, setup instructions, and roadmap as needed in the same change. For a new feature, explain its purpose, principles, usage, limitations, and newly completed capabilities in the appropriate chapter; add a chapter when the chapter plan calls for one. The primary agent also updates README files and the changelog when the writer identifies changes outside its `docs/` edit scope.
+
+Codex discovers the standalone definition at `.codex/agents/book_writer.toml`; no explicit registration in `.codex/config.toml` is needed. If the current client cannot select custom roles, pass that file's writing instructions to a dedicated subagent. The writer itself must not recursively delegate.
 
 The book uses VitePress with Mermaid diagrams. English pages live under `docs/`, with complete Simplified Chinese counterparts at the same relative paths under `docs/zh/`. Update both languages and relevant diagrams together. Explain the problem, principles, implementation, observable experiments, chapter outcomes, and limits. Keep future chapters clearly marked as planned and source links tied to the version being taught.
 
