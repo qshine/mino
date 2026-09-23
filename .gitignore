@@ -34,3 +34,8 @@
 # macOS metadata
 .DS_Store
 ._*
+
+# Tutorial website dependencies and generated output
+/node_modules/
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/

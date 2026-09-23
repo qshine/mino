@@ -1,0 +1,3 @@
+[agents.book_writer]
+description = "Maintain Mino's English-first bilingual tutorial book after code changes, including chapter explanations, outcomes, source references, and Mermaid diagrams."
+config_file = "agents/book_writer.toml"

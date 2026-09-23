@@ -1,0 +1,22 @@
+{
+  "name": "mino-book",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "book:dev": "vitepress docs --host 127.0.0.1",
+    "book:build": "vitepress build docs",
+    "book:preview": "vite preview --outDir docs/.vitepress/dist --base /mino/ --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "mermaid": "11.17.2",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "2.0.17",
+    "vite": "6.4.3"
+  },
+  "overrides": {
+    "vite": "$vite"
+  }
+}

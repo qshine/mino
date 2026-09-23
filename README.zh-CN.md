@@ -92,7 +92,19 @@ bash scripts/check.sh
 检查脚本会验证格式和 Shell 语法，运行 `go vet`、完整测试和竞态检测，并生成 `bin/mino`。
 测试使用假密钥、临时用户目录、本机模拟 HTTP 服务和模拟下载，不调用付费模型，也不修改真实配置。
 
-- [第一章：问题、实现、演示与验证](docs/chapters/01-terminal-chat.md)
-- [全部章节规划](docs/plan-todo-chapters.md)
+- [第一章：问题、实现、演示与验证](docs/zh/chapters/01-terminal-chat.md)
+- [全部章节规划](docs/zh/plan-todo-chapters.md)
 - 阅读顺序：`main.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
+
+## 图文教程书
+
+[阅读英文版](docs/index.md) · [阅读中文版](docs/zh/index.md)
+
+本书默认英文，可切换简体中文，包含流程图、时序图和概念图。
+使用 Node.js 24，在仓库中运行 `npm ci --ignore-scripts`、`npm run book:dev`，
+即可打开输出的本地地址预览。`npm run book:build` 检查站内链接并构建两种语言。
+
+项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
+GitHub Actions 已配置书籍检查，公开 Pages 发布默认关闭。
+详见[写作与发布流程](docs/zh/maintaining-the-book.md)。

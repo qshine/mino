@@ -1,6 +1,9 @@
 # Releasing Mino
 
-[English introduction](../README.md) · [中文介绍](../README.zh-CN.md)
+[English introduction](https://github.com/qshine/mino#readme) · [中文介绍](https://github.com/qshine/mino/blob/main/README.zh-CN.md)
+
+This page covers Go application releases. For the book website, see
+[writing and updating the book](./maintaining-the-book.md).
 
 ## Version policy
 
@@ -16,25 +19,25 @@ flags. Development builds display `dev`; no source constant needs bumping.
 3. Create and push the next version tag, for example:
 
    ```bash
-   git tag -a v0.1.1 -m 'Mino v0.1.1'
-   git push origin v0.1.1
+   git tag -a v0.1.2 -m 'Mino v0.1.2'
+   git push origin v0.1.2
    ```
 
-The [Release workflow](../.github/workflows/release.yml) runs the checks again,
+The [Release workflow](https://github.com/qshine/mino/blob/main/.github/workflows/release.yml) runs the checks again,
 then builds `darwin/arm64` and `darwin/amd64` with CGO disabled. A native Apple
 Silicon executable is checked during packaging; Intel binaries are cross-built.
 Release assets contain the executable and the MIT license:
 
 ```text
-mino_0.1.1_darwin_arm64.tar.gz
-mino_0.1.1_darwin_amd64.tar.gz
+mino_0.1.2_darwin_arm64.tar.gz
+mino_0.1.2_darwin_amd64.tar.gz
 checksums.txt
 ```
 
 The workflow uploads to a draft release first and publishes only after the
 uploads succeed. Users then receive the version through `mino update`.
 The changelog entry supplies the release notes. Tags without a matching entry
-fail packaging. Normal branch pushes run [CI](../.github/workflows/ci.yml)
+fail packaging. Normal branch pushes run [CI](https://github.com/qshine/mino/blob/main/.github/workflows/ci.yml)
 and do not publish a release.
 
 GitHub provides the build machines and download storage; no personal server is
@@ -58,7 +61,7 @@ inspect and remove that draft before rerunning the failed publishing job.
 Do not move a published tag or replace a published asset. Fixes receive a new
 patch tag instead.
 
-Users can reinstall an earlier release with `mino update v0.1.0`. This replaces
+Users can reinstall a specific release with `mino update v0.1.1`. This replaces
 only the executable; it does not roll back or erase `~/.mino/config.json`.
 
 ## Private repository installation

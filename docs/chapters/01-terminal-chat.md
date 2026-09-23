@@ -1,36 +1,41 @@
-# 第 01 章：与模型对话——第一个终端程序
+# Chapter 01: Your First Terminal Conversation
 
-## 这一章解决什么问题
+Applies to **0.1.x** · Source checked against **[v0.1.1](https://github.com/qshine/mino/tree/v0.1.1)**
 
-模型不会直接读取你的键盘，也不会自动把回答显示在终端。我们先搭通一条完整路径：终端读取一行问题，Go 构造 HTTP 请求，模型生成回答，Go 解析回答并打印，然后等待下一次输入。
+## The problem this chapter solves
 
-本章交付一个能在 macOS 终端运行的程序，使用 Go 1.27.1 和标准库。首次启动交互填写缺失的 `base_url`、`api_key`、`model`，保存到用户主目录 `~/.mino/config.json`，之后自动复用。启动时可选读取当前目录的 `AGENTS.md`，每轮传入 Responses API 的 `instructions`。每个请求仅包含当前问题，各轮之间没有上下文关联，也不创建本地聊天记录。内存历史会在第 02 章加入。
+You type a sentence into a terminal. How does the model receive it? How does its answer reach your screen? A model service cannot read your keyboard directly. A program has to connect terminal input, network requests, and output.
 
-安装版使用方法见[中文介绍](../../README.zh-CN.md)，支持一行安装、`mino version` 和 `mino update`。本章下面保留从源码学习的步骤。
+This chapter builds that connection in Go: **read one question, send one request, parse and display the answer, then wait for another line.** Understanding one complete exchange gives us a foundation for conversation history, tool calls, and an agent loop.
 
-## 1. 准备 macOS 和 Go
+By the end, you can:
 
-本章面向 macOS 13+ 的 Apple Silicon（`arm64`）和 Intel（`amd64`）Mac，使用系统自带的终端和默认 zsh 即可。
+- Run Mino in a macOS terminal, enter missing settings once, and reuse them on later starts.
+- Follow a question through the program and distinguish settings, model instructions, and user input.
+- Explain why a second question in the same terminal can still lack the previous exchange.
+- Verify behavior with a local mock service and automated tests, without depending on a real model's choice of words.
 
-截至 2026-09-20，[Go 官方下载页](https://go.dev/dl/)列出的最新稳定版是 **1.27.1**。在官方页面选择对应架构的 `.pkg` 并按[安装说明](https://go.dev/doc/install)安装；安装后重新打开终端。
+This version provides independent questions and answers. **It has no conversation history, session database, streaming output, or tools that the model can call.** Installation, version reporting, and updates are already available. See [Getting started](../getting-started.md) for installation and [Releasing Mino](../releases.md) for the release process.
 
-如果已经有 Go 1.21+，默认的 `GOTOOLCHAIN=auto` 可以按项目要求自动下载工具链。进入本项目根目录，执行：
+## 1. Run it and observe an exchange
 
-```zsh
-go version
+This chapter targets macOS 13 or later on Apple Silicon and Intel Macs. The release package does not require Go. If you have installed Mino, run it from any directory:
+
+```bash
+mino
 ```
 
-本章验证使用的输出为 `go version go1.27.1 darwin/arm64`；Intel Mac 的架构为 `darwin/amd64`。`go.mod` 的 `go 1.27.1` 设置最低工具链版本，更高版本也可使用。自动下载机制见 [Go Toolchains](https://go.dev/doc/toolchain)。如果此前关闭了自动选择，可以为当前命令设置 `GOTOOLCHAIN=auto go run .`，或手动安装所需版本。
+To learn while editing the source, run this from the repository root instead:
 
-## 2. 配置模型服务
-
-在项目根目录直接启动，不需要先设置环境变量：
-
-```zsh
+```bash
 go run .
 ```
 
-如果配置文件尚不存在，会看到以下提示：
+The source uses Go 1.27.1 and the standard library, with no third-party Go dependencies. The required version is recorded in [go.mod](https://github.com/qshine/mino/blob/v0.1.1/go.mod). Source commands need the project directory; **the installed program does not need to start from the repository**.
+
+### First startup
+
+When the configuration is incomplete, the program asks for the missing settings:
 
 ```text
 Complete the missing settings. Press Enter to accept a value in brackets, or Ctrl+C to cancel. Settings will be saved to ~/.mino/config.json.
@@ -40,161 +45,271 @@ API Key (input hidden):
 Settings saved. Next time, chat will start immediately.
 ```
 
-| 配置字段 | 默认值与填写方式 |
+Here, `your-model` represents a model name you type. It is a placeholder, not a default.
+
+| Field | What to enter |
 | --- | --- |
-| `base_url` | 回车接受 `https://api.openai.com/v1`，或输入自己的 API 前缀 |
-| `model` | 无默认值，必须输入服务支持且账户有权限的模型名称；空白会重新询问 |
-| `api_key` | 无默认值，必须输入；输入不回显，空白会重新询问 |
+| `base_url` | Press Enter to accept `https://api.openai.com/v1`, or enter the API prefix of a service that supports Responses |
+| `model` | Enter a model supported by the service and available to your account; an empty answer repeats the prompt |
+| `api_key` | Enter a key; typing is hidden, and an empty answer repeats the prompt |
 
-程序的配置、聊天和错误提示全部使用英文。上面的 `your-model` 是占位示例，请填写实际模型名称。只有 API 地址提供默认值，模型名称和密钥都必须由用户填写。
+The settings are saved in `~/.mino/config.json`. With a complete configuration, the next start goes straight to chat. If just one field is missing, only that field is requested. Valid local fields do not prove that the service accepts the key or model: the server checks those when a request is made.
 
-启动时自动创建 `~/.mino/` 目录；填写完成后，程序会先保存 `config.json` 再进入问答。下一次运行 `go run .` 或 `./bin/mino` 时，配置完整就直接进入对话；如果只缺少 `api_key`，就只询问密钥。配置文件结构如下，示例中的密钥是占位符：
+### Ask a question, then exit
 
-```json
-{
-  "base_url": "https://api.openai.com/v1",
-  "api_key": "你的密钥",
-  "model": "your-model"
-}
-```
-
-配置统一读取 `~/.mino/config.json`，不随当前工作目录变化。不读取项目内的 `miniagent.json`、`config.json`、旧版的 `OPENAI_*` 环境变量或 `.env`。旧版项目配置需要在新配置不存在时手动迁移到新位置，或者在首次启动时重新填写。要修改服务或模型，可以编辑 JSON 后重启；把字段设为 `""` 可让程序重新询问这一项。JSON 损坏会明确报错并保留原文件。输入过程中按 Ctrl+C 或在空行按 Ctrl+D 会取消设置，保留原有配置，不保存尚未填写完整的内容；首次创建的 `.mino` 目录会保留。
-
-密钥以明文保存在这个本地文件中。程序将 `.mino` 目录权限设为 `0700`，配置文件权限设为 `0600`，只允许当前用户访问。配置文件和写入时的临时文件都位于用户目录中，项目升级不会覆盖它们；`.gitignore` 仍忽略旧版项目配置，避免误提交旧密钥。配置不作为聊天内容传给模型，密钥只用于 HTTP 认证。完整配置表示字段齐全且格式有效，实际密钥和模型权限由服务端校验。
-
-如使用兼容服务，把 `base_url` 改成该服务的 API 前缀，例如 `https://gateway.example.com/v1`，不要填 `/chat/completions` 或完整的 `/responses` 地址。远程连接要求 HTTPS；本机模拟服务可以使用 `http://127.0.0.1:端口/v1`。程序不跟随重定向，避免把问题或密钥转发到别处。
-
-## 3. 从输入走到输出
-
-整个过程可以沿着以下源文件阅读：
-
-```text
-main.go / cli.go：处理版本与升级命令，可选读取 AGENTS.md，加载或补全配置，监听 Ctrl+C
-  ├─ config.go / config_prompt.go：读取 JSON → 只询问缺失项 → 保存 JSON
-  └─ terminal.go：读入一行非空问题
-       └─ responses.go：POST {base_url}/responses
-            └─ 提取回答 → 终端打印 → 再读一行
-```
-
-### 入口与配置：`main.go`、`cli.go`、`config.go`、`config_prompt.go`
-
-`configPath` 通过 `os.UserHomeDir()` 定位用户主目录，创建或保护 `.mino` 目录，不允许目录是普通文件或符号链接。`loadConfig` 从该目录读取 JSON，保留已有字段，再依次补全缺失的地址、模型和密钥。只有地址提示中的方括号显示默认值，空输入会采用该地址；模型和密钥没有默认值，必须填写。URL 和必填项校验通过后，在同一个 `.mino` 目录中使用权限为 `0600` 的临时文件写入，再重命名为 `config.json`，避免写入中断留下半份配置。读取时拒绝目录和符号链接，已有文件的权限也会收紧到 `0600`。
-
-`config_prompt.go` 用 macOS 自带的 `/bin/stty` 暂时关闭密钥输入回显，并用 `defer` 恢复原终端状态，覆盖成功、EOF 和 Ctrl+C 退出路径。Go 仍只依赖标准库；这里调用的是固定的终端设置命令，参数不包含用户输入。配置和聊天共用同一个输入缓冲区，避免配置阶段预读的第一条问题丢失。
-
-`loadInstructions` 从**当前工作目录**读取 `AGENTS.md`，因此必须从仓库根目录启动。文件内容在启动时读取一次，作为每一轮的 `instructions`；修改文件后需要重启生效。文件缺失或无法读取会导致启动失败，而不会悄悄丢弃项目指令。
-
-这里选择标准库 `net/http` 和 `encoding/json`，让读者能看见完整的请求构造与响应解析。所有文件仍在同一个 `main` 包中，只按职责拆分文件，暂时不引入 SDK 或其他包层次。
-
-### 构造请求：`responses.go`
-
-请求发送到 `{base_url}/responses`，头部包含 `Authorization: Bearer ...` 和 `Content-Type: application/json`。JSON 主体形如：
-
-```json
-{
-  "model": "你配置的模型名称",
-  "instructions": "AGENTS.md 的完整内容",
-  "input": "用一句话解释什么是 Agent。",
-  "store": false
-}
-```
-
-`instructions` 是 Responses API 提供的高优先级指令字段；`input` 字符串表示当前用户问题。请求中没有历史消息、`previous_response_id` 或 `conversation`，因此下一轮无法从程序获得上一轮内容。`store: false` 请求服务不要保存可供后续查询的响应对象；它不等于对服务端所有日志或数据保留策略的承诺。协议参见 [Responses 创建接口](https://developers.openai.com/api/reference/python/resources/responses/methods/create)。
-
-程序将当前问题和可选的 `AGENTS.md` 内容发送给你配置的服务。当前目录没有 `AGENTS.md` 时也能启动；存在但无法读取时会报错。`AGENTS.md` 是你主动提供的项目指令，请不要在其中放密钥。本章没有 Bash、文件修改或其他工具执行能力；模型回答仅被显示为文本。
-
-### 解析回答
-
-Responses API 的 `output` 是一个数组，里面可能先出现推理条目，文本不一定在第一项。程序遍历 `type == "message"` 且 `role == "assistant"` 的条目，再连接其中所有 `output_text` 文本。遇到 `refusal` 时显示拒绝内容。
-
-不能照搬某些 SDK 的顶层 `output_text` 便捷属性去解析原始 HTTP JSON。这里按照[官方文本生成说明](https://developers.openai.com/api/docs/guides/text)读取 `output[].content[]`。无效 JSON、空文本、失败状态以及未完成的响应都会给出错误，不会假装已有完整回答。
-
-### 终端交互：`terminal.go`
-
-`bufio.Scanner` 按行读取输入，每行是一条独立问题，空白行跳过。程序等待完整响应后一次性打印，本章不做流式输出。
-
-扫描输入使用一个 goroutine，主循环通过 `select` 同时等待输入和取消信号。`signal.NotifyContext` 将 Ctrl+C 转成取消通知；HTTP 请求也携带同一个 context，因此无论正在等键盘还是等网络，都能退出。阻塞在标准输入上的扫描由进程退出结束；复用这段函数处理其他输入流时，调用者负责关闭输入流。
-
-| 操作 | 结果 |
-| --- | --- |
-| 输入文字并按回车 | 发送一个独立请求 |
-| 空白行 | 不调用 API，继续等待 |
-| `/exit` | 正常退出 |
-| Ctrl+D（空输入行） | 收到 EOF 后退出 |
-| Ctrl+C | 取消当前请求并退出程序 |
-| 请求失败 | 向标准错误输出提示，继续等待下一次输入 |
-
-每个请求最多等待两分钟。输入单行须小于 1 MiB，HTTP 响应上限为 8 MiB。API 错误正文不直接输出，避免服务回显密钥；模型回答中的终端控制字符会被过滤，保留换行和制表符。程序不会自动重试付费请求。
-
-## 4. 观察运行结果
-
-下面是交互形式的示意，真实措辞由模型决定：
+The following is an **illustration of the interaction**, not a transcript from a live model call. The actual answer depends on the model you choose.
 
 ```text
 Mino - Chapter 01: Terminal Chat
 Each question is independent. Use /exit, Ctrl+D, or Ctrl+C to quit.
 
-You> 本项目只支持哪一种模型 API？
+You> Explain an HTTP request in one sentence.
 
-Assistant> 本项目只支持 OpenAI Responses API。
-
-You> 我最喜欢的颜色是蓝色。
-
-Assistant> 好的。
-
-You> 我刚才说最喜欢什么颜色？
-
-Assistant> 当前问题没有提供你喜欢的颜色。
+Assistant> An HTTP request is a message a client sends to a server to retrieve or submit information.
 
 You> /exit
 Goodbye.
 ```
 
-第一个问题用于观察 `AGENTS.md` 的作用。后两个问题用于理解单轮边界：最后一轮的 HTTP 请求只有“我刚才说最喜欢什么颜色？”。模型可能猜测答案，因此应以请求内容和自动化测试为准，不能只凭它是否答对判断是否携带历史。
+After you press Enter, the program waits for the complete answer and prints it at once. This chapter does not stream words as they are generated. Blank lines do not call the model. Use `/exit`, Ctrl+D on an empty input line, or Ctrl+C to quit. Sending a question calls your configured service and is subject to that service's charges.
 
-编译后可以直接运行二进制，仍须保留根目录为当前目录：
+## 2. What the program does, and what the model does
 
-```zsh
-go build -o bin/mino .
-./bin/mino
+A common source of confusion is assuming that repeated input in the same terminal gives the model access to everything shown there. The model receives the information the program includes in this particular request.
+
+Mino reads local files, collects input, builds HTTP requests, checks responses, and displays text. The model service receives a request and generates an answer. Starting the program inside a project does not automatically tell the model what is in that project's files.
+
+This diagram shows **where the information in one request comes from**:
+
+Wide diagrams can be scrolled horizontally to keep their labels readable.
+
+```mermaid
+flowchart LR
+    accTitle: Sources of information in one request
+    accDescr: User settings supply the request address, authentication header, and model name. The optional AGENTS.md file supplies instructions, and the current question supplies input. Only data explicitly included in this request is sent.
+    C["~/.mino/config.json"] --> U["base_url: request address"]
+    C --> K["api_key: authentication header"]
+    C --> M["model: model name"]
+    A["AGENTS.md in the working directory<br/>Optional; read once at startup"] --> I["instructions"]
+    Q["Current line of user input"] --> P["input"]
+    M --> B["Request JSON"]
+    I --> B
+    P --> B
+    S["store=false"] --> B
+    U --> R["This HTTP request"]
+    K --> R
+    B --> R
+    R --> O["Answer displayed as terminal text"]
 ```
 
-配置完成后，也支持按行的管道输入。配置不完整时必须先在交互终端补全，程序会报错，避免把管道里的聊天问题误存为密钥：
+The API key goes into an authentication header; the current question goes into `input`. The program does not send the whole configuration file as chat content, and it does not append the previous exchange to the current question. Follow the implementation in [responsesClient.respond](https://github.com/qshine/mino/blob/v0.1.1/responses.go#L36).
 
-```zsh
-printf '用一句话解释 Agent。\n/exit\n' | go run .
+Model output is only displayed as text in this chapter. The program does save configuration, invoke fixed terminal settings commands, and run an installer when the user selects `mino update`. Those application features do not give the model a Bash tool or permission to edit files. Model tool calls arrive in Chapter 03.
+
+## 3. Prepare instructions and settings at startup
+
+The [main entry point](https://github.com/qshine/mino/blob/v0.1.1/main.go#L13) creates a cancellation signal and delegates command selection to [runCLI](https://github.com/qshine/mino/blob/v0.1.1/cli.go#L19). Running without arguments starts chat. `mino version`, `mino help`, and `mino update` take separate paths and do not require model configuration first.
+
+The [run function](https://github.com/qshine/mino/blob/v0.1.1/main.go#L23) coordinates chat startup:
+
+```mermaid
+flowchart TD
+    accTitle: Chat startup and configuration setup
+    accDescr: Chat startup reads optional project instructions and loads configuration from the user's home directory. Complete settings lead directly to chat. Missing fields are requested and saved. Invalid files and read errors are reported; cancelled setup does not save incomplete settings.
+    A["Run mino"] --> B["Read AGENTS.md in the working directory"]
+    B --> C{"Read result"}
+    C -->|Not found| D["Use empty instructions"]
+    C -->|Success| E["Keep instructions for this run"]
+    C -->|Other read error| X["Display error and exit"]
+    D --> F["Create or check ~/.mino<br/>Read config.json"]
+    E --> F
+    F --> G{"Configuration result"}
+    G -->|Complete and valid| J["Start chat"]
+    G -->|Missing fields| H["Ask only for missing settings"]
+    G -->|Read, format, or permission error| X
+    H -->|All fields valid| I["Write a temporary file<br/>Then replace config.json"]
+    H -->|Cancellation or EOF| K["Exit without saving incomplete settings"]
+    I -->|Saved| J
+    I -->|Save error| X
 ```
 
-## 5. 验证与排错
+Going straight to chat depends on a complete local configuration. Startup does not make an extra model request to validate the account. The diagram also helps explain why an upgrade can keep your settings: the executable and user configuration are stored separately.
 
-从项目根目录运行：
+### User settings follow the user
 
-```zsh
-go fmt ./...
-go build ./...
-go test ./...
-go test -race ./...
-go vet ./...
+If settings lived in the project directory, starting elsewhere could mean entering them again. Mino uses [configPath](https://github.com/qshine/mino/blob/v0.1.1/config.go#L121) and `os.UserHomeDir()` to locate `~/.mino/config.json`, independently of the working directory.
+
+[loadConfig](https://github.com/qshine/mino/blob/v0.1.1/config.go#L22) keeps existing fields and fills only the gaps. [saveConfig](https://github.com/qshine/mino/blob/v0.1.1/config.go#L160) writes a temporary file in the same directory, then renames it to `config.json`. This avoids leaving half-written JSON by overwriting the old file directly. Cancelling setup does not save incomplete settings; a newly created `.mino` directory remains. Invalid JSON produces an error instead of automatically replacing the original file.
+
+The key is stored as plaintext in a local file. The program restricts the `.mino` directory to permissions `0700` and the configuration file to `0600`, and refuses symbolic links at these configuration locations. Keep the configuration file out of the repository.
+
+For hidden key entry, [promptConfigValue](https://github.com/qshine/mino/blob/v0.1.1/config_prompt.go#L13) uses macOS's `/bin/stty` to disable echo temporarily. A `defer` restores the terminal on success, EOF, and Ctrl+C. Setup and chat share an input buffer, so a first question already buffered during setup is not lost.
+
+The program does not read project-local `config.json`, the old `miniagent.json`, `.env`, or `OPENAI_*` environment variables. To change a service, model, or key, edit the file in your home directory and restart. Setting a field to the empty string `""` makes the program ask for it again.
+
+### Project instructions follow the working directory
+
+[loadInstructions](https://github.com/qshine/mino/blob/v0.1.1/config.go#L189) reads `AGENTS.md` only from the **current working directory**. It does not search parent directories. A missing file means empty instructions, and the program can still start. Other read failures produce an error.
+
+The contents are read once at startup and sent as `instructions` with every request. Restart after editing the file. This file tells the model how it should respond; it is not a script that automatically executes commands. Its contents go to your configured model service, so do not put credentials in it.
+
+## 4. From one question to one answer
+
+All Go files still belong to the same `main` package, separated by responsibility. Using the standard library's `net/http` and `encoding/json` makes the protocol visible without placing the key steps behind an SDK.
+
+A normal exchange follows this sequence:
+
+```mermaid
+sequenceDiagram
+    accTitle: Sequence of one terminal conversation
+    accDescr: A reader submits a question, the terminal calls the Responses client, and the client sends an HTTP request and parses the complete response. Valid text is displayed; network or protocol errors are reported before waiting for another input.
+    actor Reader as Reader
+    participant Terminal as Terminal loop
+    participant Client as Responses client
+    participant API as Configured model service
+    Reader->>Terminal: Enter the current question
+    Terminal->>Client: respond(ctx, prompt)
+    Client->>API: POST /responses
+    Note over Client,API: model, instructions, current input, store=false
+    alt Request succeeds with complete valid text
+        API-->>Client: output array
+        Client->>Client: Extract assistant text or refusal
+        Client-->>Terminal: Complete answer
+        Terminal-->>Reader: Filter control characters, then print
+    else Network, HTTP, or response parsing error
+        Client-->>Terminal: Error
+        Terminal-->>Reader: Display error, then wait for input
+    end
+    Note over Terminal,Client: No automatic retry. Ctrl+C cancels and exits
 ```
 
-自动化测试通过隔离的临时用户目录验证默认值、配置保存、切换工作目录后复用配置、忽略项目配置、再次启动不提问、只补缺失字段、目录与文件权限、符号链接拒绝、无效主目录、损坏文件保护、取消设置及输入缓冲。测试不会读写开发者真实的 `~/.mino`。通过 `httptest` 模拟 Responses 服务，覆盖项目指令注入、两轮独立请求、全部文本片段提取、拒绝回答、HTTP 错误、超时/取消、输入与响应限制、终端退出，以及不生成本地历史文件。测试密钥是固定的假值，不访问真实模型；需要允许进程绑定本机临时端口。
+One exchange handles only the current question. Returning to the input prompt after a failure does not automatically resend the failed request.
 
-本章在 Go 1.27.1、macOS 26.3.2 / Apple Silicon 上通过构建、完整测试、竞态检测和 `go vet`。伪终端连接本机模拟服务验证了中文问答、HTTP 429 后继续输入、`/exit`、Ctrl+D、等待输入或响应时的 Ctrl+C，以及 `go run .` 管道输入。Intel Mac 版本通过交叉编译，未在 Intel 实机运行；本次验收未调用真实模型服务。
+### What the request contains
 
-2026-09-23 的配置交互验收另外验证了英文提示、默认 API 地址、模型没有默认值且留空重试、错误地址和空密钥重试、密钥不回显、用户目录中的配置保存与权限、切换工作目录后直接进入聊天、只补缺失字段，以及 Ctrl+C/Ctrl+D 取消后恢复终端且不保存配置。所有密钥均为测试假值。
+The destination is `{base_url}/responses`. Headers include `Authorization: Bearer ...` and `Content-Type: application/json`. If the working directory's `AGENTS.md` says "Answer in English and keep it brief.", the request body can look like this:
 
-| 现象 | 检查方法 |
+```json
+{
+  "model": "your-model",
+  "instructions": "Answer in English and keep it brief.",
+  "input": "Explain an HTTP request in one sentence.",
+  "store": false
+}
+```
+
+`model` comes from configuration. `instructions` supplies guidance and is an empty string when there is no `AGENTS.md`. `input` is the current question. The code does not set historical messages, `previous_response_id`, or `conversation`.
+
+`store: false` asks the service not to retain a response object for later retrieval. It is not a promise that the service keeps no logs or other data. It is also not the sole reason this program has no history: the request itself does not include previous exchanges. See the [Responses creation reference](https://developers.openai.com/api/reference/python/resources/responses/methods/create) for the protocol fields.
+
+A custom endpoint must support the Responses API. Enter an API prefix such as `https://gateway.example.com/v1`, not a complete `/responses` or `/chat/completions` address. Remote connections require HTTPS; local testing may use `http://127.0.0.1:PORT/v1`. The client does not follow redirects, so it does not forward a request containing the key and question to a redirected destination.
+
+### The answer is not necessarily the first array item
+
+The raw HTTP response's `output` is an array. It may contain reasoning entries as well as messages. The program cannot assume the first item is the final answer or directly use a top-level `output_text` convenience property exposed by some SDKs.
+
+The [response parser](https://github.com/qshine/mino/blob/v0.1.1/responses.go#L68) checks JSON, errors, and completion status first. It then visits entries with `type == "message"` and `role == "assistant"`, joining `output_text` parts inside `content`. A `refusal` is displayed as refusal text. Missing text, failed generation, and incomplete status all return errors. Compare the structure with the [official text generation guide](https://developers.openai.com/api/docs/guides/text).
+
+### Keeping the terminal responsive
+
+[runTerminal](https://github.com/qshine/mino/blob/v0.1.1/terminal.go#L12) skips blank lines, recognizes `/exit`, and sends other input to `respond`. A request failure is written to standard error before the program waits for the next line.
+
+[scanLines](https://github.com/qshine/mino/blob/v0.1.1/terminal.go#L64) reads lines in a goroutine while the main loop uses `select` to wait for input or cancellation. Ctrl+C reaches the HTTP request through `signal.NotifyContext`, so the program can exit while waiting for either keyboard input or the network. A blocked standard-input read ends when the process exits; callers reusing this function with another stream must close that stream themselves.
+
+There are already specific limits: an input line must be smaller than 1 MiB, the response body is limited to 8 MiB, and each HTTP request has a two-minute timeout. Server error bodies are not printed verbatim, since they could echo sensitive input. Terminal control characters are filtered from model output, while newlines and tabs are kept. The program does not automatically retry requests that may incur charges.
+
+## 5. Why the next question has no memory
+
+Try entering these two questions:
+
+```text
+My favorite color is blue.
+What did I just say my favorite color was?
+```
+
+The second request's `input` contains only "What did I just say my favorite color was?" Neither the first statement nor the first answer is sent again. Text remaining in the terminal window does not mean the program has given that text to the model.
+
+| Exchange | Request `input` | Includes the previous exchange? |
+| --- | --- | --- |
+| First | `My favorite color is blue.` | No |
+| Second | `What did I just say my favorite color was?` | No |
+
+The model may guess "blue" or say that it does not know. **To establish whether context is present, inspect the request instead of relying on an answer that could be a lucky guess.** [TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/v0.1.1/responses_test.go#L16) checks that each request contains only its current question and has no history association fields or tool definitions.
+
+That gives the next chapter a concrete task: save earlier exchanges in the program and deliberately include them in the next request.
+
+## 6. Three small experiments
+
+### Experiment 1: Separate settings from project instructions
+
+Run `mino` in a newly created practice directory, then enter `/exit`. It starts without `AGENTS.md` and still uses your saved model settings.
+
+Next, create an `AGENTS.md` file only in that practice directory containing:
+
+```text
+Answer in English. Use at most two sentences per answer.
+```
+
+Restart and ask a question. The effect on wording depends on model behavior; what the program guarantees is that the file's contents become `instructions`. Start again from a directory without that file: your configuration stays the same, while project instructions are empty.
+
+### Experiment 2: Fill just one missing field
+
+Back up `~/.mino/config.json`, then change its `model` value to `""`, keeping valid JSON. Run `mino` again. It should ask only for a model, leaving the existing API address and key alone. Supply the model, exit, and restart: chat should open immediately.
+
+This experiment tests filling missing values. A missing value and malformed JSON are different conditions: the first can be completed interactively; the second needs to be repaired first.
+
+### Experiment 3: Read from a pipe
+
+Complete configuration in an interactive terminal first, then run:
+
+```bash
+printf 'Explain an agent in one sentence.\n/exit\n' | mino
+```
+
+When using the source, replace `mino` with `go run .` and run from the repository root. With complete settings, each line is still one input. Without complete settings, the program asks you to use an interactive terminal for setup, rather than treating piped questions as a model name or key.
+
+## 7. Verify behavior and troubleshoot symptoms
+
+Run the shared checks from the repository root:
+
+```bash
+bash scripts/check.sh
+```
+
+The script checks formatting and Shell syntax, runs `go vet`, automated tests, and the race detector, then builds `bin/mino`. You can also run only tests for the core behaviors discussed here:
+
+```bash
+go test -run 'TestRespondSendsIndependentRequests|TestTerminalContinuesAfterRequestError|TestRunWithoutProjectInstructions' .
+```
+
+The tests use isolated temporary home directories, fake keys, and local HTTP services provided by `httptest`. They do not read or write your real Mino settings or call a paid model. The environment must allow the process to bind a temporary local port.
+
+| Behavior to check | Where to read |
 | --- | --- |
-| 提示配置不完整且需要交互终端 | 先直接运行 `go run .` 补全配置，再使用管道输入 |
-| `~/.mino/config.json` 格式错误 | 检查 JSON 引号、逗号和字段类型；原文件不会被覆盖 |
-| 修改模型或密钥 | 编辑 `~/.mino/config.json`，或把相应字段设为空字符串后重启 |
-| 读取 `AGENTS.md` 失败 | 检查当前目录的该文件是否可读、是否误建为目录；文件不存在时可以直接启动 |
-| HTTP 401/403 | 检查密钥、模型权限以及密钥是否属于当前服务 |
-| HTTP 404 | 检查 API 前缀与模型名，确认服务支持 Responses API |
-| HTTP 429 | 检查额度或限流，稍后手动重试 |
-| HTTP 3xx | 填入服务最终 API 地址；程序不会跟随重定向 |
-| 响应未完成或没有文本 | 缩短问题或检查兼容服务实际返回的协议 |
-| 网络错误、超时 | 检查服务地址、网络及本机代理配置 |
-| Go 工具链下载失败 | 检查网络，或从官方页面安装 Go 1.27.1+ |
+| Requests do not carry previous exchanges | [responses_test.go](https://github.com/qshine/mino/blob/v0.1.1/responses_test.go#L16) |
+| Input continues after an HTTP request fails | [terminal_test.go](https://github.com/qshine/mino/blob/v0.1.1/terminal_test.go#L36) |
+| Startup works without `AGENTS.md` | [main_test.go](https://github.com/qshine/mino/blob/v0.1.1/main_test.go#L67) |
+| Configuration location, permissions, and symbolic links | [config_home_test.go](https://github.com/qshine/mino/blob/v0.1.1/config_home_test.go) |
+| Hidden input, cancellation, and terminal restoration | [config_prompt_test.go](https://github.com/qshine/mino/blob/v0.1.1/config_prompt_test.go) |
+| Failed installation or update preserves the executable | [install_test.go](https://github.com/qshine/mino/blob/v0.1.1/install_test.go) |
 
-本章完成后，终端到模型的路径已经可运行。第 02 章将在此基础上维护内存历史，使模型能收到先前的问题和回答。
+Existing verification records cover builds, automated tests, race detection, and terminal interaction against local mock services using Go 1.27.1 on Apple Silicon macOS. Intel packages are cross-compiled; they have not been verified on a physical Intel Mac. This lesson does not add a live model validation claim, and the answers shown above remain illustrative.
+
+| Symptom | What to check |
+| --- | --- |
+| Setup requires an interactive terminal | Run `mino` directly to complete settings before piping input |
+| Configuration JSON is invalid | Check quotes, commas, and field types; the original file is not replaced automatically |
+| Reading `AGENTS.md` fails | Check readability and whether it was created as a directory; a missing file is allowed |
+| HTTP 401 / 403 | Check the key, model access, and whether the key belongs to this service |
+| HTTP 404 | Check the API prefix, model name, and Responses API support |
+| HTTP 429 | Check quota or rate limits, then retry manually later |
+| HTTP 3xx | Use the service's final address; the program does not follow redirects |
+| Incomplete response or no text | Check the compatible service's response format, or retry with a shorter question |
+| Network error or timeout | Check the service address, network, and local proxy settings |
+| Go toolchain is unavailable | Install Go 1.27.1 or later as required by the project, then rerun source checks |
+
+## What this chapter delivered
+
+We now have a complete, observable terminal conversation path. Settings load from the user's home directory, the working directory can supply project instructions, one question becomes one Responses request, and a complete answer returns to the terminal. Failures display an error, cancellation stops current work, and installation updates can retain existing settings.
+
+The model still does not receive earlier exchanges. Chapter 02 will keep a history in memory and include it in later requests. Restoring conversations after the program exits is a separate problem for Chapter 04's persistence work. See the [chapter roadmap](../plan-todo-chapters.md) for the capabilities and completion status of each chapter.
