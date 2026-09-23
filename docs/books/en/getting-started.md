@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-Start by running Mino. Chapter 01 then follows the code through startup, a request, and an answer.
+Use this page to prepare Mino. Chapter 01 then follows one question from terminal input to a model reply.
 
 ## Prepare your Mac
 
@@ -51,7 +51,11 @@ API Key (input hidden):
 
 Press Enter to use the official OpenAI API URL. **There is no default model**: enter a model your service supports and your account can access. The API key is also required, and its characters are hidden while you type.
 
+A custom service must support the Responses API. Enter its API prefix, such as `https://gateway.example.com/v1`, without appending `/responses` or `/chat/completions`. Remote addresses require HTTPS.
+
 Settings are saved in `~/.mino/config.json`. Later launches enter chat directly when settings are complete. Updates preserve them. The key is stored locally in plain text, with directory permissions `0700` and file permissions `0600`.
+
+To change the service, model, or key, edit that file and restart. An empty field is prompted again; Ctrl+C during setup leaves existing settings unchanged. Mino does not read project-local configuration, `.env`, or `OPENAI_*` environment variables. Keep the configuration file out of the repository.
 
 Enter a question after `You>`. Real questions contact your configured service and may incur charges under its terms. Entering only `/exit` checks startup without calling the model.
 
@@ -64,7 +68,9 @@ mino update
 
 Updates still require GitHub access to the repository. Download or asset-verification failures preserve the existing executable, and your model settings remain unchanged.
 
-An optional `AGENTS.md` in the current directory can supply project instructions to the model. An installed Mino can start in a directory with no project files.
+## Optional project instructions
+
+An `AGENTS.md` in the current working directory can supply instructions to the model. Mino reads it once at startup, without searching parent directories; restart after editing it. The file is optional, so an installed Mino can start in a directory with no project files. Its contents are sent to the configured model service: do not put credentials in it.
 
 ## Learn from the source
 

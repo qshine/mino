@@ -84,7 +84,7 @@ configuration. A failed download or verification keeps the existing executable.
 A push to `main` runs CI. A version tag runs tests, builds both macOS packages,
 and publishes a GitHub Release with checksums. Git tags provide the version
 embedded in release binaries; source builds report `dev`. Published tags and
-assets stay unchanged. See [release instructions](docs/releases.md) and the
+assets stay unchanged. See [release instructions](docs/books/en/releases.md) and the
 [changelog](CHANGELOG.md).
 
 ## Build and learn
@@ -105,19 +105,20 @@ with the race detector, then builds `bin/mino`. Tests use fake keys, temporary
 home directories, local mock HTTP servers, and fake release downloads. They do
 not call a paid model or modify your real configuration.
 
-- [Read the illustrated book](docs/index.md) · [简体中文](docs/zh/index.md)
-- [Chapter 01: a terminal conversation](docs/chapters/01-terminal-chat.md)
-- [Chapter roadmap](docs/plan-todo-chapters.md)
+- [Read the illustrated book](docs/books/en/index.md) · [简体中文](docs/books/zh/index.md)
+- [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
+- [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Reading order: `main.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
 - [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)
 
 ## Preview the tutorial book
 
-The English-first bilingual book includes Mermaid flowcharts, sequence diagrams,
-and concept diagrams. With Node.js 24, run `npm ci --ignore-scripts` and
+Book sources live in `docs/books/en/` and `docs/books/zh/`. Chapters focus on
+agent interactions, with setup and release details in supporting pages.
+With Node.js 24, run `npm ci --ignore-scripts` and
 `npm run book:dev`, then open the local address shown. `npm run book:build`
 checks the site's internal links and builds both languages.
 
 The project `book_writer` subagent maintains the book after Codex code changes.
 GitHub Actions checks the book, while public Pages deployment remains disabled.
-See [the writing and publishing workflow](docs/maintaining-the-book.md).
+See [the writing and publishing workflow](docs/books/en/maintaining-the-book.md).

@@ -6,9 +6,16 @@ export default withMermaid({
   title: 'Mino',
   description: 'Build an agent from scratch in Go, one illustrated chapter at a time.',
   base: '/mino/',
+  srcDir: 'books',
+  // Keep English at the site root while both languages have explicit source directories.
+  rewrites: { 'en/:path*': ':path*' },
   lastUpdated: true,
   cleanUrls: false,
   head: [['meta', { name: 'theme-color', content: '#176b58' }]],
+  vite: {
+    // The plugin injects Mermaid imports; pre-bundle its CommonJS dependencies for local preview.
+    optimizeDeps: { include: ['mermaid'] }
+  },
   mermaid: {
     securityLevel: 'strict', theme: 'base',
     flowchart: { useMaxWidth: false },
@@ -44,7 +51,7 @@ export default withMermaid({
             { text: 'Application releases', link: '/releases' }
           ] }
         ],
-        editLink: { pattern: `${repository}/edit/main/docs/:path`, text: 'Improve this page on GitHub' },
+        editLink: { pattern: `${repository}/edit/main/docs/books/:path`, text: 'Improve this page on GitHub' },
         footer: { message: 'One problem per chapter. Working code behind every explanation.' }
       }
     },
@@ -79,7 +86,7 @@ export default withMermaid({
         darkModeSwitchTitle: '切换到深色模式',
         sidebarMenuLabel: '章节目录', returnToTopLabel: '回到顶部',
         lastUpdated: { text: '最近更新' },
-        editLink: { pattern: `${repository}/edit/main/docs/:path`, text: '在 GitHub 上改进本页' },
+        editLink: { pattern: `${repository}/edit/main/docs/books/:path`, text: '在 GitHub 上改进本页' },
         footer: { message: '每章解决一个问题，让原理变成可运行的代码。' }
       }
     }

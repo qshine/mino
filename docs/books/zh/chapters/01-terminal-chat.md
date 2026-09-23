@@ -1,0 +1,112 @@
+# 第 01 章：与模型对话——第一个终端程序
+
+适用版本：**0.1.x** · 源码核对版本：**[v0.1.1](https://github.com/qshine/mino/tree/v0.1.1)**
+
+你输入问题，模型给出回答。这两件事之间发生了什么？这一章沿着 **一行输入 → 一次 Responses API 请求 → 显示回答 → 再次等待输入** 的路径展开。这是 Agent（智能体）的基础：由程序决定模型收到什么，以及怎样处理模型的响应。
+
+先完成[准备与安装](../getting-started.md)。读完本章，你可以沿代码追踪一次问答，也能解释为什么在同一个终端里继续提问，仍然没有对话记忆。
+
+## 1. 观察一次问答
+
+启动安装好的程序：
+
+```bash
+mino
+```
+
+**交互示意**，不是一次真实 API 调用的记录：
+
+```text
+Mino - Chapter 01: Terminal Chat
+Each question is independent. Use /exit, Ctrl+D, or Ctrl+C to quit.
+
+You> 用一句话解释 HTTP 请求。
+
+Assistant> HTTP 请求是客户端发送给服务端的一条消息，用于获取或提交信息。
+
+You>
+```
+
+回车后，Mino 等待完整响应，再一次性打印回答，随后回到 `You>`，由你决定下一次输入。模型负责生成文本；程序负责读取输入、发出请求和显示结果。
+
+## 2. 跟着问题与回答走一遍
+
+模型服务看不到终端窗口。当前问题需要哪些信息，必须由 Mino 明确发送。正常问答的路径如下：
+
+```mermaid
+sequenceDiagram
+    accTitle: 一条问题经过 Mino 的路径
+    accDescr: Mino 在启动时保留可选指令，提示读者输入问题，将当前输入发送给 Responses API，从完整响应中提取助手文本，显示后再次提示输入。
+    actor User as 读者
+    participant Mino as Mino
+    participant API as Responses API
+    Note over Mino: 保留启动时<br/>读取的可选指令
+    Mino-->>User: You>
+    User->>Mino: 当前问题
+    Mino->>API: POST /responses
+    Note over Mino,API: input、instructions<br/>model、store=false
+    API-->>Mino: 完整响应：output
+    Mino->>Mino: 提取助手文本<br/>或拒绝内容
+    Mino-->>User: Assistant> 回答
+    Mino-->>User: You>
+```
+
+图 01-1：Mino 发送当前输入，显示回答后把控制交回读者。
+
+小屏幕上可以横向滚动图表。
+
+### 2.1 请求里放了什么
+
+[responsesClient.respond](https://github.com/qshine/mino/blob/v0.1.1/responses.go#L36) 使用 Go 的 `encoding/json` 和 `net/http` 构造 JSON，发送到 `{base_url}/responses`。例如，指令是“简短回答。”时，请求主体可以是：
+
+```json
+{
+  "model": "your-model",
+  "instructions": "简短回答。",
+  "input": "用一句话解释 HTTP 请求。",
+  "store": false
+}
+```
+
+`your-model` 代表配置的模型名。`input` 只有当前问题；可选的 `instructions` 来自工作目录的 `AGENTS.md`，由 [loadInstructions](https://github.com/qshine/mino/blob/v0.1.1/config.go#L189) 在启动时读取一次，没有该文件时为空字符串。指令可以引导回答，但不会赋予模型执行命令的工具。
+
+### 2.2 响应怎样变成终端文本
+
+API 响应是结构化数据，`output` 数组可能包含最终回答之外的条目，因此不能只取第一项就当作答案。
+
+[解析逻辑](https://github.com/qshine/mino/blob/v0.1.1/responses.go#L68) 先确认响应有效且已完成，再寻找 `role` 为 `assistant` 的 `message` 条目，拼接其 `content` 中类型为 `output_text` 的文本。遇到 `refusal` 时，在拒绝内容前加上 `Model refused: `。生成失败、响应未完成或没有文本，都会转为错误。
+
+[runTerminal](https://github.com/qshine/mino/blob/v0.1.1/terminal.go#L12) 过滤终端控制字符后显示返回的文本，再进入下一轮。模型输出不会作为命令执行。
+
+### 2.3 出错和退出时发生什么
+
+网络、HTTP 或响应错误会显示为 `Error: ...`，然后回到 `You>`；程序不会自动重试。HTTP 失败时只报告状态，不直接打印可能回显敏感输入的服务端错误正文。
+
+空白行不发送请求；`/exit` 或空行上的 Ctrl+D 结束聊天。等待输入或响应时都可以按 Ctrl+C 取消并退出：[main 入口](https://github.com/qshine/mino/blob/v0.1.1/main.go#L13) 将取消信号经终端循环传递到 HTTP 请求。
+
+## 3. 用第二个问题检验记忆
+
+在同一次运行中依次输入下面两句话，等第一轮回答后再问第二句：
+
+```text
+我最喜欢的颜色是蓝色。
+我刚才说最喜欢什么颜色？
+```
+
+第二次请求只有第二个问题。Mino 没有重发第一句及其回答，也没有设置 `previous_response_id` 或 `conversation`。终端里仍然可见的文字，不会自动进入模型的上下文。
+
+模型可能猜中“蓝色”。**猜对不代表有记忆，请求内容才能说明问题。** 请求中的 `store: false` 是请服务不要保留可供后续查询的响应对象，既不保证服务完全没有日志，也不是本章问答互相独立的原因；关键在于请求没有前文和历史关联字段。
+
+无需调用付费模型也能验证这一点。在仓库根目录运行：
+
+```bash
+go test -run 'TestRespond|TestTerminal' .
+```
+
+这些测试使用本机模拟 HTTP 服务和模拟输入，不使用真实配置。[TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/v0.1.1/responses_test.go#L16) 检查两轮请求主体，并验证能够跳过非消息条目提取文本；[终端测试](https://github.com/qshine/mino/blob/v0.1.1/terminal_test.go#L36) 检查请求出错后继续输入和取消行为。测试进程需要能够绑定本机端口。
+
+## 4. 本章小结与下一步
+
+现在，你可以观察输入到模型回答、再回到输入的完整路径。目前还没有对话历史、流式输出、会话持久化或模型工具执行。重复终端问答，是构建 Agent 的起点。
+
+规划中的第 02 章会在内存中保存前面的问答，并随下一条问题一起发送。模型请求工具并接收执行结果，是第 03 章的后续任务。其余工作见[章节规划](../plan-todo-chapters.md)。

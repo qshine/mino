@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "book:dev": "vitepress docs --host 127.0.0.1",
+    "book:dev": "vitepress dev docs --host 127.0.0.1",
     "book:build": "vitepress build docs",
     "book:preview": "vite preview --outDir docs/.vitepress/dist --base /mino/ --host 127.0.0.1"
   },

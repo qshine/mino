@@ -10,7 +10,7 @@ next:
 
 How does a model API become a program you can talk to in a terminal? How does that program acquire memory, call tools, save sessions, and act within clear permissions? This book follows those questions, adding one capability at a time.
 
-Run each chapter's result first. Then follow its diagrams and code to understand why it works. The diagrams explain how data and control move through the program; terminal examples show behavior you can observe yourself.
+Begin with a short interaction, then follow what the user supplies, what the model receives, and what the program does next. Focused diagrams and source links explain how data and control move; small experiments make the boundaries observable.
 
 ## Who this book is for
 
@@ -20,16 +20,11 @@ Mino targets macOS, and the application currently uses only Go's standard librar
 
 ## What each chapter gives you
 
-1. **A concrete problem:** Where does the previous chapter's program fall short?
-2. **An outcome:** What new behavior will the program have by the end?
-3. **An explanation with diagrams:** A concept map, flowchart, or sequence diagram follows an operation through the system.
-4. **An implementation path:** Find the responsible code and understand its tradeoffs.
-5. **Experiments and checks:** Observe the result and use tests to verify its boundaries.
-6. **What this chapter completed:** Separate working capabilities from the next chapter's open questions.
+Each lesson follows one concrete interaction through the minimum code needed to understand it, then gives you an experiment to check the result. It makes clear what works and what problem remains. Installation and configuration live in [getting started](./getting-started.md); chapters link there without repeating the setup walkthrough.
 
 ## What is ready to read
 
-Chapter 01 is complete. It applies to **0.1.x** and has been checked against **v0.1.1**. It covers independent terminal questions, first-run configuration, and installation and updates.
+Chapter 01 is complete. It applies to **0.1.x** and has been checked against **v0.1.1**. It follows a question into the Responses API and a reply back to the terminal, then tests why the next question has no memory. This is the foundation for later agent interactions.
 
 Chapter 02 and later chapters are planned, not implemented. The [chapter roadmap](./plan-todo-chapters.md) tracks progress; future capabilities are never presented as features that already work.
 
