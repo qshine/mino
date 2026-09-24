@@ -11,6 +11,8 @@ next:
 
 Use this page to prepare Mino. Chapter 01 then follows one question from terminal input to a model reply.
 
+The `SOUL.md` behavior described here is unreleased. Use [the current source](#learn-from-the-source) to follow this edition of Chapter 01; the published `v0.1.0` still reads working-directory `AGENTS.md` instructions.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -70,9 +72,13 @@ Updates still require GitHub access to the repository. Download or asset-verific
 
 Chapter 01 was reset to a new `v0.1.0` baseline with the official SDK. If you installed the earlier `v0.1.0` or `v0.1.1`, run `mino update v0.1.0` to install the reissued build. If the earlier updater fails, use the installation command above; existing configuration is preserved. See the [release reset note](./releases.md#chapter-01-baseline-reset).
 
-## Optional project instructions
+## Mino identity
 
-An `AGENTS.md` in the current working directory can supply instructions to the model. Mino reads it once at startup, without searching parent directories; restart after editing it. The file is optional, so an installed Mino can start in a directory with no project files. Its contents are sent to the configured model service: do not put credentials in it.
+After settings are complete, Mino loads `~/.mino/SOUL.md` once before starting chat. If the file is missing, Mino creates it from the bundled default identity. Existing content is preserved across restarts and updates; incomplete or cancelled configuration does not create the file.
+
+The default describes Mino as a terminal assistant that helps with questions, explanations, writing, and code supplied by the user. It asks the model to use your language and describe its limits honestly. Edit the user file to change this guidance, then restart Mino; there is no live reload. The complete text is sent to your configured model service in `instructions`, so keep credentials out of it.
+
+Use a regular file containing non-empty UTF-8 text, at most 64 KiB. Mino rejects directories, symbolic links, and invalid text before sending any model request. It uses directory permissions `0700` and file permissions `0600`. Mino ignores both `AGENTS.md` and `SOUL.md` in the working directory: repository `AGENTS.md` is for development, while root `SOUL.md` is only the build-time default.
 
 ## Learn from the source
 
@@ -88,7 +94,7 @@ go run ./cmd/mino
 
 The entry point imports `github.com/qshine/mino/internal` as `mino`, so the call remains `mino.Main(version)`.
 
-In the current checkout, root `installer.go` embeds root `install.sh`; `internal/cli.go` uses `installer.Script` for `mino update`. This keeps updates independent of the source checkout and working directory. The script move is unreleased: `v0.1.0` still has `internal/install.sh`, embedded directly by `internal/cli.go`.
+In the current checkout, root `assets.go` embeds `install.sh` and the default `SOUL.md`. `internal/cli.go` uses `assets.InstallerScript` for updates, and `internal/soul.go` uses `assets.DefaultSoul` to initialize the user identity. Both work without a source checkout. These changes are unreleased: `v0.1.0` still has `internal/install.sh` and does not load a user identity file.
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 

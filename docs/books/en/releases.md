@@ -12,6 +12,11 @@ During the tutorial, use `0.<chapter>.<patch>`: `0.1.0` for Chapter 01,
 The release workflow passes the tag version into the binary with Go linker
 flags. Development builds display `dev`; no source constant needs bumping.
 
+The current checkout has unreleased changes: it loads identity instructions from
+`~/.mino/SOUL.md` and embeds the root installer and default identity in `assets.go`.
+Published `v0.1.0` still reads working-directory `AGENTS.md`; updating to that tag
+does not enable `SOUL.md`. Existing user identity edits survive executable updates.
+
 ## Chapter 01 baseline reset
 
 At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the original

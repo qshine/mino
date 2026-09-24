@@ -11,6 +11,8 @@ next:
 
 这一页负责准备好 Mino。第一章再追踪一条问题从终端输入到模型回答的完整路径。
 
+这里描述的 `SOUL.md` 行为尚未发布。请使用[当前源码](#从源码学习)跟随本版第一章；已发布的 `v0.1.0` 仍读取工作目录中的 `AGENTS.md` 指令。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -70,9 +72,13 @@ mino update
 
 第一章已重置为新的 `v0.1.0` 基线，采用官方 SDK。如果安装过之前的 `v0.1.0` 或 `v0.1.1`，运行 `mino update v0.1.0` 安装重新发布的版本。如果旧版更新器失败，请使用上面的安装命令；已有配置会保留。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
 
-## 可选的项目指令
+## Mino 的身份
 
-当前工作目录的 `AGENTS.md` 可以为模型提供指令。Mino 在启动时读取一次，不向父目录搜索；修改后需要重启。这个文件是可选的，安装后的 Mino 可以在没有项目文件的目录中启动。文件内容会发送给配置的模型服务，不要在其中放置密钥。
+配置齐全后，Mino 在进入聊天前读取一次 `~/.mino/SOUL.md`。文件缺失时，程序用内嵌的默认身份创建它。已有内容会在重启和更新时保留；配置未完成或被取消时不会创建这个文件。
+
+默认内容把 Mino 描述为终端助手，可以帮助回答问题、解释概念、写作，以及讨论用户提供的代码，并要求模型使用你的语言、如实说明限制。修改用户文件可以调整这些指引，重启 Mino 后生效；程序不支持即时重载。完整文本会通过 `instructions` 发送给配置的模型服务，不要在其中放置密钥。
+
+文件必须是普通文件，包含非空的 UTF-8 文本，大小不超过 64 KiB。目录、符号链接或无效文本会在发送模型请求前被拒绝。目录和文件权限分别为 `0700`、`0600`。Mino 忽略工作目录中的 `AGENTS.md` 和 `SOUL.md`：仓库的 `AGENTS.md` 用于开发，根目录的 `SOUL.md` 仅提供构建时嵌入的默认内容。
 
 ## 从源码学习
 
@@ -88,7 +94,7 @@ go run ./cmd/mino
 
 入口以 `mino` 为别名导入 `github.com/qshine/mino/internal`，因此调用仍是 `mino.Main(version)`。
 
-当前源码中，根目录的 `installer.go` 嵌入同目录的 `install.sh`，`internal/cli.go` 使用 `installer.Script` 执行 `mino update`，因此更新不依赖源码目录或当前工作目录。这次脚本移动尚未发布：`v0.1.0` 仍由 `internal/cli.go` 直接嵌入 `internal/install.sh`。
+当前源码中，根目录的 `assets.go` 嵌入 `install.sh` 和默认 `SOUL.md`。`internal/cli.go` 使用 `assets.InstallerScript` 执行更新，`internal/soul.go` 使用 `assets.DefaultSoul` 初始化用户身份；两者都不依赖源码目录。这些变更尚未发布：`v0.1.0` 仍使用 `internal/install.sh`，也不加载用户身份文件。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
