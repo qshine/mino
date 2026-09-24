@@ -57,8 +57,16 @@ Older project-local `miniagent.json` files can be moved to the new location if
 no user configuration exists yet.
 
 A custom API URL must support `/responses`; enter its API prefix, usually
-ending in `/v1`. Remote services require HTTPS. If the current directory has an
-`AGENTS.md`, Mino loads it as model instructions; it is optional.
+ending in `/v1`. Remote services require HTTPS.
+
+After configuration is complete, chat startup creates `~/.mino/SOUL.md` from the
+bundled [SOUL.md](SOUL.md) if it is missing. This file introduces Mino, its text
+assistance, and the current limits. Edit your copy and restart Mino to change its
+instructions; existing edits are preserved. Its contents are sent to the model
+service, so keep credentials out of it. Mino does not load `AGENTS.md` or `SOUL.md`
+from the working directory. `AGENTS.md` is only for developing this repository.
+This change is available in source builds; the published `v0.1.0` still uses the
+older instruction-loading behavior.
 
 Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
 to quit. Chapter 01 does not retain conversation history.
@@ -72,7 +80,7 @@ mino update v0.1.0    # Install a specific release, including a rollback
 ```
 
 Updates manage `~/.mino/bin/mino`, reuse your GitHub login, and preserve your
-configuration. A failed download or verification keeps the existing executable.
+configuration and `SOUL.md`. A failed download or verification keeps the existing executable.
 
 | Progress | Version | Git tag |
 | --- | --- | --- |
@@ -110,7 +118,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; application code and tests: `internal/`.
-- Reading order inside `internal/`: `app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
+- Reading order inside `internal/`: `app.go` → `cli.go` → `config.go` / `config_prompt.go` → `soul.go` → `terminal.go` → `responses.go`.
 - The SDK handles API communication. Mino owns the terminal flow; tool execution and the Agent loop remain future chapters.
 - [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)
 

@@ -23,10 +23,6 @@ func Main(version string) int {
 }
 
 func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) error {
-	instructions, err := loadInstructions()
-	if err != nil {
-		return err
-	}
 	// 配置与聊天共用缓冲区，避免首次配置吞掉已经读入的第一条问题。
 	reader := bufio.NewReader(input)
 	setup := false
@@ -50,6 +46,10 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) er
 	}
 	if setup {
 		fmt.Fprintln(output, "Settings saved. Next time, chat will start immediately.")
+	}
+	instructions, err := loadInstructions()
+	if err != nil {
+		return err
 	}
 	client := newResponsesClient(cfg, instructions)
 	return runTerminal(ctx, reader, output, errorOutput, client.respond)

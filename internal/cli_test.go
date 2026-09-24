@@ -50,6 +50,10 @@ func TestCLIUpdateRunsOutsideProjectWithoutChangingSettings(t *testing.T) {
 	_, home, _ := installerFixture(t)
 	path := filepath.Join(home, ".mino", "config.json")
 	writeTestConfig(t, path, `{"api_key":"keep-settings"}`)
+	soulPath := filepath.Join(home, ".mino", "SOUL.md")
+	if err := os.WriteFile(soulPath, []byte("My custom identity"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	t.Chdir(t.TempDir())
 	var output bytes.Buffer
 	if err := runCLI(context.Background(), "dev", []string{"update", "v0.1.0"}, nil, &output, &output); err != nil {
@@ -61,5 +65,9 @@ func TestCLIUpdateRunsOutsideProjectWithoutChangingSettings(t *testing.T) {
 	data, err := os.ReadFile(path)
 	if err != nil || string(data) != `{"api_key":"keep-settings"}` {
 		t.Fatal("update changed settings")
+	}
+	data, err = os.ReadFile(soulPath)
+	if err != nil || string(data) != "My custom identity" {
+		t.Fatal("update changed SOUL.md")
 	}
 }

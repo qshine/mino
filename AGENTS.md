@@ -10,9 +10,10 @@ Deliver one runnable chapter at a time. Planned topics include terminal conversa
 
 Chapter 01 is implemented with Go 1.27.1 and the official OpenAI Go SDK, targeting macOS terminals. The current layout is:
 
-- Root: `go.mod` and `go.sum` define the application module and pinned dependencies. `cmd/mino/main.go` is the executable entry point; `internal/` contains the application implementation and tests in package `mino`. Root `installer.go` embeds root `install.sh` in package `installer` for the updater. `README.md` is English and links to `README.zh-CN.md`.
+- Root: `go.mod` and `go.sum` define the application module and pinned dependencies. `cmd/mino/main.go` is the executable entry point; `internal/` contains the application implementation and tests in package `mino`. Root `assets.go` embeds `install.sh` and the default `SOUL.md` in package `assets`. `README.md` is English and links to `README.zh-CN.md`.
 - Installation and releases: Root `install.sh` installs verified macOS packages to `~/.mino/bin/mino`; `mino update` runs its embedded copy. Release tags provide the version (`0.<chapter>.<patch>`); source builds report `dev`. `scripts/` contains checks and packaging, `.github/workflows/` contains CI and release automation, and `CHANGELOG.md` supplies version-specific release notes. Never change published tags or overwrite published assets.
 - User configuration: startup creates `~/.mino/` with mode `0700`; completed settings are saved to `~/.mino/config.json` with mode `0600`. Resolve this path from the user home directory, never the working directory. Only missing fields are prompted; a complete config starts chat immediately. Cancellation leaves existing settings unchanged. Do not read project-local configuration or `OPENAI_*` environment variables. Tests must use isolated temporary home directories, never the developer's real configuration.
+- Model instructions: root `SOUL.md` defines Mino's default identity and current capabilities. After configuration is complete, chat startup creates `~/.mino/SOUL.md` with mode `0600` only if absent and reads it once. Preserve user edits; reject empty, invalid UTF-8, oversized (over 64 KiB), or non-regular files. Never read working-directory `AGENTS.md` or `SOUL.md` as runtime instructions; `AGENTS.md` is for development only. Tests must isolate the user home directory.
 - All application prompts and error messages must be in English. Only the API URL has a default; the model name and API key require explicit input.
 - `docs/books/en/` and `docs/books/zh/`: matching English and Simplified Chinese book pages; numbered lessons live in each language's `chapters/` directory. Website configuration stays in `docs/.vitepress/`.
 - Tests: `*_test.go` beside the code they exercise; fixtures in nearby `testdata/` directories.
@@ -21,7 +22,7 @@ Keep early chapters simple. Extract packages when their responsibilities become 
 
 ## Build, Test, and Development Commands
 
-Run development commands from the repository root. The installed `mino` command works from any directory and optionally reads `AGENTS.md` from that directory:
+Run development commands from the repository root. The installed `mino` command works from any directory and reads its runtime identity from `~/.mino/SOUL.md`:
 
 - `go run ./cmd/mino`: start the terminal application.
 - `go build -o bin/mino ./cmd/mino`: build a local executable.

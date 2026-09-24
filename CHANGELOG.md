@@ -7,8 +7,13 @@ unchanged and fixes receive new patch versions.
 ## [Unreleased]
 
 - Move `install.sh` to the repository root and update installation links.
-  A small root `installer.go` embeds it for `mino update`, which continues to
-  work from any directory without a source checkout.
+  Root `assets.go` embeds it for `mino update`, which continues to work from
+  any directory without a source checkout.
+- Replace working-directory `AGENTS.md` instructions with an editable
+  `~/.mino/SOUL.md` identity. On first configured startup, seed the file from the
+  bundled root `SOUL.md`; preserve user edits and load them on restart.
+  Mino no longer reads project instruction files. Validate identity text before
+  sending it in the Responses API `instructions` field.
 
 ## [0.1.0] - 2026-09-24
 

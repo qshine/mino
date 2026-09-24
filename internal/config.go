@@ -117,8 +117,16 @@ func validateBaseURL(baseURL string) error {
 	return nil
 }
 
-// 配置位置只取决于用户主目录，不随启动时的工作目录变化。
 func configPath() (string, error) {
+	directory, err := userDirectory()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(directory, "config.json"), nil
+}
+
+// User files always live under the home directory, independent of the checkout.
+func userDirectory() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("Failed to locate your home directory: %w", err)
@@ -140,7 +148,7 @@ func configPath() (string, error) {
 	if err := os.Chmod(directory, 0700); err != nil {
 		return "", fmt.Errorf("Failed to secure ~/.mino permissions: %w", err)
 	}
-	return filepath.Join(directory, "config.json"), nil
+	return directory, nil
 }
 
 func checkConfigFile(path string) error {
@@ -184,15 +192,4 @@ func saveConfig(cfg config) error {
 		return fmt.Errorf("Failed to save config: %w", err)
 	}
 	return nil
-}
-
-func loadInstructions() (string, error) {
-	data, err := os.ReadFile("AGENTS.md")
-	if errors.Is(err, os.ErrNotExist) {
-		return "", nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("Failed to read AGENTS.md: %w", err)
-	}
-	return string(data), nil
 }

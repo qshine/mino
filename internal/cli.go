@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	installer "github.com/qshine/mino"
+	assets "github.com/qshine/mino"
 )
 
 func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
@@ -20,7 +20,7 @@ func runCLI(ctx context.Context, version string, args []string, input io.Reader,
 		defer cancel()
 		commandArgs := append([]string{"-s", "--"}, args[1:]...)
 		command := exec.CommandContext(updateCtx, "/bin/bash", commandArgs...)
-		command.Stdin = strings.NewReader(installer.Script)
+		command.Stdin = strings.NewReader(assets.InstallerScript)
 		command.Stdout = output
 		command.Stderr = errorOutput
 		if err := command.Run(); err != nil {

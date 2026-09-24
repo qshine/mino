@@ -50,7 +50,11 @@ API Key 同样必填，输入时不会回显。填写完整后保存到 `~/.mino
 如果用过旧版项目内的 `miniagent.json`，可在新配置尚不存在时将它迁移到新位置。
 
 自定义服务必须支持 `/responses`。API 地址填写前缀，通常以 `/v1` 结尾，远程服务要求 HTTPS。
-当前目录有 `AGENTS.md` 时，会将其作为模型指令；没有该文件也能正常启动。
+配置完成后，启动聊天时会在 `~/.mino/SOUL.md` 不存在时，使用内置的 [SOUL.md](SOUL.md) 创建默认文件。
+它介绍 Mino 是什么、可以提供哪些文本帮助，以及当前的能力限制。修改用户目录中的副本并重启 Mino，
+即可调整模型指令；已有修改会保留。文件内容会发送给模型服务，请勿放入密钥。
+Mino 不读取工作目录中的 `AGENTS.md` 或 `SOUL.md`；`AGENTS.md` 仅用于开发本仓库。
+这项改动目前可通过源码运行体验；已发布的 `v0.1.0` 仍使用旧的指令读取方式。
 
 输入问题后按回车。使用 `/exit`、空行上的 Ctrl+D 或 Ctrl+C 退出。第一章不保留聊天历史。
 
@@ -62,7 +66,7 @@ mino update           # 安装最新发布版本
 mino update v0.1.0    # 安装指定版本，也可用于回退
 ```
 
-升级会更新 `~/.mino/bin/mino`，复用 GitHub 登录状态，保留已有配置。
+升级会更新 `~/.mino/bin/mino`，复用 GitHub 登录状态，保留已有配置和 `SOUL.md`。
 下载或校验失败时不会替换旧程序。
 
 | 进度 | 版本号 | Git 标签 |
@@ -95,7 +99,7 @@ bash scripts/check.sh
 - [第一章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/`。
-- `internal/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
+- `internal/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `soul.go` → `terminal.go` → `responses.go`。
 - SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 
