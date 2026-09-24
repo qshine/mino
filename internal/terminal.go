@@ -13,8 +13,8 @@ import (
 func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Writer, respond func(context.Context, string, func(string) error) error) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	fmt.Fprintln(output, "Mino - Chapter 01: Terminal Chat")
-	fmt.Fprintln(output, "Each question is independent. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(output, "Mino - Chapter 02: Conversation History")
+	fmt.Fprintln(output, "History is saved locally and restored on startup. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	lines := scanLines(ctx, input)
 	for {
 		fmt.Fprint(output, "\nYou> ")
@@ -53,6 +53,10 @@ func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Wr
 				return errors.New("Failed to write terminal output")
 			}
 			fmt.Fprintln(output)
+			var storageErr *historyError
+			if errors.As(err, &storageErr) {
+				return err
+			}
 			if ctx.Err() != nil {
 				fmt.Fprintln(output)
 				return nil

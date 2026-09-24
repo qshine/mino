@@ -34,7 +34,7 @@ func runCLI(ctx context.Context, version string, args []string, input io.Reader,
 			_, err := fmt.Fprintln(output, "mino "+version)
 			return err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: "+configLocation)
+			_, err := fmt.Fprintln(output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: "+configLocation+"\nHistory: "+historyLocation)
 			return err
 		}
 	}

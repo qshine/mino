@@ -2,6 +2,7 @@ package mino
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -41,25 +42,27 @@ func newResponsesClient(cfg config, instructions string) *responsesClient {
 		option.WithBaseURL(cfg.BaseURL),
 		option.WithAPIKey(cfg.APIKey),
 		option.WithHTTPClient(client.httpClient),
-		option.WithMaxRetries(0), // Chapter 01 sends one request per question.
+		option.WithMaxRetries(0), // A recorded question must not be silently resubmitted.
 		option.WithMiddleware(checkResponse),
 	)
 	return client
 }
 
-// respond sends one independent request and delivers each text delta immediately.
+// respond sends explicit conversation input and delivers each text delta immediately.
 // https://developers.openai.com/api/docs/guides/streaming-responses
-func (c *responsesClient) respond(ctx context.Context, prompt string, emit func(string) error) error {
+func (c *responsesClient) respond(ctx context.Context, input responses.ResponseInputParam, emit func(string) error) (modelReply, error) {
 	var response *http.Response
 	stream := c.api.NewStreaming(ctx, responses.ResponseNewParams{
 		Model:        c.config.Model,
 		Instructions: openai.String(c.instructions),
-		Input:        responses.ResponseNewParamsInputUnion{OfString: openai.String(prompt)},
+		Input:        responses.ResponseNewParamsInputUnion{OfInputItemList: input},
 		Store:        openai.Bool(false),
+		Include:      []responses.ResponseIncludable{responses.ResponseIncludableReasoningEncryptedContent},
 	}, option.WithResponseInto(&response))
 	defer stream.Close()
 
 	hasText, refusing := false, false
+	var text strings.Builder
 	for stream.Next() {
 		event := stream.Current()
 		switch event.Type {
@@ -67,52 +70,60 @@ func (c *responsesClient) respond(ctx context.Context, prompt string, emit func(
 			if strings.TrimSpace(event.Delta) != "" {
 				hasText = true
 			}
+			text.WriteString(event.Delta)
 			delta := event.Delta
 			if event.Type == "response.refusal.delta" && !refusing {
 				delta = "Model refused: " + delta
 				refusing = true
 			}
 			if err := emit(delta); err != nil {
-				return err
+				return modelReply{}, err
 			}
 		case "response.completed":
 			result := event.Response
 			responseError := result.JSON.Error.Raw()
 			if result.Status == "failed" || (responseError != "" && responseError != "null") {
-				return errors.New("Model generation failed. Check the service status and model settings.")
+				return modelReply{}, errors.New("Model generation failed. Check the service status and model settings.")
 			}
 			if result.Status != "completed" {
-				return errors.New("Model response is incomplete. Try again or shorten your question.")
+				return modelReply{}, errors.New("Model response is incomplete. Try again or shorten your question.")
 			}
 			if !hasText {
-				return errors.New("The model returned no text")
+				return modelReply{}, errors.New("The model returned no text")
 			}
-			return nil
+			reply := modelReply{Text: text.String()}
+			for _, item := range result.Output {
+				reply.Output = append(reply.Output, json.RawMessage(item.RawJSON()))
+			}
+			if _, err := reply.inputItems(); err != nil {
+				return modelReply{}, err
+			}
+			return reply, nil
 		case "response.failed", "error":
-			return errors.New("Model generation failed. Check the service status and model settings.")
+			return modelReply{}, errors.New("Model generation failed. Check the service status and model settings.")
 		case "response.incomplete":
-			return errors.New("Model response is incomplete. Try again or shorten your question.")
+			return modelReply{}, errors.New("Model response is incomplete. Try again or shorten your question.")
 		}
 	}
 	if err := stream.Err(); err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
-			return context.Canceled
+			return modelReply{}, context.Canceled
 		case errors.Is(err, context.DeadlineExceeded):
-			return fmt.Errorf("Request timed out: %w", context.DeadlineExceeded)
+			return modelReply{}, fmt.Errorf("Request timed out: %w", context.DeadlineExceeded)
 		case errors.Is(err, errResponseTooLarge):
-			return errResponseTooLarge
+			return modelReply{}, errResponseTooLarge
 		case response != nil && (response.StatusCode < 200 || response.StatusCode >= 300):
-			return fmt.Errorf("Responses API returned HTTP %d (%s). Check the URL, API key, model access, or quota.", response.StatusCode, http.StatusText(response.StatusCode))
+			return modelReply{}, fmt.Errorf("Responses API returned HTTP %d (%s). Check the URL, API key, model access, or quota.", response.StatusCode, http.StatusText(response.StatusCode))
 		case response != nil:
-			return errors.New("The server returned an invalid or unreadable Responses API stream. Check that your endpoint supports streaming (text/event-stream).")
+			return modelReply{}, errors.New("The server returned an invalid or unreadable Responses API stream. Check that your endpoint supports streaming (text/event-stream).")
 		default:
 			// SDK errors can include request URLs, response bodies, or credentials.
-			return fmt.Errorf("Request failed. Check your connection and base_url in %s.", configLocation)
+			return modelReply{}, fmt.Errorf("Request failed. Check your connection and base_url in %s.", configLocation)
 		}
 	}
 	// EOF or [DONE] alone does not establish that generation succeeded.
-	return errors.New("Model response is incomplete: the stream ended before completion. Try again.")
+	return modelReply{}, errors.New("Model response is incomplete: the stream ended before completion. Try again.")
 }
 
 // checkResponse enforces HTTP limits without buffering the stream before display.

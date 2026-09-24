@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/openai/openai-go/v3/responses"
 )
 
 func streamEvent(w http.ResponseWriter, event string) {
@@ -110,7 +112,7 @@ func TestRespondStopsWhileStreamIsOpen(t *testing.T) {
 			}
 			outputError := errors.New("output unavailable")
 			var got string
-			err := client.respond(ctx, "Hello", func(delta string) error {
+			_, err := client.respond(ctx, responses.ResponseInputParam{userInput("Hello")}, func(delta string) error {
 				got += delta
 				if mode == "cancel" {
 					cancel()

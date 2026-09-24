@@ -6,6 +6,21 @@ unchanged and fixes receive new patch versions.
 
 ## [Unreleased]
 
+### Added
+
+- Chapter 02 conversation history in `~/.mino/history.jsonl`, with a stable
+  `session_id` on every record, ordered turns, and automatic restart recovery.
+  Completed turns are supplied to subsequent Responses requests while answers
+  continue to stream immediately. Preserve returned output items, including
+  assistant phase and encrypted reasoning state, for stateless replay.
+- Private history files, a single-writer lock, recovery backups for incomplete
+  tails, validation of record order and session identity, and bounded file sizes.
+  Failed and interrupted turns remain recorded without entering future context;
+  storage failures stop chat and never silently retry a model request.
+- Bilingual Chapter 02 lessons and deterministic tests for restart continuity,
+  streaming, cancellation, disk failures, truncation recovery, and file locking.
+  Chapter 02 targets `v0.2.0`; no release tag or package has been published.
+
 ### Changed
 
 - Center the book writer's rules and bilingual Chapter 01 on user/model

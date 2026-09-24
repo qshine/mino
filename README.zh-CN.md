@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-用 Go 从零实现终端 Agent 的分章教程。第一章通过 OpenAI Responses API 实现独立的一问一答。
+用 Go 和 OpenAI Responses API 从零实现终端 Agent 的分章教程。当前源码已实现第二章：JSONL 对话历史、多轮问答与重启恢复。已发布的 `v0.1.0` 仍是第一章基线。
 支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
@@ -61,6 +61,21 @@ Mino 不读取工作目录中的 `AGENTS.md` 或 `SOUL.md`；`AGENTS.md` 仅用�
 如果中途出错，已显示的内容会保留，同时提示错误。请重新执行上方安装命令获取流式输出，
 即便当前版本已经显示 `0.1.0`；更早的同号版本会等待完整回答后一次性显示。
 
+## 对话历史（第二章源码）
+
+第二章发布前，可在当前检出目录运行 `go run ./cmd/mino` 体验。
+Mino 将记录追加到 `~/.mino/history.jsonl`，启动时恢复成功完成的问答。
+每条记录包含稳定的 `session_id`，一个本地文件保存一段会话，回答仍实时流式显示。
+失败或中断的回合保留为记录，但不进入后续请求，也不会自动重试。
+
+历史与恢复副本含有私人对话，文件权限为 `0600`，同一时间只允许一个 Mino 进程使用历史。
+写入失败会停止聊天；不完整的尾部先备份再修复，中间记录损坏则停止启动。
+单条记录上限为 16 MiB，整个文件为 64 MiB；上下文压缩和 `/new` 留在后续章节。
+
+已有的 `~/.mino/SOUL.md` 会保留。如果其中仍写着每个问题互相独立，请手动修改这一句，
+可参考更新后的默认 [SOUL.md](SOUL.md)。会话命令实现前，如需重新开始，先退出 Mino，
+再将 `history.jsonl` 移到私有备份位置；恢复副本同样需要妥善保管。
+
 ## 版本与升级
 
 ```bash
@@ -81,7 +96,7 @@ mino update v0.1.0    # 安装指定版本，也可用于回退
 | --- | --- | --- |
 | 第一章 | `0.1.0` | `v0.1.0` |
 | 后续第一章修正（示例） | `0.1.1`、`0.1.2` | `v0.1.1`、`v0.1.2` |
-| 计划中的第二章 | `0.2.0` | `v0.2.0` |
+| 第二章（源码已实现，尚未发布） | 目标 `0.2.0` | 尚未创建标签 |
 | 后续第二章修正（示例） | `0.2.1` | `v0.2.1` |
 
 推送 `main` 会触发 CI。推送版本标签会触发测试、两种 Mac 架构的编译和 GitHub Release 发布，
@@ -105,9 +120,10 @@ bash scripts/check.sh
 测试使用假密钥、临时用户目录、本机模拟 HTTP 服务和模拟下载，不调用付费模型，也不修改真实配置。
 
 - [第一章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
+- [第二章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/`。
-- `internal/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `soul.go` → `terminal.go` → `responses.go`。
+- `internal/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `soul.go` → `history.go` → `terminal.go` → `conversation.go` → `responses.go`。
 - SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 

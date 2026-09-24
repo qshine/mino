@@ -11,9 +11,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/openai/openai-go/v3/responses"
 )
 
-func TestRespondSendsIndependentRequests(t *testing.T) {
+func TestRespondSendsOnlySuppliedInput(t *testing.T) {
 	var inputs []string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/custom/v1/responses" {
@@ -36,10 +38,12 @@ func TestRespondSendsIndependentRequests(t *testing.T) {
 				t.Errorf("single-turn request contains %s", field)
 			}
 		}
-		input, ok := body["input"].(string)
-		if !ok {
-			t.Error("input must be the current question only")
+		items, ok := body["input"].([]any)
+		if !ok || len(items) != 1 {
+			t.Errorf("unexpected explicit input: %#v", body["input"])
+			return
 		}
+		input := items[0].(map[string]any)["content"].(string)
 		inputs = append(inputs, input)
 		streamEvent(w, `{"type":"response.reasoning_text.delta","delta":"private reasoning"}`)
 		streamEvent(w, `{"type":"response.output_text.delta","delta":"你好，"}`)
@@ -221,7 +225,7 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 // Collecting is test-only; the terminal receives deltas without waiting for completion.
 func collectResponse(client *responsesClient, ctx context.Context, prompt string) (string, error) {
 	var output strings.Builder
-	err := client.respond(ctx, prompt, func(delta string) error {
+	_, err := client.respond(ctx, responses.ResponseInputParam{userInput(prompt)}, func(delta string) error {
 		output.WriteString(delta)
 		return nil
 	})

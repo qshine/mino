@@ -46,7 +46,8 @@ export default withMermaid({
             { text: 'Chapter roadmap', link: '/plan-todo-chapters' }
           ] },
           { text: 'Part I · Connect to a model', items: [
-            { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' }
+            { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' },
+            { text: '02 JSONL conversation history', link: '/chapters/02-jsonl-history' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -74,7 +75,8 @@ export default withMermaid({
             { text: '章节路线与进度', link: '/zh/plan-todo-chapters' }
           ] },
           { text: '第一部分 · 搭通对话', items: [
-            { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' }
+            { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' },
+            { text: '02 JSONL 对话历史', link: '/zh/chapters/02-jsonl-history' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

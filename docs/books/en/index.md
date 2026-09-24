@@ -24,14 +24,15 @@ Each lesson follows one concrete interaction through the minimum code needed to 
 
 ## What is ready to read
 
-Chapter 01 is complete. This edition follows the **v0.1.0 streaming reissue**. The chapter follows the identity loaded from `~/.mino/SOUL.md` and a question into a streaming Responses request, then explains immediate text display, completion checks, and why the next question has no memory. Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
+Chapters 01 and 02 are complete in the source and book. Chapter 01 follows the **v0.1.0 streaming reissue**: send the loaded identity and current question, display incoming answer fragments, and check completion. It explains why that version's independent requests have no memory. Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
 
-Chapter 02 and later chapters are planned, not implemented. The [chapter roadmap](./plan-todo-chapters.md) tracks progress; future capabilities are never presented as features that already work.
+Chapter 02 adds a JSONL history file, a stable session ID, and restoration after restart. Only completed turns become context for the next question. Its implementation targets **v0.2.0 and is Unreleased**; use a checkout containing that implementation to run it. Chapter 03 onward remains planned. The [chapter roadmap](./plan-todo-chapters.md) separates completed work from future capabilities.
 
 | Stage | The question you will explore |
 | --- | --- |
 | [01 A terminal conversation](./chapters/01-terminal-chat.md) | How does a line of input become an HTTP request and then an answer? |
-| 02–04 Context, tools, and sessions | Who remembers the conversation? Who executes tools? What survives a restart? |
+| [02 JSONL conversation history](./chapters/02-jsonl-history.md) | What survives a restart, and which saved records become model context? |
+| 03–04 Tools and multiple sessions | Who executes tools? How do you start or restore a separate conversation? |
 | 05–06 Context management | How can older interactions be summarized, and when should that happen? |
 | 07–09 Extensions and guardrails | How do knowledge and tools connect, and how are actual permissions enforced? |
 

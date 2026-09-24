@@ -22,7 +22,7 @@ func Main(version string) int {
 	return 0
 }
 
-func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) error {
+func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) (err error) {
 	// 配置与聊天共用缓冲区，避免首次配置吞掉已经读入的第一条问题。
 	reader := bufio.NewReader(input)
 	setup := false
@@ -51,6 +51,16 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) er
 	if err != nil {
 		return err
 	}
-	client := newResponsesClient(cfg, instructions)
-	return runTerminal(ctx, reader, output, errorOutput, client.respond)
+	history, err := openHistory()
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, history.close()) }()
+	if history.notice != "" {
+		if _, err := fmt.Fprint(errorOutput, terminalText(history.notice)); err != nil {
+			return err
+		}
+	}
+	chat := conversation{history: history, client: newResponsesClient(cfg, instructions)}
+	return runTerminal(ctx, reader, output, errorOutput, chat.respond)
 }
