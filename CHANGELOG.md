@@ -8,6 +8,9 @@ unchanged and fixes receive new patch versions.
 
 ### Changed
 
+- Center the book writer's rules and bilingual Chapter 01 on user/model
+  interactions, replacing file, function, and SDK walkthroughs with request,
+  streaming response, completion, and context explanations.
 - Download public macOS releases with `curl`, without GitHub CLI or a GitHub
   login, while preserving checksum/version verification and existing settings.
   The published `v0.1.0` embeds the earlier updater; rerun the README installer
