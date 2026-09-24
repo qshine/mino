@@ -24,7 +24,7 @@ Each lesson follows one concrete interaction through the minimum code needed to 
 
 ## What is ready to read
 
-Chapter 01 is complete. It applies to **0.1.x** and has been checked against the reissued **v0.1.0**. It follows a question through the SDK into the Responses API and a reply back to the terminal, then tests why the next question has no memory. This is the foundation for later agent interactions.
+Chapter 01 is complete. This edition follows a **development snapshot** with application code directly in `internal/`. That directory change is unreleased; runtime behavior matches the reissued **v0.1.0**. The chapter follows a question through the SDK into the Responses API and a reply back to the terminal, then tests why the next question has no memory. This is the foundation for later agent interactions.
 
 Chapter 02 and later chapters are planned, not implemented. The [chapter roadmap](./plan-todo-chapters.md) tracks progress; future capabilities are never presented as features that already work.
 
@@ -37,7 +37,7 @@ Chapter 02 and later chapters are planned, not implemented. The [chapter roadmap
 
 ## Read alongside the code
 
-Each chapter identifies its applicable version. Important source links point to a checked release tag, so the implementation behind a lesson remains available as the project evolves.
+Each chapter identifies its applicable version. Important source links point to a checked release tag or an immutable development commit, so the implementation behind a lesson remains available as the project evolves.
 
 Versions follow `0.<chapter>.<patch>`: Chapter 01 starts at `0.1.0`, a fix becomes `0.1.1`, and Chapter 02 starts at `0.2.0`. Small fixes update the relevant text and diagrams without creating an extra chapter.
 

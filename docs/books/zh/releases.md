@@ -14,6 +14,8 @@
 
 根据所有者的明确要求，第一章重新发布为 `v0.1.0`，替换原来的 `v0.1.0`、`v0.1.1` Release 和标签。新基线引入 OpenAI 官方 Go SDK、`cmd/mino` 启动入口，以及 `internal/mino` 应用包，同时保留原 `v0.1.1` 中的私有下载修复。
 
+之后的开发版将应用直接移入 `internal/`。这次变更尚未发布，不改变 `v0.1.0` 标签或运行行为。
+
 如果使用过之前任一版本，可以运行 `mino update v0.1.0` 安装新基线；如果旧版内嵌的更新器失败，请用当前 [README 中的安装命令](https://github.com/qshine/mino/blob/main/README.zh-CN.md#安装)重新安装。两种方式都会保留已有配置。单看版本字符串无法区分两次 `0.1.0` 构建。这是一次性重置，后续修复仍使用新补丁标签，不改变已发布标签和附件。
 
 ## 发布一个版本
@@ -57,7 +59,7 @@ bash scripts/package.sh v0.1.0
 
 ## 私有仓库安装
 
-README 的安装命令通过已经登录的 `gh api` 从 `main` 读取 `internal/mino/install.sh`。安装器和内嵌的更新器使用 `gh` 获取 Release ID，再通过 GitHub 专门的附件接口下载文件，避免版本元数据中不完整的附件列表阻止安装。
+README 的安装命令通过已经登录的 `gh api` 从 `main` 读取 `internal/install.sh`。安装器和内嵌的更新器使用 `gh` 获取 Release ID，再通过 GitHub 专门的附件接口下载文件，避免版本元数据中不完整的附件列表阻止安装。
 
 用户必须登录有权读取仓库的账号。令牌仍由 GitHub CLI 管理，不会复制到 Mino 配置中。
 

@@ -19,6 +19,9 @@ At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the origin
 OpenAI Go SDK, `cmd/mino` entry point, and `internal/mino` application package.
 It also retains the private-download fix from the earlier `v0.1.1`.
 
+The later development layout moves the application directly into `internal/`.
+That change is unreleased and does not alter the `v0.1.0` tag or runtime behavior.
+
 If you used either earlier build, run `mino update v0.1.0` to install this baseline;
 if its embedded updater fails, reinstall with the current
 [README installation command](https://github.com/qshine/mino#install).
@@ -84,7 +87,7 @@ only the executable; it does not roll back or erase `~/.mino/config.json`.
 ## Private repository installation
 
 The bootstrap command in the README uses authenticated `gh api` to read
-`internal/mino/install.sh` from `main`. The installer and the embedded updater use `gh` to
+`internal/install.sh` from `main`. The installer and the embedded updater use `gh` to
 resolve release IDs and download files through GitHub's dedicated release-assets
 API, so an incomplete embedded asset list does not block installation. Users
 must sign in with an account that can read that repository. Tokens remain managed by GitHub

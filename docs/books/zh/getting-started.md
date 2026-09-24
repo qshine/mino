@@ -28,7 +28,7 @@ GitHub 登录用于下载程序，下一步填写的模型 API Key 用于访问�
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 安装器校验下载包的 SHA-256 和程序版本，将可执行文件放入 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
@@ -68,7 +68,7 @@ mino update
 
 更新仍需 GitHub 账号的仓库访问权限。下载、附件校验失败时，保留现有程序；已有模型配置继续使用。
 
-第一章已重置为新的 `v0.1.0` 基线，采用本书描述的 SDK 和目录布局。如果安装过之前的 `v0.1.0` 或 `v0.1.1`，运行 `mino update v0.1.0` 安装重新发布的版本。如果旧版更新器失败，请使用上面的安装命令；已有配置会保留。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
+第一章已重置为新的 `v0.1.0` 基线，采用官方 SDK。如果安装过之前的 `v0.1.0` 或 `v0.1.1`，运行 `mino update v0.1.0` 安装重新发布的版本。如果旧版更新器失败，请使用上面的安装命令；已有配置会保留。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
 
 ## 可选的项目指令
 
@@ -84,7 +84,9 @@ cd mino
 go run ./cmd/mino
 ```
 
-`cmd/mino/main.go` 是可执行程序的启动入口。应用代码及对应测试放在 `internal/mino/` 下的 `mino` 包中，由 `app.go` 将启动流程接到终端循环。安装脚本也放在这里，供 `cli.go` 内嵌后执行 `mino update`。阅读时从 `app.go` 开始，再沿 `terminal.go` 进入 `responses.go`。
+`cmd/mino/main.go` 是可执行程序的启动入口。应用代码及对应测试放在 `internal/` 下的 `mino` 包中，由 `app.go` 将启动流程接到终端循环。安装脚本也放在这里，供 `cli.go` 内嵌后执行 `mino update`。阅读时从 `app.go` 开始，再沿 `terminal.go` 进入 `responses.go`。
+
+这次目录简化属于 `v0.1.0` 之后尚未发布的改动；`v0.1.0` 的源码仍使用 `internal/mino/`，运行行为没有变化。入口以 `mino` 为别名导入 `github.com/qshine/mino/internal`，因此调用仍是 `mino.Main(version)`。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
