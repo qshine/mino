@@ -15,23 +15,19 @@ Use this page to prepare Mino. Chapter 01 then follows one question from termina
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
 
-The repository is currently private. Downloads require a GitHub account with repository access and [GitHub CLI](https://cli.github.com/). If you use Homebrew, install it with `brew install gh`, then sign in once:
-
-```bash
-gh auth login --hostname github.com
-```
-
-Your GitHub login downloads the program. The model API key entered later accesses the model service. These are separate credentials.
+The repository and release downloads are public. Installation uses macOS's `curl`; you do not need GitHub CLI or a GitHub login. A model API key is needed only when configuring the model service on first launch.
 
 ## Install with one command
 
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-The installer verifies the package's SHA-256 checksum and executable version, installs `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
+This command uses the **Unreleased installer on `main`** to download the latest published application, currently the `v0.1.0` streaming reissue. It resolves one release tag, then downloads its macOS package and checksum file over HTTPS.
+
+The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
 ## Start for the first time
 
@@ -63,12 +59,13 @@ Enter a question after `You>`. Real questions contact your configured service an
 
 ```bash
 mino version
-mino update
 ```
 
-Updates still require GitHub access to the repository. Download or asset-verification failures preserve the existing executable, and your model settings remain unchanged.
+To install the latest release without a GitHub login, rerun the installation command above. Download or verification failures preserve the existing executable; installation also preserves your model settings and custom `~/.mino/SOUL.md`.
 
-The reissued `v0.1.0` adds terminal streaming; earlier builds with the same version number wait for the complete answer. Run `mino update v0.1.0` to obtain the streaming release **even if `mino version` already reports `0.1.0`**. If the earlier updater fails, use the installation command above. Both paths preserve your configuration and custom `~/.mino/SOUL.md`. This replacement is an explicit owner-authorized exception; see the [release reset note](./releases.md#chapter-01-baseline-reset).
+The published `v0.1.0` still embeds the earlier updater: its `mino update` command requires GitHub CLI and a GitHub login. The public-download updater is Unreleased and will be included in a future application release. See [public downloads and the embedded updater](./releases.md#public-downloads-and-the-embedded-updater) for the distinction.
+
+Earlier builds also report `0.1.0` but wait for the complete answer. If you used one of those builds, rerun the installation command to obtain streaming **even if `mino version` already reports `0.1.0`**. The [release reset note](./releases.md#chapter-01-baseline-reset) explains this owner-authorized replacement.
 
 ## Mino identity
 
@@ -83,7 +80,7 @@ Use a regular file containing non-empty UTF-8 text, at most 64 KiB. Mino rejects
 To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository and run from its directory:
 
 ```bash
-gh repo clone qshine/mino
+git clone https://github.com/qshine/mino.git
 cd mino
 go run ./cmd/mino
 ```

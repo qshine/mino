@@ -25,7 +25,7 @@ flowchart TD
     E --> F[Build and preview the book]
     F --> G[Commit the reviewed changes]
     G --> H[GitHub Actions builds the site]
-    H --> I[Private build artifact]
+    H --> I[Downloadable workflow artifact]
     H --> J{Pages publishing explicitly enabled?}
     J -->|Yes| K[Publish the website]
     J -->|No| L[Keep the site unpublished]
@@ -91,16 +91,16 @@ The current book configuration also includes `mermaid` in `vite.optimizeDeps.inc
 
 ## Publishing later
 
-The [Tutorial book workflow](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) builds on relevant pushes and pull requests. It stores a downloadable build artifact in the private repository. **Public deployment is disabled by default.**
+The repository is public, and you can already [read the English book on GitHub](https://github.com/qshine/mino/blob/main/docs/books/en/index.md). The [Tutorial book workflow](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) builds on relevant pushes and pull requests and stores a downloadable workflow artifact. **Pages deployment remains disabled by default.**
 
-GitHub Pages can host a static book without a separate server. Pages from private repositories requires an eligible paid GitHub plan. A personal private repository does not make its Pages website private; restricted private Pages requires an organization using GitHub Enterprise Cloud. See [GitHub Pages availability](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) and [site visibility](https://docs.github.com/en/enterprise-cloud@latest/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site).
+GitHub Pages can host the static book without a separate server. Making the repository public does not enable the website automatically; publishing remains a separate owner decision.
 
-When the owner explicitly decides to publish and the plan supports it:
+When the owner explicitly decides to publish the website:
 
 1. Set the repository's Pages source to **GitHub Actions**.
 2. Set the repository Actions variable `BOOK_PUBLISH_ENABLED` to `true`.
 3. Run **Tutorial book**, or push a documentation update to `main`.
 
-The configured project path is `/mino/`. A public deployment would normally be served at `https://qshine.github.io/mino/`; this is a target address, not an already published site. A separate domain is optional.
+The configured project path is `/mino/`. The planned English address is `https://qshine.github.io/mino/`, and Simplified Chinese is `https://qshine.github.io/mino/zh/`. Pages is not enabled yet; use the GitHub reading link above for the available book. A separate domain is optional.
 
 Removing the variable prevents future deployments; it does **not** remove an already published website. To take a published site offline, unpublish it in the repository's Pages settings.

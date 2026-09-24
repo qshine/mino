@@ -21,12 +21,11 @@ official OpenAI Go SDK, `cmd/mino` entry point, `internal/` application package,
 root `install.sh`, and editable `~/.mino/SOUL.md` identity. `assets.go` embeds the
 installer and default identity. The private-download fix from `v0.1.1` is retained.
 
-If you used any earlier build, run `mino update v0.1.0` even if `mino version`
-already reports `0.1.0`: the version number is unchanged. If its embedded updater
-fails, reinstall with the current
+If you used any earlier build, reinstall with the current
 [README installation command](https://github.com/qshine/mino#install).
-Both paths install the streaming release and preserve your configuration and
-custom `~/.mino/SOUL.md`. Replacing the published tag and assets is an explicit
+Do this even if `mino version` already reports `0.1.0`: the version number is
+unchanged. Reinstallation preserves your configuration and custom
+`~/.mino/SOUL.md`. Replacing the published tag and assets is an explicit
 owner-authorized exception for this reissue. Subsequent fixes use new patch tags
 and leave published tags and assets unchanged.
 
@@ -56,13 +55,14 @@ checksums.txt
 ```
 
 The workflow uploads to a draft release first and publishes only after the
-uploads succeed. Users then receive the version through `mino update`.
+uploads succeed. Users then receive the version by rerunning the installation
+command or using `mino update`, subject to the [embedded updater's requirements](#public-downloads-and-the-embedded-updater).
 The changelog entry supplies the release notes. Tags without a matching entry
 fail packaging. Normal branch pushes run [CI](https://github.com/qshine/mino/blob/main/.github/workflows/ci.yml)
 and do not publish a release.
 
-GitHub provides the build machines and download storage; no personal server is
-required. Private repositories consume the account's GitHub Actions allowance.
+GitHub provides the build machines and public release downloads; no personal
+server is required.
 The publishing job uses its built-in `GITHUB_TOKEN` with `contents: write`;
 no personal access token or model API key needs to be added to Actions secrets.
 
@@ -84,17 +84,27 @@ inspect and remove that draft before rerunning the failed publishing job.
 Do not move a published tag or replace a published asset. Fixes receive a new
 patch tag instead.
 
-Users can reinstall the Chapter 01 streaming release with `mino update v0.1.0`. This replaces
-only the executable; it preserves `~/.mino/config.json` and custom `~/.mino/SOUL.md`.
+Users can reinstall with the [current installation command](./getting-started.md#install-with-one-command).
+It replaces only the executable and preserves `~/.mino/config.json` and custom
+`~/.mino/SOUL.md`. To select a particular release from a source checkout, run
+`bash install.sh v0.1.0` from the repository root.
 
-## Private repository installation
+## Public downloads and the embedded updater
 
-The bootstrap command in the README uses authenticated `gh api` to read
-root `install.sh` from `main`. The installer and the embedded updater use `gh` to
-resolve release IDs and download files through GitHub's dedicated release-assets
-API, so an incomplete embedded asset list does not block installation. Users
-must sign in with an account that can read that repository. Tokens remain managed by GitHub
-CLI and are not copied into Mino's configuration.
+The repository is public. The README command uses `curl` to fetch root
+`install.sh` from `main`, without GitHub CLI or a GitHub login. This installer
+change is **Unreleased**; it downloads existing published application packages.
+It resolves the latest release once, downloads the package and `checksums.txt`
+from the same tag, verifies SHA-256 and the executable's version, and only then
+replaces the installed executable. A specified version skips latest-release
+discovery.
+
+`assets.go` embeds the installer when the application is built, and
+`mino update` runs that embedded copy. The published `v0.1.0` therefore still
+uses the earlier GitHub CLI updater and requires a GitHub login, including for
+`mino update v0.1.0`. Updating the script on `main` does not change a published
+binary. Until a new application release includes the public-download updater,
+rerun the README installation command to update without GitHub CLI.
 
 Installation creates `~/.mino/bin/mino`. First launch asks for model settings
 and creates `~/.mino/config.json` only when they are complete. The installer

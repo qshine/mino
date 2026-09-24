@@ -23,12 +23,18 @@ case $(uname -m) in
   *) fail 'Unsupported Mac architecture.' ;;
 esac
 [[ ${HOME:-} == /* && -d ${HOME:-} ]] || fail 'Your home directory must exist and have an absolute path.'
-command -v gh >/dev/null 2>&1 || fail 'Install GitHub CLI (brew install gh), then run gh auth login.'
+command -v curl >/dev/null 2>&1 || fail 'curl is required to download Mino.'
 
 repository=qshine/mino
+release_url="https://github.com/$repository/releases"
+curl_options=(--proto '=https' --tlsv1.2 --fail --silent --show-error --location)
 release_tag=${1:-latest}
 if [[ $release_tag == latest ]]; then
-  release_tag=$(gh api --hostname github.com "repos/$repository/releases/latest" --jq .tag_name) || fail 'Cannot find a release. Run gh auth login and check your repository access.'
+  # Resolve once so the package and checksum always come from the same release.
+  latest_url=$(curl "${curl_options[@]}" --head --output /dev/null --write-out '%{url_effective}' \
+    "$release_url/latest") || fail 'Cannot find the latest public release. Check your network connection.'
+  [[ $latest_url == "$release_url/tag/"* ]] || fail 'Invalid latest release URL.'
+  release_tag=${latest_url#"$release_url/tag/"}
 fi
 release_version=${release_tag#v}
 version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
@@ -54,18 +60,9 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 printf 'Downloading Mino %s for macOS %s...\n' "$release_version" "$architecture"
-# The tag endpoint can omit embedded assets even when they are uploaded.
-# Resolve the release, then list and download assets through their own API.
-release_id=$(gh api --hostname github.com "repos/$repository/releases/tags/$release_tag" \
-  --jq 'select(.draft == false and .prerelease == false) | .id') || fail 'Cannot find this published release.'
-[[ $release_id =~ ^[0-9]+$ ]] || fail 'Invalid or unpublished release.'
-release_assets=$(gh api --hostname github.com --paginate "repos/$repository/releases/$release_id/assets" \
-  --jq '.[] | select(.state == "uploaded") | [.id, .name] | @tsv') || fail 'Cannot list release downloads.'
 for filename in "$asset" checksums.txt; do
-  asset_id=$(printf '%s\n' "$release_assets" | awk -F '\t' -v name="$filename" '$2 == name { print $1 }')
-  [[ $asset_id =~ ^[0-9]+$ ]] || fail "Missing or invalid release asset: $filename"
-  gh api --hostname github.com -H 'Accept: application/octet-stream' \
-    "repos/$repository/releases/assets/$asset_id" > "$download_directory/$filename" || fail 'Download failed. Your existing installation has not been changed.'
+  curl "${curl_options[@]}" --output "$download_directory/$filename" \
+    "$release_url/download/$release_tag/$filename" || fail 'Download failed. Your existing installation has not been changed.'
 done
 expected_checksum=$(awk -v name="$asset" '$2 == name { print $1 }' "$download_directory/checksums.txt")
 [[ $expected_checksum =~ ^[a-f0-9]{64}$ ]] || fail 'Missing or invalid SHA-256 checksum.'

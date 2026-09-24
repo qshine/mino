@@ -6,7 +6,14 @@ unchanged and fixes receive new patch versions.
 
 ## [Unreleased]
 
-No pending changes.
+### Changed
+
+- Download public macOS releases with `curl`, without GitHub CLI or a GitHub
+  login, while preserving checksum/version verification and existing settings.
+  The published `v0.1.0` embeds the earlier updater; rerun the README installer
+  for public downloads until a new application release includes this change.
+- Update the bilingual installation guides for the public repository and add
+  direct online reading links to the book on GitHub.
 
 ## [0.1.0] - 2026-09-24
 

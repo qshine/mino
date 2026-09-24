@@ -14,7 +14,7 @@
 
 根据所有者的明确要求，第一章以支持终端流式输出的版本重新发布为 `v0.1.0`，替换此前不支持流式输出的 `v0.1.0` 和其他第一章构建，包括 `v0.1.1` 和过渡版本。基线包含 OpenAI 官方 Go SDK、`cmd/mino` 启动入口、`internal/` 应用包、根目录的 `install.sh`，以及可编辑的 `~/.mino/SOUL.md` 身份。`assets.go` 嵌入安装脚本和默认身份，同时保留原 `v0.1.1` 中的私有下载修复。
 
-如果使用过之前任一版本，即使 `mino version` 已显示 `0.1.0`，也要运行 `mino update v0.1.0`，因为版本号没有变化。如果旧版内嵌的更新器失败，请用当前 [README 中的安装命令](https://github.com/qshine/mino/blob/main/README.zh-CN.md#安装)重新安装。两种方式都会安装流式版本，并保留配置和自定义 `~/.mino/SOUL.md`。本次替换已发布标签和附件，是所有者明确授权的例外；后续修复仍使用新补丁标签，不改变已发布标签和附件。
+如果使用过之前任一版本，请用当前 [README 中的安装命令](https://github.com/qshine/mino/blob/main/README.zh-CN.md#安装)重新安装。即使 `mino version` 已显示 `0.1.0`，也需要这样做，因为版本号没有变化。重新安装会保留配置和自定义 `~/.mino/SOUL.md`。本次替换已发布标签和附件，是所有者明确授权的例外；后续修复仍使用新补丁标签，不改变已发布标签和附件。
 
 ## 发布一个版本
 
@@ -37,9 +37,9 @@ mino_0.1.2_darwin_amd64.tar.gz
 checksums.txt
 ```
 
-工作流先创建草稿 Release，全部附件上传成功后才正式发布。用户随后通过 `mino update` 获得新版本。发布说明来自对应的 changelog 条目；没有匹配条目的标签会在打包时失败。普通分支推送运行 [CI](https://github.com/qshine/mino/blob/main/.github/workflows/ci.yml)，不会发布应用版本。
+工作流先创建草稿 Release，全部附件上传成功后才正式发布。用户随后重新运行安装命令，或在满足[内嵌更新器要求](#公开下载与内嵌更新器)时使用 `mino update`，获得新版本。发布说明来自对应的 changelog 条目；没有匹配条目的标签会在打包时失败。普通分支推送运行 [CI](https://github.com/qshine/mino/blob/main/.github/workflows/ci.yml)，不会发布应用版本。
 
-GitHub 提供构建机器和下载存储，不需要自备服务器。私有仓库的构建会使用账号的 GitHub Actions 配额。发布任务使用内置的 `GITHUB_TOKEN` 和 `contents: write` 权限，无需把个人访问令牌或模型 API Key 加入 Actions secrets。
+GitHub 提供构建机器和公开的发布包下载，不需要自备服务器。发布任务使用内置的 `GITHUB_TOKEN` 和 `contents: write` 权限，无需把个人访问令牌或模型 API Key 加入 Actions secrets。
 
 ## 本地打包与恢复
 
@@ -53,12 +53,12 @@ bash scripts/package.sh v0.1.0
 
 工作流失败时先检查日志。附件上传失败可能留下草稿；重新运行发布任务前，应检查并删除对应的未完成草稿。不要移动已经发布的标签，也不要替换已发布附件；修复应获得新的补丁版本号。
 
-用户可以通过 `mino update v0.1.0` 重装第一章流式版本。这只替换可执行文件，保留 `~/.mino/config.json` 和自定义 `~/.mino/SOUL.md`。
+用户可以用[当前安装命令](./getting-started.md#一行安装)重新安装。这只替换可执行文件，保留 `~/.mino/config.json` 和自定义 `~/.mino/SOUL.md`。如果已有源码，需要选择特定发布版，可以从仓库根目录运行 `bash install.sh v0.1.0`。
 
-## 私有仓库安装
+## 公开下载与内嵌更新器
 
-README 的安装命令通过已经登录的 `gh api` 从 `main` 读取根目录的 `install.sh`。安装器和内嵌的更新器使用 `gh` 获取 Release ID，再通过 GitHub 专门的附件接口下载文件，避免版本元数据中不完整的附件列表阻止安装。
+仓库现已公开。README 的命令使用 `curl` 从 `main` 获取根目录的 `install.sh`，无需 GitHub CLI 或 GitHub 登录。这项安装器改动属于 **Unreleased**，下载的是现有的已发布应用包。安装器只解析一次最新版本，从同一标签下载压缩包和 `checksums.txt`，验证 SHA-256 和可执行文件的版本后，才替换现有程序。指定版本时，不查询最新版本。
 
-用户必须登录有权读取仓库的账号。令牌仍由 GitHub CLI 管理，不会复制到 Mino 配置中。
+`assets.go` 在构建应用时嵌入安装器，`mino update` 执行这个内嵌副本。因此，已发布的 `v0.1.0` 仍使用早期 GitHub CLI 更新器，需要 GitHub 登录，运行 `mino update v0.1.0` 也一样。修改 `main` 上的脚本不会改变已经发布的二进制程序。在新应用版本内嵌公开下载更新器之前，重新运行 README 安装命令，即可在不安装 GitHub CLI 的情况下更新。
 
 安装会创建 `~/.mino/bin/mino`。首次启动询问模型配置，全部填写完成后才写入 `~/.mino/config.json`。安装器向 `.zshrc`（支持 `ZDOTDIR`）或 `.bash_profile` 添加 PATH 行，不覆盖原文件。如果配置文件是符号链接或不可写，会打印手动添加的方法。README 的安装命令还会更新当前终端的 PATH。

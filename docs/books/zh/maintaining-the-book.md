@@ -25,7 +25,7 @@ flowchart TD
     E --> F[构建并预览书籍]
     F --> G[提交审核后的改动]
     G --> H[GitHub Actions 构建网站]
-    H --> I[私有构建产物]
+    H --> I[可下载的工作流产物]
     H --> J{是否明确开启 Pages 发布}
     J -->|是| K[发布网站]
     J -->|否| L[保持未发布]
@@ -91,16 +91,16 @@ npm run book:preview
 
 ## 以后如何发布
 
-[Tutorial book 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) 会在相关代码推送和 PR 时构建，并在私有仓库中保存可下载的构建产物。**默认不公开部署。**
+仓库现已公开，你现在就可以[在 GitHub 上阅读中文版](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md)。[Tutorial book 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) 会在相关代码推送和 PR 时构建，并保存可下载的工作流产物。**Pages 部署仍默认关闭。**
 
-GitHub Pages 可以直接托管静态教程，不需要另租服务器。私有仓库使用 Pages 需要符合条件的付费 GitHub 方案；个人仓库私有并不意味着 Pages 网站私有。限制读者访问的私有 Pages 需要使用 GitHub Enterprise Cloud 的组织。参见 [Pages 可用范围](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)与[网站访问权限](https://docs.github.com/en/enterprise-cloud@latest/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site)。
+GitHub Pages 可以直接托管静态教程，不需要另租服务器。仓库改为公开不会自动启用网站，是否发布网站仍由所有者另行决定。
 
-仓库所有者明确决定公开、且账号方案支持后：
+仓库所有者明确决定发布网站后：
 
 1. 在仓库 Pages 设置中选择 **GitHub Actions** 作为来源。
 2. 把仓库 Actions 变量 `BOOK_PUBLISH_ENABLED` 设为 `true`。
 3. 手动运行 **Tutorial book**，或者向 `main` 推送教程更新。
 
-项目路径已经配置为 `/mino/`。公开后通常使用 `https://qshine.github.io/mino/`，这只是预定地址，目前尚未发布。自定义域名是可选项。
+项目路径已经配置为 `/mino/`。英文预定地址是 `https://qshine.github.io/mino/`，简体中文是 `https://qshine.github.io/mino/zh/`。Pages 尚未启用；目前请通过上面的 GitHub 阅读链接访问书籍。自定义域名是可选项。
 
 删除该变量会停止之后的部署，但**不会下线已经发布的网站**。如果需要下线，请在仓库的 Pages 设置中取消发布。

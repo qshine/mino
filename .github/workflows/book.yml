@@ -32,13 +32,13 @@ jobs:
       - run: npm audit --audit-level=moderate
       - name: Build both languages and check internal links
         run: npm run book:build
-      - name: Keep the built site as a private workflow artifact
+      - name: Keep the built site as a workflow artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs/.vitepress/dist
           retention-days: 7
 
-  # Opt-in only: never publish this private repository's book by default.
+  # Opt-in only: publish the book website only when explicitly enabled.
   deploy:
     if: vars.BOOK_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: build

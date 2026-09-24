@@ -5,19 +5,17 @@
 用 Go 从零实现终端 Agent 的分章教程。第一章通过 OpenAI Responses API 实现独立的一问一答。
 支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
 
+**在线阅读：**[中文教程](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md) · [English book](https://github.com/qshine/mino/blob/main/docs/books/en/index.md)
+
 ## 安装
 
-使用安装包不需要安装 Go。仓库处于私有状态时，需要有 `qshine/mino` 访问权限的 GitHub 账号，
-并安装 [GitHub CLI](https://cli.github.com/)。如果已安装 Homebrew，可先运行 `brew install gh`，再登录一次：
+仓库和安装包已公开，无需安装 Go、GitHub CLI，也无需登录 GitHub。
+安装程序使用 macOS 自带的 `curl` 下载。
+
+在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-gh auth login --hostname github.com
-```
-
-然后在 Bash 或 zsh 中执行这一行命令：
-
-```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 安装程序会识别 Mac 架构，下载最新发布版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
@@ -60,7 +58,7 @@ Mino 不读取工作目录中的 `AGENTS.md` 或 `SOUL.md`；`AGENTS.md` 仅用�
 输入问题后按回车。使用 `/exit`、空行上的 Ctrl+D 或 Ctrl+C 退出。第一章不保留聊天历史。
 
 重新发布的 `v0.1.0` 流式版本会在 `Assistant>` 后逐步显示收到的回答片段。
-如果中途出错，已显示的内容会保留，同时提示错误。请运行 `mino update v0.1.0` 获取流式输出，
+如果中途出错，已显示的内容会保留，同时提示错误。请重新执行上方安装命令获取流式输出，
 即便当前版本已经显示 `0.1.0`；更早的同号版本会等待完整回答后一次性显示。
 
 ## 版本与升级
@@ -71,11 +69,13 @@ mino update           # 安装最新发布版本
 mino update v0.1.0    # 安装指定版本，也可用于回退
 ```
 
-升级会更新 `~/.mino/bin/mino`，复用 GitHub 登录状态，保留已有配置和 `SOUL.md`。
-下载或校验失败时不会替换旧程序。
+升级会更新 `~/.mino/bin/mino`，保留已有配置和 `SOUL.md`。下载或校验失败时不会替换旧程序。
+
+已发布的 `v0.1.0` 仍内置旧版 GitHub CLI 升级脚本。若希望无需 GitHub CLI 或登录即可升级，
+请重新执行上方安装命令。从更新后的源码构建的版本，其 `mino update` 也使用公开下载。
 
 要安装包含流式输出和 `SOUL.md` 的第一章重新发布版本，即使 `mino version` 已显示 `0.1.0`，
-也请执行 `mino update v0.1.0`。这次重新发布保持版本号不变。
+也请重新执行上方安装命令。这次重新发布保持版本号不变。
 
 | 进度 | 版本号 | Git 标签 |
 | --- | --- | --- |
@@ -113,7 +113,7 @@ bash scripts/check.sh
 
 ## 图文教程书
 
-[阅读英文版](docs/books/en/index.md) · [阅读中文版](docs/books/zh/index.md)
+[在线阅读中文版](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md) · [Read online in English](https://github.com/qshine/mino/blob/main/docs/books/en/index.md)
 
 书籍源码分别位于 `docs/books/en/` 和 `docs/books/zh/`，网站默认英文，可切换简体中文。
 章节聚焦 Agent 交互，安装配置和发布细节放在配套页面中。
@@ -121,5 +121,6 @@ bash scripts/check.sh
 即可打开输出的本地地址预览。`npm run book:build` 检查站内链接并构建两种语言。
 
 项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
-GitHub Actions 已配置书籍检查，公开 Pages 发布默认关闭。
+GitHub Actions 已配置书籍检查。上方在线链接直接打开 GitHub 上的书籍页面；
+独立的 GitHub Pages 网站尚未启用。
 详见[写作与发布流程](docs/books/zh/maintaining-the-book.md)。

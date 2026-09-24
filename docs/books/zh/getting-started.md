@@ -15,23 +15,19 @@ next:
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
 
-仓库目前是私有的。下载需要一个有仓库访问权限的 GitHub 账号，以及 [GitHub CLI](https://cli.github.com/)。如果使用 Homebrew，可以先运行 `brew install gh`，然后登录一次：
-
-```bash
-gh auth login --hostname github.com
-```
-
-GitHub 登录用于下载程序，下一步填写的模型 API Key 用于访问模型服务；它们是两套独立的凭据。
+仓库和发布包现已公开。安装使用 macOS 自带的 `curl`，不需要 GitHub CLI，也不需要登录 GitHub。首次启动配置模型服务时，才需要填写模型 API Key。
 
 ## 一行安装
 
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装器校验下载包的 SHA-256 和程序版本，将可执行文件放入 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
+此命令使用 **`main` 上尚未随应用发布的安装器（Unreleased）**，下载最新已发布的应用，目前是重新发布的 `v0.1.0` 流式版本。安装器先确定一个版本标签，再通过 HTTPS 下载该版本的 macOS 安装包和校验文件。
+
+安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
 ## 第一次启动
 
@@ -63,12 +59,13 @@ API 地址可以直接回车使用 OpenAI 官方地址。**模型没有默认值
 
 ```bash
 mino version
-mino update
 ```
 
-更新仍需 GitHub 账号的仓库访问权限。下载、附件校验失败时，保留现有程序；已有模型配置继续使用。
+无需登录 GitHub 即可更新：重新运行上面的安装命令，获取最新发布版。下载或校验失败时，保留现有程序；安装也会保留模型配置和自定义 `~/.mino/SOUL.md`。
 
-重新发布的 `v0.1.0` 增加了终端流式输出；此前同号构建会等待完整回答。运行 `mino update v0.1.0` 获取流式版本，**即使 `mino version` 已显示 `0.1.0`，也需要更新**。如果旧版更新器失败，请使用上面的安装命令。两种方式都会保留配置和自定义 `~/.mino/SOUL.md`。本次替换是所有者明确授权的例外，详见[第一章基线重置说明](./releases.md#第一章基线重置)。
+已发布的 `v0.1.0` 仍内嵌旧版更新器，它的 `mino update` 命令需要 GitHub CLI 和 GitHub 登录。公开下载的更新器目前属于 Unreleased，将在后续应用版本中提供。两者的区别见[公开下载与内嵌更新器](./releases.md#公开下载与内嵌更新器)。
+
+早期构建也显示 `0.1.0`，但会等待完整回答。如果使用过这类构建，请重新运行安装命令获取流式输出，**即使 `mino version` 已显示 `0.1.0`，也需要更新**。[第一章基线重置说明](./releases.md#第一章基线重置)记录了这次由所有者授权的替换。
 
 ## Mino 的身份
 
@@ -83,7 +80,7 @@ mino update
 若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，从仓库目录运行：
 
 ```bash
-gh repo clone qshine/mino
+git clone https://github.com/qshine/mino.git
 cd mino
 go run ./cmd/mino
 ```
