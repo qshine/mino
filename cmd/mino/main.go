@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/qshine/mino/internal/mino"
+	mino "github.com/qshine/mino/internal"
 )
 
 // Release builds set this from the Git tag; source builds report dev.

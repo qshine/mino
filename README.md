@@ -19,7 +19,7 @@ gh auth login --hostname github.com
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads the latest release,
@@ -109,8 +109,8 @@ not call a paid model or modify your real configuration.
 - [Read the illustrated book](docs/books/en/index.md) · [简体中文](docs/books/zh/index.md)
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
-- Entry point: `cmd/mino/main.go`; application code and tests: `internal/mino/`.
-- Reading order inside `internal/mino/`: `app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
+- Entry point: `cmd/mino/main.go`; application code and tests: `internal/`.
+- Reading order inside `internal/`: `app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`.
 - The SDK handles API communication. Mino owns the terminal flow; tool execution and the Agent loop remain future chapters.
 - [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)
 

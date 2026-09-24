@@ -4,6 +4,12 @@ Versions follow the tutorial chapters: `0.<chapter>.<patch>`. Git tags use a
 `v` prefix. After this owner-requested Chapter 01 reset, published releases stay
 unchanged and fixes receive new patch versions.
 
+## [Unreleased]
+
+- Place the application code, tests, and embedded installer directly in `internal/`.
+  The entry point remains `cmd/mino`; source commands and installation links use
+  the flatter layout. Runtime behavior is unchanged.
+
 ## [0.1.0] - 2026-09-23
 
 Chapter 01 is reissued as `v0.1.0` at the owner's request, replacing the original

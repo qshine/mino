@@ -17,7 +17,7 @@ gh auth login --hostname github.com
 然后在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/mino/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 安装程序会识别 Mac 架构，下载最新发布版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
@@ -94,8 +94,8 @@ bash scripts/check.sh
 
 - [第一章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
-- 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/mino/`。
-- `internal/mino/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
+- 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/`。
+- `internal/` 内的阅读顺序：`app.go` → `cli.go` → `config.go` / `config_prompt.go` → `terminal.go` → `responses.go`。
 - SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 
