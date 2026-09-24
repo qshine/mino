@@ -15,6 +15,11 @@ unchanged and fixes receive new patch versions.
 - Update the bilingual installation guides for the public repository and add
   direct online reading links to the bilingual GitHub Pages book website.
 
+### Fixed
+
+- Prevent Mermaid from automatically reprocessing diagrams already rendered by
+  the book components, avoiding intermittent syntax errors after page loads.
+
 ## [0.1.0] - 2026-09-24
 
 Chapter 01 is reissued as `v0.1.0` at the owner's request, replacing the original

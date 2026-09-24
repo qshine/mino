@@ -89,6 +89,8 @@ The lockfile pins the website dependencies. VitePress 1.6.4's default Vite depen
 
 The current book configuration also includes `mermaid` in `vite.optimizeDeps.include`. This pre-bundles the plugin-injected Mermaid imports for the development server, converting CommonJS dependencies such as `fastdom` for browser use. Without it, the pinned Mermaid 11.17.2 dependencies can leave local preview blank with an error about a missing default export. After dependency upgrades, check `npm run book:dev` in a browser as well as running the production build.
 
+The VitePress component renders each diagram. To prevent Mermaid's window-load handler from also scanning `.mermaid` elements, `docs/.vitepress/theme/index.ts` initializes Mermaid with `startOnLoad: false` before Vue mounts; `docs/.vitepress/config.mts` keeps that option for later plugin initialization. The plugin reads its settings asynchronously, so its configuration alone can arrive too late and leave intermittent `Syntax error` diagrams. After changes, hard-reload a diagram page in each language, then switch languages through the menu; confirm that the diagrams render without `Syntax error` text.
+
 ## Publishing the website
 
 The book is published on GitHub Pages: [English](https://qshine.github.io/mino/) and [Simplified Chinese](https://qshine.github.io/mino/zh/). The configured project path is `/mino/`; a separate domain or server is not required.

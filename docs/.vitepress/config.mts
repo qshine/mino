@@ -17,6 +17,8 @@ export default withMermaid({
     optimizeDeps: { include: ['mermaid'] }
   },
   mermaid: {
+    // The VitePress component renders diagrams; avoid a second automatic pass.
+    startOnLoad: false,
     securityLevel: 'strict', theme: 'base',
     flowchart: { useMaxWidth: false },
     sequence: { useMaxWidth: false },

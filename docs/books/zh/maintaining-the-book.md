@@ -89,6 +89,8 @@ npm run book:preview
 
 当前书籍配置还在 `vite.optimizeDeps.include` 中显式包含 `mermaid`。开发服务器会预构建插件注入的 Mermaid 导入，将 `fastdom` 等 CommonJS 依赖转换为浏览器可用的格式。没有这一步，当前锁定的 Mermaid 11.17.2 依赖可能让本地预览显示空白页，并报告缺少默认导出。升级依赖后，除了运行正式构建，还要在浏览器中检查 `npm run book:dev` 的效果。
 
+每张图由 VitePress 组件负责渲染。为避免 Mermaid 的页面加载处理器再次扫描 `.mermaid` 元素，`docs/.vitepress/theme/index.ts` 在 Vue 挂载前以 `startOnLoad: false` 初始化 Mermaid；`docs/.vitepress/config.mts` 保留同一选项，供插件之后初始化时使用。插件异步读取配置，仅在插件配置中设置可能来不及阻止自动扫描，导致图表偶发显示 `Syntax error`。修改后，分别强制刷新一个英文和中文图表页面，再通过菜单切换语言；确认图表正常显示，没有 `Syntax error` 文本。
+
 ## 发布教程网站
 
 教程已发布到 GitHub Pages：[英文版](https://qshine.github.io/mino/)和[简体中文版](https://qshine.github.io/mino/zh/)。项目路径为 `/mino/`，不需要另设域名或服务器。
