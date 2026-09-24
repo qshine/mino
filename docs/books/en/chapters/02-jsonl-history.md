@@ -1,6 +1,6 @@
 # Chapter 02: Keeping a conversation going with JSONL history
 
-Applies to the **Chapter 02 development implementation** · Target version **v0.2.0 (Unreleased)** · Source checked against the current development working tree
+Applies to the **Chapter 02 development implementation** · Target version **v0.2.0 (Unreleased)** · Source checked against implementation commit **[c3d8e7b](https://github.com/qshine/mino/tree/c3d8e7b438483d1580fda0e39a093480b105b437)**
 
 You tell Mino your favorite color, exit, and later ask what color you named. To answer from that earlier exchange, the model needs Mino to send it again. This chapter adds local conversation history and restores it after a restart.
 
@@ -84,7 +84,7 @@ sequenceDiagram
 
 Figure 02-1. Text can appear before saving finishes; the next turn waits until the completed exchange has been saved.
 
-The diagram can be scrolled horizontally on a narrow screen. The success path has two storage boundaries: Mino synchronizes the input before contacting the model, then synchronizes the answer and ending before accepting the next question. A write or synchronization failure stops this path.
+The diagram can be scrolled horizontally on a narrow screen. The success path has [two storage boundaries](https://github.com/qshine/mino/blob/c3d8e7b438483d1580fda0e39a093480b105b437/internal/conversation.go#L90): Mino synchronizes the input before contacting the model, then synchronizes the answer and ending before accepting the next question. A write or synchronization failure stops this path.
 
 Some responses contain more than visible text. Mino preserves returned assistant message items, including `phase`, and reasoning items with opaque `encrypted_content`. It requests the latter through `include: ["reasoning.encrypted_content"]` so the service can receive its own state again with the next request. Mino does not display or decrypt that state. If a compatible service omits output items on completion, Mino falls back to the successfully completed streamed text as an assistant message.
 
@@ -108,7 +108,7 @@ go test ./internal -run 'TestRunRestoresConversationHistory|TestRunFailedTurnDoe
 
 These tests use temporary home directories and local mock HTTP services. They do not read your real history or call a paid model. A successful run prints `ok` for `github.com/qshine/mino/internal`; the process needs permission to bind a local port.
 
-The restart check submits the color statement, closes Mino, then starts it again and asks about the color. It inspects the second request for the original input, the returned reasoning and answer items, and the new question. It also checks that all six saved records have consecutive sequence numbers and no `session_id` field. Each turn's records share a valid `turn_id`, and the two turns use different IDs. **The inspected request proves continuity; a plausible answer alone does not.**
+The [restart check](https://github.com/qshine/mino/blob/c3d8e7b438483d1580fda0e39a093480b105b437/internal/conversation_test.go#L17) submits the color statement, closes Mino, then starts it again and asks about the color. It inspects the second request for the original input, the returned reasoning and answer items, and the new question. It also checks that all six saved records have consecutive sequence numbers and no `session_id` field. Each turn's records share a valid `turn_id`, and the two turns use different IDs. **The inspected request proves continuity; a plausible answer alone does not.**
 
 The other checks interrupt writes at every byte boundary of a sample turn, inject write and synchronization failures, and try opening the same history from a second process. Passing establishes that incomplete turns stay out of context, storage failures prevent further requests, and only one process can use this history at a time. The streaming check also confirms that answer fragments still appear before completion.
 
