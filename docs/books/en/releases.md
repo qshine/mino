@@ -16,17 +16,17 @@ flags. Development builds display `dev`; no source constant needs bumping.
 
 At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the original
 `v0.1.0` and `v0.1.1` releases and tags. The new baseline introduces the official
-OpenAI Go SDK, `cmd/mino` entry point, and `internal/mino` application package.
+OpenAI Go SDK, `cmd/mino` entry point, and `internal/` application package.
 It also retains the private-download fix from the earlier `v0.1.1`.
 
-The later development layout moves the application directly into `internal/`.
-That change is unreleased and does not alter the `v0.1.0` tag or runtime behavior.
+The September 24 reissue includes the final layout with application files directly
+in `internal/`, replacing the intermediate `v0.1.0` build. Runtime behavior is unchanged.
 
-If you used either earlier build, run `mino update v0.1.0` to install this baseline;
+If you used any earlier build, run `mino update v0.1.0` to install this baseline;
 if its embedded updater fails, reinstall with the current
 [README installation command](https://github.com/qshine/mino#install).
 Both paths preserve your configuration. The version string alone cannot distinguish
-the two `0.1.0` builds. This is a one-time reset; subsequent fixes use new patch tags
+these `0.1.0` builds. This is a one-time reset; subsequent fixes use new patch tags
 and leave published tags and assets unchanged.
 
 ## Publish a version

@@ -86,7 +86,7 @@ go run ./cmd/mino
 
 `cmd/mino/main.go` is the executable entry point. Application code and its tests live together in the `mino` package under `internal/`; `app.go` connects startup to the terminal loop. The installer lives there too so `cli.go` can embed it for `mino update`. Start with `app.go`, then follow `terminal.go` into `responses.go`.
 
-This flatter layout is an unreleased change after `v0.1.0`, whose source uses `internal/mino/`. Runtime behavior is unchanged. The entry point imports `github.com/qshine/mino/internal` as `mino`, so the call remains `mino.Main(version)`.
+The entry point imports `github.com/qshine/mino/internal` as `mino`, so the call remains `mino.Main(version)`.
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 

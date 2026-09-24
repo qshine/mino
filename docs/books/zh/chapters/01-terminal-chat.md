@@ -1,6 +1,6 @@
 # 第 01 章：与模型对话——第一个终端程序
 
-适用范围：**第一章开发版代码** · 源码核对版本：开发版快照 **[ddba9306](https://github.com/qshine/mino/tree/ddba93063769bc9220c1e8ed8f063fa7180c1e20)**
+适用版本：**0.1.x** · 源码核对版本：重新发布的 **[v0.1.0](https://github.com/qshine/mino/tree/v0.1.0)**
 
 你输入问题，模型给出回答。这两件事之间发生了什么？这一章沿着 **一行输入 → 一次 Responses API 请求 → 显示回答 → 再次等待输入** 的路径展开。这是 Agent（智能体）的基础：由程序决定模型收到什么，以及怎样处理模型的响应。
 
@@ -57,13 +57,13 @@ sequenceDiagram
 
 ### 2.1 Mino 与 SDK 的分工
 
-程序从 [cmd/mino/main.go](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/cmd/mino/main.go#L12) 启动，把构建版本交给 `mino.Main`。应用实现放在 `internal/` 中：[run](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/app.go#L25) 加载配置和指令、创建 Responses 客户端，再把它的 `respond` 方法交给终端循环。读取输入和决定下一步做什么，仍由 Mino 负责。
+程序从 [cmd/mino/main.go](https://github.com/qshine/mino/blob/v0.1.0/cmd/mino/main.go#L12) 启动，把构建版本交给 `mino.Main`。应用实现放在 `internal/` 中：[run](https://github.com/qshine/mino/blob/v0.1.0/internal/app.go#L25) 加载配置和指令、创建 Responses 客户端，再把它的 `respond` 方法交给终端循环。读取输入和决定下一步做什么，仍由 Mino 负责。
 
-[OpenAI 官方 Go 软件开发工具包（SDK）](https://developers.openai.com/api/docs/libraries) 负责 API 请求和响应类型。本章在 [go.mod](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/go.mod) 中将 `github.com/openai/openai-go/v3` 固定为 **v3.66.0**。Mino 在 [newResponsesClient](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/responses.go#L30) 中使用明确的配置创建 `responses.ResponseService`。**API 客户端不会替 Mino 实现 Agent 循环**：提供可用工具、执行模型请求的工具调用并继续任务，将由 Mino 的运行系统负责，这层系统也常称为 *harness*。
+[OpenAI 官方 Go 软件开发工具包（SDK）](https://developers.openai.com/api/docs/libraries) 负责 API 请求和响应类型。本章在 [go.mod](https://github.com/qshine/mino/blob/v0.1.0/go.mod) 中将 `github.com/openai/openai-go/v3` 固定为 **v3.66.0**。Mino 在 [newResponsesClient](https://github.com/qshine/mino/blob/v0.1.0/internal/responses.go#L30) 中使用明确的配置创建 `responses.ResponseService`。**API 客户端不会替 Mino 实现 Agent 循环**：提供可用工具、执行模型请求的工具调用并继续任务，将由 Mino 的运行系统负责，这层系统也常称为 *harness*。
 
 ### 2.2 请求里放了什么
 
-[responsesClient.respond](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/responses.go#L53) 将带类型的参数交给 SDK 的 `New` 方法。下面只摘录参数字段；完整方法还包含错误处理和响应检查：
+[responsesClient.respond](https://github.com/qshine/mino/blob/v0.1.0/internal/responses.go#L53) 将带类型的参数交给 SDK 的 `New` 方法。下面只摘录参数字段；完整方法还包含错误处理和响应检查：
 
 ```go
 responses.ResponseNewParams{
@@ -85,21 +85,21 @@ responses.ResponseNewParams{
 }
 ```
 
-`your-model` 代表配置的模型名。`input` 只有当前问题；可选的 `instructions` 来自工作目录的 `AGENTS.md`，由 [loadInstructions](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/config.go#L189) 在启动时读取一次，没有该文件时为空字符串。指令可以引导回答，但不会赋予模型执行命令的工具。
+`your-model` 代表配置的模型名。`input` 只有当前问题；可选的 `instructions` 来自工作目录的 `AGENTS.md`，由 [loadInstructions](https://github.com/qshine/mino/blob/v0.1.0/internal/config.go#L189) 在启动时读取一次，没有该文件时为空字符串。指令可以引导回答，但不会赋予模型执行命令的工具。
 
 ### 2.3 响应怎样变成终端文本
 
 API 响应是结构化数据，`output` 数组可能包含最终回答之外的条目，因此不能只取第一项就当作答案。
 
-Mino 的 [checkResponse](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/responses.go#L109) 在 SDK 解码前拦截 HTTP 错误、超过 8 MiB 的响应和无效 JSON。随后，[响应检查](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/responses.go#L78) 要求响应已经完成。Mino 寻找 `role` 为 `assistant` 的 `message` 条目，拼接其 `content` 中类型为 `output_text` 的文本。遇到 `refusal` 时，在拒绝内容前加上 `Model refused: `。生成失败、响应未完成或没有文本，都会转为错误。
+Mino 的 [checkResponse](https://github.com/qshine/mino/blob/v0.1.0/internal/responses.go#L109) 在 SDK 解码前拦截 HTTP 错误、超过 8 MiB 的响应和无效 JSON。随后，[响应检查](https://github.com/qshine/mino/blob/v0.1.0/internal/responses.go#L78) 要求响应已经完成。Mino 寻找 `role` 为 `assistant` 的 `message` 条目，拼接其 `content` 中类型为 `output_text` 的文本。遇到 `refusal` 时，在拒绝内容前加上 `Model refused: `。生成失败、响应未完成或没有文本，都会转为错误。
 
-[runTerminal](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/terminal.go#L12) 过滤终端控制字符后显示返回的文本，再进入下一轮。模型输出不会作为命令执行。
+[runTerminal](https://github.com/qshine/mino/blob/v0.1.0/internal/terminal.go#L12) 过滤终端控制字符后显示返回的文本，再进入下一轮。模型输出不会作为命令执行。
 
 ### 2.4 出错和退出时发生什么
 
 网络、HTTP 或响应错误会显示为 `Error: ...`，然后回到 `You>`。Mino 关闭 SDK 自动重试、设置两分钟的 HTTP 超时并拒绝重定向，避免一次提问在后台重复请求或转到其他服务。HTTP 失败时只报告状态，不读取或显示可能回显敏感输入的服务端错误正文。
 
-空白行不发送请求；`/exit` 或空行上的 Ctrl+D 结束聊天。等待输入或响应时都可以按 Ctrl+C 取消并退出：[mino.Main](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/app.go#L14) 将取消信号经终端循环和 SDK 传递到 HTTP 请求。
+空白行不发送请求；`/exit` 或空行上的 Ctrl+D 结束聊天。等待输入或响应时都可以按 Ctrl+C 取消并退出：[mino.Main](https://github.com/qshine/mino/blob/v0.1.0/internal/app.go#L14) 将取消信号经终端循环和 SDK 传递到 HTTP 请求。
 
 ## 3. 用第二个问题检验记忆
 
@@ -120,7 +120,7 @@ Mino 的 [checkResponse](https://github.com/qshine/mino/blob/ddba93063769bc9220c
 go test ./internal -run 'TestRespond|TestTerminal'
 ```
 
-这些测试使用本机模拟 HTTP 服务和模拟输入，不使用真实配置。通过时，输出会在 `github.com/qshine/mino/internal` 前显示 `ok`。[TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/responses_test.go#L16) 检查两轮请求主体，并验证能够跳过非消息条目提取文本。其他响应测试检查 SDK 请求是否忽略环境中的 `OPENAI_*` 设置，以及是否关闭自动重试。[终端测试](https://github.com/qshine/mino/blob/ddba93063769bc9220c1e8ed8f063fa7180c1e20/internal/terminal_test.go#L36) 检查请求出错后继续输入和取消行为。测试进程需要能够绑定本机端口。
+这些测试使用本机模拟 HTTP 服务和模拟输入，不使用真实配置。通过时，输出会在 `github.com/qshine/mino/internal` 前显示 `ok`。[TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/v0.1.0/internal/responses_test.go#L16) 检查两轮请求主体，并验证能够跳过非消息条目提取文本。其他响应测试检查 SDK 请求是否忽略环境中的 `OPENAI_*` 设置，以及是否关闭自动重试。[终端测试](https://github.com/qshine/mino/blob/v0.1.0/internal/terminal_test.go#L36) 检查请求出错后继续输入和取消行为。测试进程需要能够绑定本机端口。
 
 ## 4. 本章小结与下一步
 

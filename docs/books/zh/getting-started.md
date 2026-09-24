@@ -86,7 +86,7 @@ go run ./cmd/mino
 
 `cmd/mino/main.go` 是可执行程序的启动入口。应用代码及对应测试放在 `internal/` 下的 `mino` 包中，由 `app.go` 将启动流程接到终端循环。安装脚本也放在这里，供 `cli.go` 内嵌后执行 `mino update`。阅读时从 `app.go` 开始，再沿 `terminal.go` 进入 `responses.go`。
 
-这次目录简化属于 `v0.1.0` 之后尚未发布的改动；`v0.1.0` 的源码仍使用 `internal/mino/`，运行行为没有变化。入口以 `mino` 为别名导入 `github.com/qshine/mino/internal`，因此调用仍是 `mino.Main(version)`。
+入口以 `mino` 为别名导入 `github.com/qshine/mino/internal`，因此调用仍是 `mino.Main(version)`。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
