@@ -81,7 +81,7 @@ Use a regular file containing non-empty UTF-8 text, at most 64 KiB. Mino rejects
 
 ## Local history in Chapter 02
 
-After loading settings and identity, the Chapter 02 development build opens `~/.mino/history.jsonl` and restores completed turns. Each record belongs to the same `session_id`; startup keeps that ID when records already exist. The file starts empty on first launch. Mino also opens a stable `~/.mino/history.lock` so only one process can use this history at a time. Close the other Mino process if startup reports that history is in use; the lock file can remain after exit and should not be deleted to bypass a running process.
+After loading settings and identity, the Chapter 02 development build opens `~/.mino/history.jsonl` and restores completed turns. This file represents one conversation; records use `turn_id` to pair each input with its answer and ending. The file starts empty on first launch. Mino also opens a stable `~/.mino/history.lock` so only one process can use this history at a time. Close the other Mino process if startup reports that history is in use; the lock file can remain after exit and should not be deleted to bypass a running process.
 
 Both files use `0600` permissions under the `0700` user directory. Mino rejects symbolic links and non-regular history or lock files. Conversation text is stored locally in plain text; configuration credentials and raw API errors are not copied into the history. Text you submit is saved, including any sensitive data you put in it. Keep history and recovery copies out of Git, screenshots, and shared logs.
 
@@ -90,6 +90,8 @@ Only completed exchanges are sent with later questions. Changing the model or se
 If startup repairs an incomplete or malformed final line, it reports a `history-recovery-*.jsonl` backup in `~/.mino/`, saved with `0600` permissions before the repair. A pending turn is marked interrupted and is not retried. Corruption in the middle, unknown record fields or versions, and invalid record order stop startup while preserving the history contents; use a known valid backup rather than removing arbitrary records.
 
 History is limited to 16 MiB per record and 64 MiB per file. These are file limits, not the model's context budget. Mino reports a limit failure instead of silently dropping old records. If you need to start over manually, close Mino, keep a private backup, and move `history.jsonl` aside before restarting. `/new`, `/clear`, and compaction are not implemented yet.
+
+Earlier Unreleased development builds wrote `session_id` into every record. The current format rejects this unknown field and leaves the file contents unchanged; Mino does not migrate it automatically. To keep that history, exit Mino and make a private backup, then remove only the top-level `session_id` field from each line's JSON object. Preserve `v`, `seq`, `turn_id`, all other fields and values, record order, and each line's terminating newline, including the final one. Do not remove matching text inside messages or nested data. Alternatively, back up and move the old file aside to start a new conversation.
 
 ## Learn from the source
 

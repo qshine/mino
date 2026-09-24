@@ -22,14 +22,13 @@ const maxHistoryRecordBytes = 16 << 20
 const maxHistoryBytes = 64 << 20
 
 type historyRecord struct {
-	Version   int               `json:"v"`
-	SessionID string            `json:"session_id"`
-	Seq       int               `json:"seq"`
-	TurnID    string            `json:"turn_id"`
-	Kind      string            `json:"kind"`
-	Text      string            `json:"text,omitempty"`
-	Output    []json.RawMessage `json:"output,omitempty"`
-	Status    string            `json:"status,omitempty"`
+	Version int               `json:"v"`
+	Seq     int               `json:"seq"`
+	TurnID  string            `json:"turn_id"`
+	Kind    string            `json:"kind"`
+	Text    string            `json:"text,omitempty"`
+	Output  []json.RawMessage `json:"output,omitempty"`
+	Status  string            `json:"status,omitempty"`
 }
 
 type pendingTurn struct {
@@ -38,11 +37,10 @@ type pendingTurn struct {
 }
 
 type historyState struct {
-	sessionID string
-	seq       int
-	pending   pendingTurn
-	turns     map[string]bool
-	input     responses.ResponseInputParam
+	seq     int
+	pending pendingTurn
+	turns   map[string]bool
+	input   responses.ResponseInputParam
 }
 
 // Only the write/sync boundary is replaceable, to test short writes and disk failures.
@@ -117,9 +115,6 @@ func openHistory() (_ *history, err error) {
 	if err = h.load(data); err != nil {
 		return nil, err
 	}
-	if h.state.sessionID == "" {
-		h.state.sessionID = newHistoryID()
-	}
 	if h.state.pending.id != "" {
 		if err = h.append(historyRecord{TurnID: h.state.pending.id, Kind: "turn_end", Status: "interrupted"}); err != nil {
 			return nil, err
@@ -169,7 +164,7 @@ func (h *history) append(records ...historyRecord) error {
 	var data bytes.Buffer
 	for i := range records {
 		r := &records[i]
-		r.Version, r.SessionID, r.Seq = 1, h.state.sessionID, h.state.seq+i+1
+		r.Version, r.Seq = 1, h.state.seq+i+1
 		line, err := json.Marshal(r)
 		if err != nil {
 			return errors.New("Failed to encode history record")
@@ -205,11 +200,8 @@ func (h *history) append(records ...historyRecord) error {
 }
 
 func (s *historyState) apply(r historyRecord) error {
-	if r.Version != 1 || r.Seq != s.seq+1 || !validHistoryID(r.SessionID) || !validHistoryID(r.TurnID) {
+	if r.Version != 1 || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
 		return errors.New("invalid version, sequence, or identifier")
-	}
-	if s.sessionID != "" && r.SessionID != s.sessionID {
-		return errors.New("session_id does not match this history")
 	}
 	switch r.Kind {
 	case "user_message":
@@ -250,7 +242,7 @@ func (s *historyState) apply(r historyRecord) error {
 	default:
 		return errors.New("unknown record kind")
 	}
-	s.sessionID, s.seq = r.SessionID, r.Seq
+	s.seq = r.Seq
 	return nil
 }
 

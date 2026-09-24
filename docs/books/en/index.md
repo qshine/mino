@@ -26,7 +26,7 @@ Each lesson follows one concrete interaction through the minimum code needed to 
 
 Chapters 01 and 02 are complete in the source and book. Chapter 01 follows the **v0.1.0 streaming reissue**: send the loaded identity and current question, display incoming answer fragments, and check completion. It explains why that version's independent requests have no memory. Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
 
-Chapter 02 adds a JSONL history file, a stable session ID, and restoration after restart. Only completed turns become context for the next question. Its implementation targets **v0.2.0 and is Unreleased**; use a checkout containing that implementation to run it. Chapter 03 onward remains planned. The [chapter roadmap](./plan-todo-chapters.md) separates completed work from future capabilities.
+Chapter 02 saves one conversation in a JSONL history file and restores it after restart. Records within each turn share a `turn_id`; only completed turns become context for the next question. Its implementation targets **v0.2.0 and is Unreleased**; use a checkout containing that implementation to run it. Chapter 03 onward remains planned. The [chapter roadmap](./plan-todo-chapters.md) separates completed work from future capabilities.
 
 | Stage | The question you will explore |
 | --- | --- |

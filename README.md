@@ -79,8 +79,8 @@ builds with this version number waited for the complete answer.
 
 Run `go run ./cmd/mino` from this checkout to use Chapter 02 before its release.
 Mino appends conversation records to `~/.mino/history.jsonl` and restores completed
-turns at startup. Every record includes a stable `session_id`; one local file holds
-one conversation. Streamed answers remain immediate. Failed or interrupted turns
+turns at startup. One local file holds one conversation; `turn_id` associates the
+records within each turn. Streamed answers remain immediate. Failed or interrupted turns
 are retained as records but excluded from later requests; requests are never
 automatically retried.
 

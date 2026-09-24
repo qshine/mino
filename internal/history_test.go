@@ -20,12 +20,12 @@ import (
 func historyFixture(t *testing.T) []byte {
 	t.Helper()
 	var b bytes.Buffer
-	for i, r := range []historyRecord{
-		{Kind: "user_message", Text: "Remember blue."},
-		{Kind: "assistant_message", Text: "Blue."},
-		{Kind: "turn_end", Status: "completed"},
+	for i, r := range []map[string]any{
+		{"kind": "user_message", "text": "Remember blue."},
+		{"kind": "assistant_message", "text": "Blue."},
+		{"kind": "turn_end", "status": "completed"},
 	} {
-		r.Version, r.SessionID, r.TurnID, r.Seq = 1, strings.Repeat("a", 32), strings.Repeat("b", 32), i+1
+		r["v"], r["turn_id"], r["seq"] = 1, strings.Repeat("b", 32), i+1
 		if err := json.NewEncoder(&b).Encode(r); err != nil {
 			t.Fatal(err)
 		}
@@ -108,14 +108,16 @@ func boolInt(b bool) int {
 func TestHistoryRejectsCorruptionWithoutChangingFile(t *testing.T) {
 	good := string(historyFixture(t))
 	for name, data := range map[string]string{
-		"middle JSON":      strings.Replace(good, "\n", "\n{bad}\n", 1),
-		"session mismatch": strings.Replace(good, `"session_id":"`+strings.Repeat("a", 32)+`"`, `"session_id":"`+strings.Repeat("c", 32)+`"`, 1),
-		"sequence":         strings.Replace(good, `"seq":2`, `"seq":1`, 1),
-		"version":          strings.Replace(good, `"v":1`, `"v":9`, 1),
-		"unknown field":    strings.Replace(good, `"v":1`, `"future":true,"v":1`, 1),
-		"unknown kind":     strings.Replace(good, `"turn_end"`, `"future_kind"`, 1),
-		"missing answer":   strings.Split(good, "\n")[0] + "\n" + strings.Replace(strings.Split(good, "\n")[2], `"seq":3`, `"seq":2`, 1) + "\n",
-		"invalid UTF-8":    strings.Replace(good, "Blue.", "\xff", 1),
+		"middle JSON":           strings.Replace(good, "\n", "\n{bad}\n", 1),
+		"removed session field": strings.ReplaceAll(good, `"v":1`, `"session_id":"`+strings.Repeat("a", 32)+`","v":1`),
+		"turn mismatch":         strings.Replace(good, `"turn_id":"`+strings.Repeat("b", 32)+`"`, `"turn_id":"`+strings.Repeat("c", 32)+`"`, 1),
+		"invalid turn ID":       strings.Replace(good, `"turn_id":"`+strings.Repeat("b", 32)+`"`, `"turn_id":"invalid"`, 1),
+		"sequence":              strings.Replace(good, `"seq":2`, `"seq":1`, 1),
+		"version":               strings.Replace(good, `"v":1`, `"v":9`, 1),
+		"unknown field":         strings.Replace(good, `"v":1`, `"future":true,"v":1`, 1),
+		"unknown kind":          strings.Replace(good, `"turn_end"`, `"future_kind"`, 1),
+		"missing answer":        strings.Split(good, "\n")[0] + "\n" + strings.Replace(strings.Split(good, "\n")[2], `"seq":3`, `"seq":2`, 1) + "\n",
+		"invalid UTF-8":         strings.Replace(good, "Blue.", "\xff", 1),
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := writeHistoryFixture(t, []byte(data))

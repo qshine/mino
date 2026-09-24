@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestRunRestoresConversationAndSession(t *testing.T) {
+func TestRunRestoresConversationHistory(t *testing.T) {
 	path := filepath.Join(filepath.Dir(isolateConfig(t)), "history.jsonl")
 	var inputs [][]map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +61,7 @@ func TestRunRestoresConversationAndSession(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var session string
+	var turnIDs [2]string
 	lines := bytes.Split(bytes.TrimSpace(data), []byte("\n"))
 	if len(lines) != 6 {
 		t.Fatalf("history has %d records", len(lines))
@@ -71,13 +71,19 @@ func TestRunRestoresConversationAndSession(t *testing.T) {
 		if err := json.Unmarshal(line, &record); err != nil {
 			t.Fatal(err)
 		}
-		id, _ := record["session_id"].(string)
-		if i == 0 {
-			session = id
+		if _, ok := record["session_id"]; ok {
+			t.Fatalf("record contains removed session_id: %s", line)
 		}
-		if len(id) != 32 || id != session || record["seq"] != float64(i+1) {
-			t.Fatalf("invalid session/order: %s", line)
+		id, _ := record["turn_id"].(string)
+		if i%3 == 0 {
+			turnIDs[i/3] = id
 		}
+		if !validHistoryID(id) || id != turnIDs[i/3] || record["seq"] != float64(i+1) {
+			t.Fatalf("invalid turn/order: %s", line)
+		}
+	}
+	if turnIDs[0] == turnIDs[1] {
+		t.Fatal("different turns reused the same identifier")
 	}
 	if strings.Contains(string(data), "test-key") {
 		t.Fatal("configuration key was saved in history")

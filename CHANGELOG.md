@@ -8,13 +8,13 @@ unchanged and fixes receive new patch versions.
 
 ### Added
 
-- Chapter 02 conversation history in `~/.mino/history.jsonl`, with a stable
-  `session_id` on every record, ordered turns, and automatic restart recovery.
+- Chapter 02 conversation history in `~/.mino/history.jsonl`, with one conversation
+  per file, ordered turns paired by `turn_id`, and automatic restart recovery.
   Completed turns are supplied to subsequent Responses requests while answers
   continue to stream immediately. Preserve returned output items, including
   assistant phase and encrypted reasoning state, for stateless replay.
 - Private history files, a single-writer lock, recovery backups for incomplete
-  tails, validation of record order and session identity, and bounded file sizes.
+  tails, validation of record order and turn pairing, and bounded file sizes.
   Failed and interrupted turns remain recorded without entering future context;
   storage failures stop chat and never silently retry a model request.
 - Bilingual Chapter 02 lessons and deterministic tests for restart continuity,
@@ -23,6 +23,10 @@ unchanged and fixes receive new patch versions.
 
 ### Changed
 
+- Remove the per-record `session_id` from the unreleased Chapter 02 format;
+  Chapter 04 will identify each session by its JSONL filename. Earlier development
+  histories with this field are rejected unchanged; back up the file and remove
+  only that top-level field from each record before reuse.
 - Center the book writer's rules and bilingual Chapter 01 on user/model
   interactions, replacing file, function, and SDK walkthroughs with request,
   streaming response, completion, and context explanations.
