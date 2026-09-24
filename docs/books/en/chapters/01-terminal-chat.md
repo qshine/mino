@@ -152,4 +152,4 @@ The preceding command also runs [TestRespondSendsIndependentRequests](https://gi
 
 You can now trace a question into a streaming request, watch answer fragments arrive, and distinguish a partial answer from successful completion. Mino still has no conversation history, session persistence, or model tool execution. Repeating this terminal loop is only the starting point for an agent.
 
-Chapter 02 is planned to keep earlier exchanges in memory and send them with the next question. A model requesting tools and receiving their results is a later step in Chapter 03. See the [roadmap](../plan-todo-chapters.md) for the remaining work.
+Chapter 02 is planned to save earlier exchanges in a JSON Lines (JSONL) file, with one JSON record per line, load them into memory at startup, and send them with the next question. A model requesting tools and receiving their results is a later step in Chapter 03. See the [roadmap](../plan-todo-chapters.md) for the remaining work.

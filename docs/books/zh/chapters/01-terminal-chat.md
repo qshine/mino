@@ -152,4 +152,4 @@ go test ./internal -run 'TestRunStreamsBeforeResponseCompletes|TestRespond|TestT
 
 现在，你可以追踪问题怎样进入流式请求，观察回答片段逐步出现，并区分部分回答与成功完成的回答。Mino 仍没有对话历史、会话持久化或模型工具执行。重复终端问答，是构建 Agent 的起点。
 
-规划中的第 02 章会在内存中保存前面的问答，并随下一条问题一起发送。模型请求工具并接收执行结果，是第 03 章的后续任务。其余工作见[章节规划](../plan-todo-chapters.md)。
+规划中的第 02 章会用 JSON Lines（JSONL，每行一条 JSON 记录）文件保存前面的问答，启动时恢复到内存，并随下一条问题一起发送。模型请求工具并接收执行结果，是第 03 章的后续任务。其余工作见[章节规划](../plan-todo-chapters.md)。
