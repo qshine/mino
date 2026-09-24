@@ -57,7 +57,8 @@ Older project-local `miniagent.json` files can be moved to the new location if
 no user configuration exists yet.
 
 A custom API URL must support `/responses`; enter its API prefix, usually
-ending in `/v1`. Remote services require HTTPS.
+ending in `/v1`. The streaming build requires Responses streaming with
+`text/event-stream`. Remote services require HTTPS.
 
 After configuration is complete, chat startup creates `~/.mino/SOUL.md` from the
 bundled [SOUL.md](SOUL.md) if it is missing. This file introduces Mino, its text
@@ -70,6 +71,12 @@ The reissued `v0.1.0` includes this identity file.
 Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
 to quit. Chapter 01 does not retain conversation history.
 
+The reissued `v0.1.0` streaming build displays answer fragments
+as they arrive after `Assistant>`. If a stream fails, the partial answer remains
+visible and an error is shown. Run `mino update v0.1.0` to get streaming, even if
+your installed version already reports `0.1.0`; earlier builds with this version
+number waited for the complete answer.
+
 ## Version and updates
 
 ```bash
@@ -81,7 +88,7 @@ mino update v0.1.0    # Install a specific release, including a rollback
 Updates manage `~/.mino/bin/mino`, reuse your GitHub login, and preserve your
 configuration and `SOUL.md`. A failed download or verification keeps the existing executable.
 
-To get the reissued Chapter 01 build with `SOUL.md`, run `mino update v0.1.0`
+To get the reissued Chapter 01 build with streaming and `SOUL.md`, run `mino update v0.1.0`
 even if `mino version` already reports `0.1.0`. The version number is unchanged.
 
 | Progress | Version | Git tag |

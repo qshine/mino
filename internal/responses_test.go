@@ -28,7 +28,7 @@ func TestRespondSendsIndependentRequests(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if body["model"] != "test-model" || body["instructions"] != "请用中文回答。\n" || body["store"] != false {
+		if body["model"] != "test-model" || body["instructions"] != "请用中文回答。\n" || body["store"] != false || body["stream"] != true {
 			t.Errorf("unexpected request: %#v", body)
 		}
 		for _, field := range []string{"previous_response_id", "conversation", "messages", "tools"} {
@@ -41,16 +41,17 @@ func TestRespondSendsIndependentRequests(t *testing.T) {
 			t.Error("input must be the current question only")
 		}
 		inputs = append(inputs, input)
-		fmt.Fprint(w, `{"status":"completed","output":[
-			{"type":"reasoning","summary":[]},
-			{"type":"message","role":"assistant","content":[{"type":"output_text","text":"你好，"},{"type":"output_text","text":"世界！"}]},
-			{"type":"message","role":"assistant","content":[{"type":"output_text","text":"\n第二段。"}]}
-		]}`)
+		streamEvent(w, `{"type":"response.reasoning_text.delta","delta":"private reasoning"}`)
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"你好，"}`)
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"世界！"}`)
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"\n第二段。"}`)
+		streamEvent(w, `{"type":"response.output_text.done","text":"你好，世界！\n第二段。"}`)
+		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"你好，世界！\n第二段。"}]}]}}`)
 	}))
 	defer server.Close()
 	client := newResponsesClient(config{server.URL + "/custom/v1", "test-key", "test-model"}, "请用中文回答。\n")
 	for _, prompt := range []string{"我叫小明。", "我叫什么？"} {
-		got, err := client.respond(context.Background(), prompt)
+		got, err := collectResponse(client, context.Background(), prompt)
 		if err != nil || got != "你好，世界！\n第二段。" {
 			t.Fatalf("response = %q, error = %v", got, err)
 		}
@@ -69,24 +70,29 @@ func TestRespondHandlesFailuresAndRefusal(t *testing.T) {
 		{"unauthorized", 401, `{"error":{"message":"invalid test-key"}}`, "", "HTTP 401"},
 		{"rate limited", 429, `{"error":{"message":"slow down"}}`, "", "HTTP 429"},
 		{"server error", 502, `<html>test-key</html>`, "", "HTTP 502"},
-		{"bad JSON", 200, `<html>test-key</html>`, "", "JSON"},
-		{"trailing JSON", 200, `{"status":"completed","output":[]} private-data`, "", "JSON"},
+		{"bad JSON", 200, `<html>test-key</html>`, "", "invalid"},
+		{"trailing JSON", 200, `{"type":"response.completed"} private-data`, "", "invalid"},
 		{"null response", 200, `null`, "", "incomplete"},
 		{"oversized response", 200, strings.Repeat("x", maxResponseBytes+1), "", "8 MiB"},
-		{"empty output", 200, `{"status":"completed","output":[]}`, "", "no text"},
-		{"failed", 200, `{"status":"failed","error":{"message":"test-key"}}`, "", "generation failed"},
-		{"incomplete", 200, `{"status":"incomplete","incomplete_details":{"reason":"max_output_tokens"}}`, "", "incomplete"},
-		{"not completed", 200, `{"status":"queued"}`, "", "incomplete"},
-		{"refusal", 200, `{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"refusal","refusal":"无法帮助完成此请求。"}]}]}`, "Model refused: 无法帮助完成此请求。", ""},
+		{"empty output", 200, `{"type":"response.completed","response":{"status":"completed"}}`, "", "no text"},
+		{"failed", 200, `{"type":"response.failed","response":{"status":"failed","error":{"message":"test-key"}}}`, "", "generation failed"},
+		{"error event", 200, `{"type":"error","message":"test-key"}`, "", "generation failed"},
+		{"nested error", 200, `{"error":{"message":"test-key"}}`, "", "invalid"},
+		{"incomplete", 200, `{"type":"response.incomplete","response":{"status":"incomplete"}}`, "", "incomplete"},
+		{"not completed", 200, `{"type":"response.completed","response":{"status":"queued"}}`, "", "incomplete"},
+		{"completed with error", 200, `{"type":"response.completed","response":{"status":"completed","error":{"message":"test-key"}}}`, "", "generation failed"},
+		{"EOF", 200, `{"type":"response.output_text.delta","delta":"partial"}`, "", "incomplete"},
+		{"DONE", 200, `[DONE]`, "", "incomplete"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/event-stream")
 				w.WriteHeader(tc.status)
-				fmt.Fprint(w, tc.body)
+				fmt.Fprintf(w, "data: %s\n\n", tc.body)
 			}))
 			defer server.Close()
 			client := newResponsesClient(config{server.URL, "test-key", "test-model"}, "instructions")
-			got, err := client.respond(context.Background(), "你好")
+			got, err := collectResponse(client, context.Background(), "你好")
 			if tc.wantError != "" {
 				if err == nil || !strings.Contains(err.Error(), tc.wantError) {
 					t.Fatalf("error = %v, want %q", err, tc.wantError)
@@ -130,14 +136,15 @@ func TestRespondIgnoresEnvironmentConfiguration(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		if body["model"] != "configured-model" || body["instructions"] != "" || body["store"] != false {
+		if body["model"] != "configured-model" || body["instructions"] != "" || body["store"] != false || body["stream"] != true {
 			t.Errorf("unexpected request settings: %#v", body)
 		}
-		fmt.Fprint(w, `{"status":"completed","error":null,"output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Hello"}]}]}`)
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"Hello"}`)
+		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","error":null}}`)
 	}))
 	defer server.Close()
 	client := newResponsesClient(config{server.URL + "/custom/v1", "configured-key", "configured-model"}, "")
-	if got, err := client.respond(context.Background(), "Hello"); err != nil || got != "Hello" {
+	if got, err := collectResponse(client, context.Background(), "Hello"); err != nil || got != "Hello" {
 		t.Fatalf("response = %q, error = %v", got, err)
 	}
 }
@@ -153,7 +160,7 @@ func TestRespondDoesNotRetry(t *testing.T) {
 			}))
 			defer server.Close()
 			client := newResponsesClient(config{server.URL, "test-key", "test-model"}, "")
-			_, err := client.respond(context.Background(), "Hello")
+			_, err := collectResponse(client, context.Background(), "Hello")
 			if err == nil || !strings.Contains(err.Error(), fmt.Sprint(status)) || strings.Contains(err.Error(), "private-data") {
 				t.Fatalf("unexpected API error: %v", err)
 			}
@@ -174,7 +181,7 @@ func TestRespondDoesNotFollowRedirects(t *testing.T) {
 	}))
 	defer server.Close()
 	client := newResponsesClient(config{server.URL, "test-key", "test-model"}, "instructions")
-	if _, err := client.respond(context.Background(), "你好"); err == nil || !strings.Contains(err.Error(), "307") {
+	if _, err := collectResponse(client, context.Background(), "你好"); err == nil || !strings.Contains(err.Error(), "307") {
 		t.Fatalf("redirect error = %v", err)
 	}
 }
@@ -193,7 +200,7 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		go func() { <-started; cancel() }()
-		if _, err := client.respond(ctx, "你好"); !errors.Is(err, context.Canceled) {
+		if _, err := collectResponse(client, ctx, "你好"); !errors.Is(err, context.Canceled) {
 			t.Fatalf("cancellation error = %v", err)
 		}
 	})
@@ -205,8 +212,18 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 		defer server.Close()
 		client := newResponsesClient(config{server.URL, "test-key", "test-model"}, "instructions")
 		client.httpClient.Timeout = 20 * time.Millisecond
-		if _, err := client.respond(context.Background(), "你好"); !errors.Is(err, context.DeadlineExceeded) {
+		if _, err := collectResponse(client, context.Background(), "你好"); !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("timeout error = %v", err)
 		}
 	})
+}
+
+// Collecting is test-only; the terminal receives deltas without waiting for completion.
+func collectResponse(client *responsesClient, ctx context.Context, prompt string) (string, error) {
+	var output strings.Builder
+	err := client.respond(ctx, prompt, func(delta string) error {
+		output.WriteString(delta)
+		return nil
+	})
+	return output.String(), err
 }

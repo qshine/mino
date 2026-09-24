@@ -51,7 +51,7 @@ API Key (input hidden):
 
 API 地址可以直接回车使用 OpenAI 官方地址。**模型没有默认值**，需要填写服务支持且账号有权限使用的模型名；密钥也需要填写，输入时不显示字符。
 
-自定义服务必须支持 Responses API。填写 API 前缀，例如 `https://gateway.example.com/v1`，不要加上 `/responses` 或 `/chat/completions`。远程地址必须使用 HTTPS。
+自定义服务必须支持 Responses API 流式输出：接受 `stream: true` 请求并返回 `text/event-stream`。Mino 会拒绝仅返回完整 JSON 的端点。填写 API 前缀，例如 `https://gateway.example.com/v1`，不要加上 `/responses` 或 `/chat/completions`。远程地址必须使用 HTTPS。
 
 设置保存在 `~/.mino/config.json`。之后配置齐全就直接进入聊天；升级不会覆盖这些设置。密钥以明文保存在本地，目录和文件分别使用 `0700`、`0600` 权限。
 
@@ -68,7 +68,7 @@ mino update
 
 更新仍需 GitHub 账号的仓库访问权限。下载、附件校验失败时，保留现有程序；已有模型配置继续使用。
 
-重新发布的 `v0.1.0` 包含官方 SDK、根目录安装脚本和用户 `SOUL.md` 身份。如果安装过早期第一章构建，即使 `mino version` 已显示 `0.1.0`，也要运行 `mino update v0.1.0` 重装，因为版本号没有变化。如果旧版更新器失败，请使用上面的安装命令。两种方式都会保留配置和自定义 `~/.mino/SOUL.md`。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
+重新发布的 `v0.1.0` 增加了终端流式输出；此前同号构建会等待完整回答。运行 `mino update v0.1.0` 获取流式版本，**即使 `mino version` 已显示 `0.1.0`，也需要更新**。如果旧版更新器失败，请使用上面的安装命令。两种方式都会保留配置和自定义 `~/.mino/SOUL.md`。本次替换是所有者明确授权的例外，详见[第一章基线重置说明](./releases.md#第一章基线重置)。
 
 ## Mino 的身份
 

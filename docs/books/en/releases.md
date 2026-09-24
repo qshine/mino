@@ -14,8 +14,9 @@ flags. Development builds display `dev`; no source constant needs bumping.
 
 ## Chapter 01 baseline reset
 
-At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the original
-and intermediate Chapter 01 builds, including `v0.1.1`. The baseline includes the
+At the owner's explicit request, Chapter 01 is reissued as `v0.1.0` with terminal
+streaming, replacing earlier non-streaming `v0.1.0` and intermediate Chapter 01
+builds, including `v0.1.1`. The baseline includes the
 official OpenAI Go SDK, `cmd/mino` entry point, `internal/` application package,
 root `install.sh`, and editable `~/.mino/SOUL.md` identity. `assets.go` embeds the
 installer and default identity. The private-download fix from `v0.1.1` is retained.
@@ -24,9 +25,10 @@ If you used any earlier build, run `mino update v0.1.0` even if `mino version`
 already reports `0.1.0`: the version number is unchanged. If its embedded updater
 fails, reinstall with the current
 [README installation command](https://github.com/qshine/mino#install).
-Both paths preserve your configuration and custom `~/.mino/SOUL.md`. After this
-owner-authorized reset, subsequent fixes use new patch tags and leave published
-tags and assets unchanged.
+Both paths install the streaming release and preserve your configuration and
+custom `~/.mino/SOUL.md`. Replacing the published tag and assets is an explicit
+owner-authorized exception for this reissue. Subsequent fixes use new patch tags
+and leave published tags and assets unchanged.
 
 ## Publish a version
 
@@ -72,15 +74,17 @@ To inspect packages before publishing:
 bash scripts/package.sh v0.1.0
 ```
 
-Choose a version already described in `CHANGELOG.md`. Output goes into the
-ignored `dist/` directory. Local packaging does not create a tag or a release.
+Run this from the repository root and choose a version already described in
+`CHANGELOG.md`. Packaging builds the current working tree, not a checkout of the
+named tag. Output goes into the ignored `dist/` directory; it does not create a
+tag or a release.
 
 If a run fails, inspect its logs. A failed asset upload can leave a draft;
 inspect and remove that draft before rerunning the failed publishing job.
 Do not move a published tag or replace a published asset. Fixes receive a new
 patch tag instead.
 
-Users can reinstall the Chapter 01 baseline with `mino update v0.1.0`. This replaces
+Users can reinstall the Chapter 01 streaming release with `mino update v0.1.0`. This replaces
 only the executable; it preserves `~/.mino/config.json` and custom `~/.mino/SOUL.md`.
 
 ## Private repository installation

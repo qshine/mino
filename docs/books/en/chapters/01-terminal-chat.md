@@ -1,14 +1,14 @@
 # Chapter 01: Your first terminal conversation
 
-Applies to **0.1.x** · Source checked against the **v0.1.0 reissue**, implementation **[bf851e6](https://github.com/qshine/mino/tree/bf851e61c462f159cae5284a470f4769d12b8201)**
+Applies to **0.1.x** · Source checked against the **v0.1.0 streaming reissue**, implementation **[ce6ba86](https://github.com/qshine/mino/tree/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542)**
 
-You type a question, and a model answers. What connects those two events? This chapter follows **one line of input → one Responses API request → one displayed reply → the next input prompt**. It is the foundation for an agent: the program controls what the model receives and what happens to its response.
+You type a question and want to see the answer begin before the model finishes. This chapter follows **one line of input → one streaming Responses API request → displayed answer fragments → the next input prompt**. It is the foundation for an agent: the program controls what the model receives and what happens to its response.
 
 Complete [setup and installation](../getting-started.md) first. By the end of this chapter, you will be able to trace an exchange through the code and explain why another question in the same terminal still has no conversation memory.
 
 ## 1. Observe one exchange
 
-Start the installed program:
+Start the installed streaming release:
 
 ```bash
 mino
@@ -27,7 +27,7 @@ Assistant> An HTTP request is a message a client sends to a server to retrieve o
 You>
 ```
 
-After Enter, Mino waits for the complete response and prints the answer at once. It then returns control to you at `You>`. The model generates text; the program handles input, makes the request, and decides how to display the result.
+After Enter, Mino prints `Assistant>`, then appends each answer fragment as it arrives. The transcript shows the final text; the service determines fragment sizes and timing. Mino returns control to you at `You>` only after checking completion or reporting an error. The model generates text; the program handles input, makes the request, and decides how to display the result.
 
 ## 2. Follow the question and reply
 
@@ -36,34 +36,38 @@ The model service cannot read the terminal window. Mino must explicitly send the
 ```mermaid
 sequenceDiagram
     accTitle: One question through Mino
-    accDescr: After configuration is complete, Mino reads the user's home-directory SOUL.md once, prompts for a question, sends its identity instructions and the current input through the OpenAI Go SDK to the Responses API, then extracts and displays the answer before prompting again.
+    accDescr: Mino loads the user's identity once, sends the current question with streaming enabled, and displays each text delta immediately. It checks the completion event before returning to the next input prompt.
     actor User as Reader
     participant Mino as Mino
     participant API as Responses API
     Note over Mino: After setup, read<br/>~/.mino/SOUL.md once
     Mino-->>User: You>
     User->>Mino: Current question
+    Mino-->>User: Assistant>
     Mino->>API: SDK sends POST /responses
-    Note over Mino,API: input, instructions<br/>model, store=false
-    API-->>Mino: Completed response: output
-    Mino->>Mino: Extract assistant text<br/>or refusal
-    Mino-->>User: Assistant> answer
+    Note over Mino,API: input, instructions, model<br/>store=false, stream=true
+    loop Each text fragment
+        API-->>Mino: response.output_text.delta
+        Mino-->>User: Filter and append delta
+    end
+    API-->>Mino: response.completed
+    Mino->>Mino: Check successful completion
     Mino-->>User: You>
 ```
 
-Figure 01-1. Mino sends the loaded identity with the current input, then returns control to the reader after displaying the answer.
+Figure 01-1. Text reaches the reader before completion, while the next prompt waits for the completion check.
 
 The diagram can be scrolled horizontally on a narrow screen.
 
 ### 2.1 Mino and the SDK
 
-The executable starts in [cmd/mino/main.go](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/cmd/mino/main.go#L12), which passes the build version to `mino.Main`. The application lives in `internal/`: [run](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/app.go#L25) loads settings and instructions, creates the Responses client, and passes its `respond` method to the terminal loop. Reading input and deciding what happens next remain Mino's work.
+The executable starts in [cmd/mino/main.go](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/cmd/mino/main.go#L12), which passes the build version to `mino.Main`. The application lives in `internal/`: [run](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/app.go#L25) loads settings and instructions, creates the Responses client, and passes its `respond` method to the terminal loop. Reading input and deciding what happens next remain Mino's work.
 
-The official [OpenAI Go software development kit (SDK)](https://developers.openai.com/api/docs/libraries) handles API requests and response types. This chapter pins `github.com/openai/openai-go/v3` to **v3.66.0** in [go.mod](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/go.mod). Mino creates a `responses.ResponseService` with explicit settings in [newResponsesClient](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/responses.go#L30). **An API client does not supply Mino's Agent loop**: exposing available tools, executing calls requested by the model, and continuing a task will be responsibilities of Mino's runtime, sometimes called a *harness*.
+The official [OpenAI Go software development kit (SDK)](https://developers.openai.com/api/docs/libraries) handles API requests and response types. This chapter pins `github.com/openai/openai-go/v3` to **v3.66.0** in [go.mod](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/go.mod). Mino creates a `responses.ResponseService` with explicit settings in [newResponsesClient](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/responses.go#L29). **An API client does not supply Mino's Agent loop**: exposing available tools, executing calls requested by the model, and continuing a task will be responsibilities of Mino's runtime, sometimes called a *harness*.
 
 ### 2.2 What goes into the request
 
-[responsesClient.respond](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/responses.go#L53) passes typed parameters to the SDK's `New` method. This excerpt shows only the parameter fields; the full method also handles errors and validates the response:
+[responsesClient.respond](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/responses.go#L52) in `internal/responses.go` passes typed parameters to the SDK's `NewStreaming` method, which sets `stream: true`. This excerpt shows only the parameter fields; the full method also handles errors and consumes the event stream:
 
 ```go
 responses.ResponseNewParams{
@@ -81,29 +85,55 @@ responses.ResponseNewParams{
   "model": "your-model",
   "instructions": "You are Mino. Answer briefly.",
   "input": "Explain an HTTP request in one sentence.",
-  "store": false
+  "store": false,
+  "stream": true
 }
 ```
 
-`your-model` is a placeholder for the configured model. `input` contains only the current question. After configuration is complete, [loadInstructions](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/soul.go#L19) reads `~/.mino/SOUL.md` once. If it is missing, Mino creates it from the bundled default, which describes Mino's identity, text-help capabilities, and current limits. Each request sends the loaded text in the Responses API `instructions` field.
+`your-model` is a placeholder for the configured model. `input` contains only the current question. After configuration is complete, [loadInstructions](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/soul.go#L19) reads `~/.mino/SOUL.md` once. If it is missing, Mino creates it from the bundled default, which describes Mino's identity, text-help capabilities, and current limits. Each request sends the loaded text in the Responses API `instructions` field.
 
 The program ignores `AGENTS.md` and `SOUL.md` in the working directory. Repository development instructions therefore stay separate from Mino's identity. Editing the user file takes effect after a restart; instructions can guide an answer but cannot add executable tools.
 
 ### 2.3 How the response becomes terminal text
 
-An API response is structured data. Its `output` array can contain entries other than the final answer, so reading only its first item would be unreliable.
+Streaming returns a sequence of server-sent events (SSE), using `Content-Type: text/event-stream`. Each event carries structured data. A *delta* is the next fragment of text, not the complete answer.
 
-Mino's [checkResponse](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/responses.go#L109) rejects HTTP errors, responses larger than 8 MiB, and invalid JSON before the SDK decodes the data. The [response checks](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/responses.go#L78) then require a completed response. Mino finds `message` entries whose `role` is `assistant`, joining their `content` parts of type `output_text`. A `refusal` becomes text prefixed with `Model refused: `. Failed generation, incomplete responses, and missing text become errors.
+`responsesClient.respond` iterates with `stream.Next()`. For `response.output_text.delta`, it passes `event.Delta` directly to the `emit` callback supplied by the terminal. It also displays `response.refusal.delta`, adding `Model refused: ` once before the first refusal fragment. Other events do not become answer text; in particular, `done` and `completed` events must not print the answer a second time.
 
-[runTerminal](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/terminal.go#L12) displays the returned text after filtering terminal control characters, then starts the next iteration. No model output is executed as a command.
+[runTerminal](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/terminal.go#L13) in `internal/terminal.go` supplies this callback. The excerpt omits surrounding error and completion handling:
+
+```go
+err := respond(ctx, prompt, func(delta string) error {
+	_, writeErr = fmt.Fprint(output, terminalText(delta))
+	return writeErr
+})
+```
+
+The callback filters terminal control characters and writes each fragment immediately. A write failure stops the request. No model output is executed as a command.
+
+**Displayed text does not prove that generation finished.** Mino accepts success only after `response.completed` contains `status: completed` with no response error and at least one non-whitespace text or refusal fragment has arrived. It then closes the stream; it does not wait for the server to close the connection. End of file (EOF) or `[DONE]` alone is insufficient.
 
 ### 2.4 Errors and stopping
 
-A network, HTTP, or response error produces an `Error: ...` message and returns to `You>`. Mino disables SDK retries, sets a two-minute HTTP timeout, and refuses redirects, so one question cannot silently become repeated requests or move to another service. For an HTTP failure, it reports the status without reading or displaying the server's raw error body, which could echo sensitive input.
+A network, HTTP, or stream error produces an `Error: ...` message and returns to `You>`. If fragments have already appeared, they remain visible: the error means the partial answer did not finish successfully. Failed or incomplete events and a missing completion event follow this path.
 
-Blank lines skip the request. `/exit` or Ctrl+D on an empty input line ends the chat. Ctrl+C cancels and exits while waiting for either input or a response: [mino.Main](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/app.go#L14) carries the cancellation signal through the terminal loop and SDK to the HTTP request.
+[checkResponse](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/responses.go#L119) requires a successful HTTP status and the SSE content type. Its body reader enforces an 8 MiB limit on cumulative stream bytes without buffering the whole answer. Mino disables SDK retries, sets a two-minute HTTP timeout covering the stream, and refuses redirects. HTTP failures report the status without reading or displaying the server's raw error body, which could echo sensitive input. An endpoint that only returns a complete JSON response is rejected; there is no non-streaming fallback.
 
-## 3. Test whether a second question has memory
+Blank lines skip the request. `/exit` or Ctrl+D on an empty input line ends the chat. Ctrl+C cancels and exits while waiting for either input or a response: [mino.Main](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/app.go#L14) carries the cancellation signal through the terminal loop and SDK to the HTTP request.
+
+## 3. Check that text arrives before completion
+
+From the repository root, run:
+
+```bash
+go test ./internal -run 'TestRunStreamsBeforeResponseCompletes|TestRespond|TestTerminal'
+```
+
+These tests use local mock HTTP services and simulated input, without your real configuration or a paid model. A successful run prints `ok` for `github.com/qshine/mino/internal`; the process needs permission to bind a local port.
+
+In [TestRunStreamsBeforeResponseCompletes](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/streaming_test.go#L34), the mock service sends the first fragment and refuses to send the rest until the terminal writer observes it. A passing test therefore establishes that Mino displays text before completion, not merely that the final answer looks correct. Other tests check that completion text is not duplicated, an interrupted stream preserves its displayed fragments, and cancellation or a timeout closes an open stream.
+
+## 4. Test whether a second question has memory
 
 In one run, enter these questions in order, waiting for the first answer before asking the second:
 
@@ -116,18 +146,10 @@ The second request's `input` contains only the second question; `instructions` s
 
 The model might guess “blue.” **A correct guess does not demonstrate memory; the request contents do.** The request also sets `store: false` to ask the service not to retain a response object for later retrieval. That is neither a guarantee of no service logs nor what makes these questions independent: the missing history and association fields are the decisive part.
 
-You can verify this without a paid model. From the repository root, run:
+The preceding command also runs [TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/ce6ba867d97d81c7bcc114e8ca6384eed5bcf542/internal/responses_test.go#L16) in `internal/responses_test.go`. It inspects both request bodies, including `stream: true`, and checks that each carries only its current question. Streaming changes when you see the answer; it does not add history to the next request.
 
-```bash
-go test ./internal -run 'TestRespond|TestTerminal|TestRunUsesSoul|TestLoadInstructions'
-```
+## 5. Chapter outcome and next step
 
-These tests use local mock HTTP services and simulated input, without your real configuration. A successful run prints `ok` for `github.com/qshine/mino/internal`. [TestRespondSendsIndependentRequests](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/responses_test.go#L16) checks the two request bodies and extracts text after a non-message output item. Other response tests check that SDK requests ignore ambient `OPENAI_*` settings and do not retry. The [terminal tests](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/terminal_test.go#L36) check recovery after a request error and cancellation. The test process needs permission to bind a local port.
-
-[TestRunUsesSoulInsteadOfProjectInstructions](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/app_test.go#L16) checks that default or custom identity text reaches `instructions` while project-file contents do not. The [identity tests](https://github.com/qshine/mino/blob/bf851e61c462f159cae5284a470f4769d12b8201/internal/soul_test.go#L10) check initialization, preserved edits, and invalid files. These checks establish what the program sends without relying on the model's wording.
-
-## 4. Chapter outcome and next step
-
-You now have an observable path from input to model reply and back to input. It has no conversation history, streaming output, session persistence, or model tool execution yet. Repeating this terminal loop is only the starting point for an agent.
+You can now trace a question into a streaming request, watch answer fragments arrive, and distinguish a partial answer from successful completion. Mino still has no conversation history, session persistence, or model tool execution. Repeating this terminal loop is only the starting point for an agent.
 
 Chapter 02 is planned to keep earlier exchanges in memory and send them with the next question. A model requesting tools and receiving their results is a later step in Chapter 03. See the [roadmap](../plan-todo-chapters.md) for the remaining work.

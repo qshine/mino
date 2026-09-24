@@ -51,7 +51,7 @@ API Key (input hidden):
 
 Press Enter to use the official OpenAI API URL. **There is no default model**: enter a model your service supports and your account can access. The API key is also required, and its characters are hidden while you type.
 
-A custom service must support the Responses API. Enter its API prefix, such as `https://gateway.example.com/v1`, without appending `/responses` or `/chat/completions`. Remote addresses require HTTPS.
+A custom service must support Responses API streaming: `stream: true` requests and `text/event-stream` responses. Mino rejects endpoints that return only complete JSON. Enter the API prefix, such as `https://gateway.example.com/v1`, without appending `/responses` or `/chat/completions`. Remote addresses require HTTPS.
 
 Settings are saved in `~/.mino/config.json`. Later launches enter chat directly when settings are complete. Updates preserve them. The key is stored locally in plain text, with directory permissions `0700` and file permissions `0600`.
 
@@ -68,7 +68,7 @@ mino update
 
 Updates still require GitHub access to the repository. Download or asset-verification failures preserve the existing executable, and your model settings remain unchanged.
 
-The reissued `v0.1.0` includes the official SDK, root installer, and user `SOUL.md` identity. If you installed an earlier Chapter 01 build, run `mino update v0.1.0` even if `mino version` already reports `0.1.0`; the version number is unchanged. If the earlier updater fails, use the installation command above. Both paths preserve your configuration and custom `~/.mino/SOUL.md`. See the [release reset note](./releases.md#chapter-01-baseline-reset).
+The reissued `v0.1.0` adds terminal streaming; earlier builds with the same version number wait for the complete answer. Run `mino update v0.1.0` to obtain the streaming release **even if `mino version` already reports `0.1.0`**. If the earlier updater fails, use the installation command above. Both paths preserve your configuration and custom `~/.mino/SOUL.md`. This replacement is an explicit owner-authorized exception; see the [release reset note](./releases.md#chapter-01-baseline-reset).
 
 ## Mino identity
 

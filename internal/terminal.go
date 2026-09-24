@@ -3,13 +3,14 @@ package mino
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"unicode"
 )
 
-func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Writer, respond func(context.Context, string) (string, error)) error {
+func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Writer, respond func(context.Context, string, func(string) error) error) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	fmt.Fprintln(output, "Mino - Chapter 01: Terminal Chat")
@@ -40,7 +41,18 @@ func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Wr
 			if ctx.Err() != nil {
 				return nil
 			}
-			answer, err := respond(ctx, prompt)
+			if _, err := fmt.Fprint(output, "\nAssistant> "); err != nil {
+				return errors.New("Failed to write terminal output")
+			}
+			var writeErr error
+			err := respond(ctx, prompt, func(delta string) error {
+				_, writeErr = fmt.Fprint(output, terminalText(delta))
+				return writeErr
+			})
+			if writeErr != nil {
+				return errors.New("Failed to write terminal output")
+			}
+			fmt.Fprintln(output)
 			if ctx.Err() != nil {
 				fmt.Fprintln(output)
 				return nil
@@ -49,7 +61,6 @@ func runTerminal(ctx context.Context, input io.Reader, output, errorOutput io.Wr
 				fmt.Fprintln(errorOutput, "Error: "+terminalText(err.Error()))
 				continue
 			}
-			fmt.Fprintln(output, "\nAssistant> "+terminalText(answer))
 		}
 	}
 }

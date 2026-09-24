@@ -18,6 +18,23 @@ includes application files directly in `internal/`, the root installer, and
 `SOUL.md`. Run the update even if `mino version` already reports `0.1.0`:
 the version number is unchanged by this owner-requested reissue.
 
+At the owner's explicit request, `v0.1.0` is reissued again with terminal
+streaming. Run `mino update v0.1.0` even if already on `0.1.0` to replace the
+earlier non-streaming build. This release replacement is an owner-authorized
+exception; subsequent fixes use new patch versions.
+
+Streaming update:
+
+- Display Responses API text and refusal fragments in the terminal as they arrive.
+  Streaming is enabled by default and requires a `text/event-stream` endpoint.
+- Keep partial answers visible on interruption or failure, report incomplete
+  streams, and avoid printing the completed answer twice. Preserve cancellation,
+  timeout, response-size limits, and terminal control-character filtering.
+- Add a deterministic test proving terminal output appears before generation
+  completes, plus stream failure, cancellation, refusal, and size-limit tests.
+
+Existing Chapter 01 baseline:
+
 - Independent terminal conversations through the OpenAI Responses API, using
   the official OpenAI Go SDK v3.66.0. Mino retains control of interaction flow;
   tool execution and the Agent loop remain planned.

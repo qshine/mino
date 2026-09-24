@@ -18,9 +18,9 @@ func TestTerminalReadsQuestionsAndExits(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var output, errorOutput bytes.Buffer
 			var prompts []string
-			respond := func(ctx context.Context, prompt string) (string, error) {
+			respond := func(ctx context.Context, prompt string, emit func(string) error) error {
 				prompts = append(prompts, prompt)
-				return "中文回答", nil
+				return emit("中文回答")
 			}
 			err := runTerminal(context.Background(), strings.NewReader(tc.input), &output, &errorOutput, respond)
 			if err != nil || errorOutput.Len() != 0 {
@@ -35,11 +35,11 @@ func TestTerminalReadsQuestionsAndExits(t *testing.T) {
 
 func TestTerminalContinuesAfterRequestError(t *testing.T) {
 	var output, errorOutput bytes.Buffer
-	respond := func(ctx context.Context, prompt string) (string, error) {
+	respond := func(ctx context.Context, prompt string, emit func(string) error) error {
 		if prompt == "第一次" {
-			return "", errors.New("HTTP 429")
+			return errors.New("HTTP 429")
 		}
-		return "恢复正常", nil
+		return emit("恢复正常")
 	}
 	err := runTerminal(context.Background(), strings.NewReader("第一次\n第二次\n/exit\n"), &output, &errorOutput, respond)
 	if err != nil || !strings.Contains(errorOutput.String(), "HTTP 429") || !strings.Contains(output.String(), "恢复正常") {
@@ -57,10 +57,10 @@ func TestTerminalCancellation(t *testing.T) {
 			defer cancel()
 			started := make(chan struct{})
 			done := make(chan error, 1)
-			respond := func(ctx context.Context, prompt string) (string, error) {
+			respond := func(ctx context.Context, prompt string, emit func(string) error) error {
 				close(started)
 				<-ctx.Done()
-				return "", ctx.Err()
+				return ctx.Err()
 			}
 			go func() { done <- runTerminal(ctx, reader, io.Discard, io.Discard, respond) }()
 			if waitingForResponse {
@@ -84,7 +84,10 @@ func TestTerminalCancellation(t *testing.T) {
 
 func TestTerminalRejectsOversizedInput(t *testing.T) {
 	err := runTerminal(context.Background(), strings.NewReader(strings.Repeat("a", 1<<20)), io.Discard, io.Discard,
-		func(context.Context, string) (string, error) { t.Fatal("oversized input was sent"); return "", nil })
+		func(context.Context, string, func(string) error) error {
+			t.Fatal("oversized input was sent")
+			return nil
+		})
 	if err == nil || !strings.Contains(err.Error(), "read input") {
 		t.Fatalf("input error = %v", err)
 	}
@@ -93,7 +96,9 @@ func TestTerminalRejectsOversizedInput(t *testing.T) {
 func TestTerminalTreatsControlSequencesAsText(t *testing.T) {
 	var output bytes.Buffer
 	err := runTerminal(context.Background(), strings.NewReader("你好\n/exit\n"), &output, io.Discard,
-		func(context.Context, string) (string, error) { return "你好\x1b[2J\x00\r\n世界\t！", nil })
+		func(_ context.Context, _ string, emit func(string) error) error {
+			return emit("你好\x1b[2J\x00\r\n世界\t！")
+		})
 	if err != nil {
 		t.Fatal(err)
 	}

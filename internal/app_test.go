@@ -40,7 +40,8 @@ func TestRunUsesSoulInsteadOfProjectInstructions(t *testing.T) {
 					t.Errorf("input = %v", body["input"])
 				}
 				requests++
-				fmt.Fprint(w, `{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"你好！"}]}]}`)
+				streamEvent(w, `{"type":"response.output_text.delta","delta":"你好！"}`)
+				streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 			}))
 			defer server.Close()
 			if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model"}); err != nil {

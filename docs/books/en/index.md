@@ -24,7 +24,7 @@ Each lesson follows one concrete interaction through the minimum code needed to 
 
 ## What is ready to read
 
-Chapter 01 is complete. This edition follows the reissued **v0.1.0**, which loads Mino's identity from `~/.mino/SOUL.md`. The chapter follows identity instructions and a question through the SDK into the Responses API, then checks the reply and why the next question has no memory.
+Chapter 01 is complete. This edition follows the **v0.1.0 streaming reissue**. The chapter follows the identity loaded from `~/.mino/SOUL.md` and a question into a streaming Responses request, then explains immediate text display, completion checks, and why the next question has no memory. Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
 
 Chapter 02 and later chapters are planned, not implemented. The [chapter roadmap](./plan-todo-chapters.md) tracks progress; future capabilities are never presented as features that already work.
 
