@@ -129,8 +129,16 @@ bash scripts/check.sh
 
 书籍源码分别位于 `docs/books/en/` 和 `docs/books/zh/`，网站默认英文，可切换简体中文。
 章节聚焦 Agent 交互，安装配置和发布细节放在配套页面中。
-使用 Node.js 24，在仓库中运行 `npm ci --ignore-scripts`、`npm run book:dev`，
-即可打开输出的本地地址预览。`npm run book:build` 检查站内链接并构建两种语言。
+使用 Node.js 24，在仓库根目录运行：
+
+```bash
+./book_review.sh
+```
+
+脚本会自动安装缺少的书籍依赖、构建当前检出的书稿，并用默认浏览器打开中文第一章。
+端口被占用时会选择其他可用端口；保持终端打开，按 Ctrl+C 停止预览。
+修改书稿后重新运行即可构建新版。边写边预览时，也可使用 `npm run book:dev`。
+`npm run book:build` 检查站内链接并构建两种语言。
 
 项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
 GitHub Actions 会在 `main` 上的相关内容更新后检查书籍并发布到 GitHub Pages。

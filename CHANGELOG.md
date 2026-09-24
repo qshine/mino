@@ -6,6 +6,12 @@ unchanged and fixes receive new patch versions.
 
 ## [Unreleased]
 
+### Added
+
+- `./book_review.sh` installs missing book dependencies, builds the current
+  checkout, and opens Chinese Chapter 01 in the default browser for local review.
+  The preview uses an available port and stops with Ctrl+C.
+
 ## [0.2.0] - 2026-09-24
 
 ### Added

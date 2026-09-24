@@ -154,9 +154,17 @@ not call a paid model or modify your real configuration.
 
 Book sources live in `docs/books/en/` and `docs/books/zh/`. Chapters focus on
 agent interactions, with setup and release details in supporting pages.
-With Node.js 24, run `npm ci --ignore-scripts` and
-`npm run book:dev`, then open the local address shown. `npm run book:build`
-checks the site's internal links and builds both languages.
+With Node.js 24, run from the repository root:
+
+```bash
+./book_review.sh
+```
+
+The script installs missing book dependencies, builds this checkout, and opens
+Chinese Chapter 01 in your default browser. It uses a free local port; keep the
+terminal open and press Ctrl+C to stop the preview. Run it again after edits to
+rebuild. For live preview while editing, use `npm run book:dev` instead.
+`npm run book:build` checks internal links and builds both languages.
 
 The project `book_writer` subagent maintains the book after Codex code changes.
 GitHub Actions checks and publishes the book to GitHub Pages after relevant

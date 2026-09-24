@@ -67,7 +67,17 @@ A small fix updates its existing chapter; a new capability belongs in the chapte
 
 ## Preview and check locally
 
-Website tooling is separate from the Go application. Use Node.js 24 (recorded in `.node-version`), then run from the repository root:
+Website tooling is separate from the Go application. Use Node.js 24 (recorded in `.node-version`). To review the current checkout, run one command from the repository root:
+
+```bash
+./book_review.sh
+```
+
+The script installs website dependencies with `npm ci --ignore-scripts` if the local VitePress or Vite executable is missing, builds the book on every run, and opens the Chinese Chapter 01 in your system's default browser. Use the language menu to switch to English. The preview listens only on `127.0.0.1`, starting at port `4173` and choosing the next available port if needed; the terminal prints the actual address.
+
+Keep the terminal open while reviewing. Press Ctrl+C there to stop the preview. It serves the built pages, so after editing the book, stop it and rerun `./book_review.sh` to see the changes.
+
+For live updates while writing, use the development server instead:
 
 ```bash
 npm ci --ignore-scripts
