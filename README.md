@@ -65,8 +65,7 @@ assistance, and the current limits. Edit your copy and restart Mino to change it
 instructions; existing edits are preserved. Its contents are sent to the model
 service, so keep credentials out of it. Mino does not load `AGENTS.md` or `SOUL.md`
 from the working directory. `AGENTS.md` is only for developing this repository.
-This change is available in source builds; the published `v0.1.0` still uses the
-older instruction-loading behavior.
+The reissued `v0.1.0` includes this identity file.
 
 Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
 to quit. Chapter 01 does not retain conversation history.
@@ -81,6 +80,9 @@ mino update v0.1.0    # Install a specific release, including a rollback
 
 Updates manage `~/.mino/bin/mino`, reuse your GitHub login, and preserve your
 configuration and `SOUL.md`. A failed download or verification keeps the existing executable.
+
+To get the reissued Chapter 01 build with `SOUL.md`, run `mino update v0.1.0`
+even if `mino version` already reports `0.1.0`. The version number is unchanged.
 
 | Progress | Version | Git tag |
 | --- | --- | --- |

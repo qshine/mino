@@ -11,8 +11,6 @@ next:
 
 这一页负责准备好 Mino。第一章再追踪一条问题从终端输入到模型回答的完整路径。
 
-这里描述的 `SOUL.md` 行为尚未发布。请使用[当前源码](#从源码学习)跟随本版第一章；已发布的 `v0.1.0` 仍读取工作目录中的 `AGENTS.md` 指令。
-
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -70,7 +68,7 @@ mino update
 
 更新仍需 GitHub 账号的仓库访问权限。下载、附件校验失败时，保留现有程序；已有模型配置继续使用。
 
-第一章已重置为新的 `v0.1.0` 基线，采用官方 SDK。如果安装过之前的 `v0.1.0` 或 `v0.1.1`，运行 `mino update v0.1.0` 安装重新发布的版本。如果旧版更新器失败，请使用上面的安装命令；已有配置会保留。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
+重新发布的 `v0.1.0` 包含官方 SDK、根目录安装脚本和用户 `SOUL.md` 身份。如果安装过早期第一章构建，即使 `mino version` 已显示 `0.1.0`，也要运行 `mino update v0.1.0` 重装，因为版本号没有变化。如果旧版更新器失败，请使用上面的安装命令。两种方式都会保留配置和自定义 `~/.mino/SOUL.md`。详见[第一章基线重置说明](./releases.md#第一章基线重置)。
 
 ## Mino 的身份
 
@@ -94,7 +92,7 @@ go run ./cmd/mino
 
 入口以 `mino` 为别名导入 `github.com/qshine/mino/internal`，因此调用仍是 `mino.Main(version)`。
 
-当前源码中，根目录的 `assets.go` 嵌入 `install.sh` 和默认 `SOUL.md`。`internal/cli.go` 使用 `assets.InstallerScript` 执行更新，`internal/soul.go` 使用 `assets.DefaultSoul` 初始化用户身份；两者都不依赖源码目录。这些变更尚未发布：`v0.1.0` 仍使用 `internal/install.sh`，也不加载用户身份文件。
+根目录的 `assets.go` 嵌入 `install.sh` 和默认 `SOUL.md`。`internal/cli.go` 使用 `assets.InstallerScript` 执行更新，`internal/soul.go` 使用 `assets.DefaultSoul` 初始化用户身份；两者都不依赖源码目录。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 

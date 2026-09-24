@@ -6,22 +6,17 @@ unchanged and fixes receive new patch versions.
 
 ## [Unreleased]
 
-- Move `install.sh` to the repository root and update installation links.
-  Root `assets.go` embeds it for `mino update`, which continues to work from
-  any directory without a source checkout.
-- Replace working-directory `AGENTS.md` instructions with an editable
-  `~/.mino/SOUL.md` identity. On first configured startup, seed the file from the
-  bundled root `SOUL.md`; preserve user edits and load them on restart.
-  Mino no longer reads project instruction files. Validate identity text before
-  sending it in the Responses API `instructions` field.
+No pending changes.
 
 ## [0.1.0] - 2026-09-24
 
 Chapter 01 is reissued as `v0.1.0` at the owner's request, replacing the original
 `v0.1.0` and `v0.1.1` releases. Install this baseline with `mino update v0.1.0`;
 if an earlier updater fails, use the updated README installation command.
-Both paths preserve existing configuration. This reissue includes the final
-layout with application files directly in `internal/`.
+Both paths preserve existing configuration and user identity edits. This reissue
+includes application files directly in `internal/`, the root installer, and
+`SOUL.md`. Run the update even if `mino version` already reports `0.1.0`:
+the version number is unchanged by this owner-requested reissue.
 
 - Independent terminal conversations through the OpenAI Responses API, using
   the official OpenAI Go SDK v3.66.0. Mino retains control of interaction flow;
@@ -32,9 +27,14 @@ layout with application files directly in `internal/`.
   Project configuration and `OPENAI_*` environment variables are not used.
 - Explicit request limits, no automatic retries or redirects, and redacted errors.
 - macOS installation for Apple Silicon and Intel, without a local Go installation.
-  The installer is now `internal/install.sh`; use the updated README command.
+  The installer is now root `install.sh`; root `assets.go` embeds it so
+  `mino update` works from any directory without a source checkout.
 - `mino version` and `mino update`, with verified downloads and preserved settings.
   Private release downloads use the dedicated GitHub assets API, retaining the
   original `v0.1.1` fix for incomplete asset listings.
-- Optional `AGENTS.md` instructions from the current working directory.
+- An editable `~/.mino/SOUL.md` identity replaces working-directory `AGENTS.md`
+  instructions. On first configured startup, seed the file from the bundled root
+  `SOUL.md`; preserve user edits and load them on restart. Mino no longer reads
+  project instruction files. Validate identity text before sending it in the
+  Responses API `instructions` field.
 - Updated English and Simplified Chinese tutorials, plus automated tests and releases.

@@ -12,27 +12,21 @@ During the tutorial, use `0.<chapter>.<patch>`: `0.1.0` for Chapter 01,
 The release workflow passes the tag version into the binary with Go linker
 flags. Development builds display `dev`; no source constant needs bumping.
 
-The current checkout has unreleased changes: it loads identity instructions from
-`~/.mino/SOUL.md` and embeds the root installer and default identity in `assets.go`.
-Published `v0.1.0` still reads working-directory `AGENTS.md`; updating to that tag
-does not enable `SOUL.md`. Existing user identity edits survive executable updates.
-
 ## Chapter 01 baseline reset
 
 At the owner's request, Chapter 01 is reissued as `v0.1.0`, replacing the original
-`v0.1.0` and `v0.1.1` releases and tags. The new baseline introduces the official
-OpenAI Go SDK, `cmd/mino` entry point, and `internal/` application package.
-It also retains the private-download fix from the earlier `v0.1.1`.
+and intermediate Chapter 01 builds, including `v0.1.1`. The baseline includes the
+official OpenAI Go SDK, `cmd/mino` entry point, `internal/` application package,
+root `install.sh`, and editable `~/.mino/SOUL.md` identity. `assets.go` embeds the
+installer and default identity. The private-download fix from `v0.1.1` is retained.
 
-The September 24 reissue includes the final layout with application files directly
-in `internal/`, replacing the intermediate `v0.1.0` build. Runtime behavior is unchanged.
-
-If you used any earlier build, run `mino update v0.1.0` to install this baseline;
-if its embedded updater fails, reinstall with the current
+If you used any earlier build, run `mino update v0.1.0` even if `mino version`
+already reports `0.1.0`: the version number is unchanged. If its embedded updater
+fails, reinstall with the current
 [README installation command](https://github.com/qshine/mino#install).
-Both paths preserve your configuration. The version string alone cannot distinguish
-these `0.1.0` builds. This is a one-time reset; subsequent fixes use new patch tags
-and leave published tags and assets unchanged.
+Both paths preserve your configuration and custom `~/.mino/SOUL.md`. After this
+owner-authorized reset, subsequent fixes use new patch tags and leave published
+tags and assets unchanged.
 
 ## Publish a version
 
@@ -87,13 +81,12 @@ Do not move a published tag or replace a published asset. Fixes receive a new
 patch tag instead.
 
 Users can reinstall the Chapter 01 baseline with `mino update v0.1.0`. This replaces
-only the executable; it does not roll back or erase `~/.mino/config.json`.
+only the executable; it preserves `~/.mino/config.json` and custom `~/.mino/SOUL.md`.
 
 ## Private repository installation
 
 The bootstrap command in the README uses authenticated `gh api` to read
-root `install.sh` from `main`. This script move is unreleased; the `v0.1.0` source
-still stores it at `internal/install.sh`. The installer and the embedded updater use `gh` to
+root `install.sh` from `main`. The installer and the embedded updater use `gh` to
 resolve release IDs and download files through GitHub's dedicated release-assets
 API, so an incomplete embedded asset list does not block installation. Users
 must sign in with an account that can read that repository. Tokens remain managed by GitHub

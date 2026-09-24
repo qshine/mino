@@ -1,6 +1,6 @@
 # Chapter 01: Your first terminal conversation
 
-Applies to **Chapter 01 development code** · Source checked against development snapshot **[bf851e6](https://github.com/qshine/mino/tree/bf851e61c462f159cae5284a470f4769d12b8201)**
+Applies to **0.1.x** · Source checked against the **v0.1.0 reissue**, implementation **[bf851e6](https://github.com/qshine/mino/tree/bf851e61c462f159cae5284a470f4769d12b8201)**
 
 You type a question, and a model answers. What connects those two events? This chapter follows **one line of input → one Responses API request → one displayed reply → the next input prompt**. It is the foundation for an agent: the program controls what the model receives and what happens to its response.
 
@@ -8,10 +8,10 @@ Complete [setup and installation](../getting-started.md) first. By the end of th
 
 ## 1. Observe one exchange
 
-From the repository root, start the source version covered here:
+Start the installed program:
 
 ```bash
-go run ./cmd/mino
+mino
 ```
 
 **Illustrative output**, not a record of a live API call:

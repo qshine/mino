@@ -11,8 +11,6 @@ next:
 
 Use this page to prepare Mino. Chapter 01 then follows one question from terminal input to a model reply.
 
-The `SOUL.md` behavior described here is unreleased. Use [the current source](#learn-from-the-source) to follow this edition of Chapter 01; the published `v0.1.0` still reads working-directory `AGENTS.md` instructions.
-
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -70,7 +68,7 @@ mino update
 
 Updates still require GitHub access to the repository. Download or asset-verification failures preserve the existing executable, and your model settings remain unchanged.
 
-Chapter 01 was reset to a new `v0.1.0` baseline with the official SDK. If you installed the earlier `v0.1.0` or `v0.1.1`, run `mino update v0.1.0` to install the reissued build. If the earlier updater fails, use the installation command above; existing configuration is preserved. See the [release reset note](./releases.md#chapter-01-baseline-reset).
+The reissued `v0.1.0` includes the official SDK, root installer, and user `SOUL.md` identity. If you installed an earlier Chapter 01 build, run `mino update v0.1.0` even if `mino version` already reports `0.1.0`; the version number is unchanged. If the earlier updater fails, use the installation command above. Both paths preserve your configuration and custom `~/.mino/SOUL.md`. See the [release reset note](./releases.md#chapter-01-baseline-reset).
 
 ## Mino identity
 
@@ -94,7 +92,7 @@ go run ./cmd/mino
 
 The entry point imports `github.com/qshine/mino/internal` as `mino`, so the call remains `mino.Main(version)`.
 
-In the current checkout, root `assets.go` embeds `install.sh` and the default `SOUL.md`. `internal/cli.go` uses `assets.InstallerScript` for updates, and `internal/soul.go` uses `assets.DefaultSoul` to initialize the user identity. Both work without a source checkout. These changes are unreleased: `v0.1.0` still has `internal/install.sh` and does not load a user identity file.
+Root `assets.go` embeds `install.sh` and the default `SOUL.md`. `internal/cli.go` uses `assets.InstallerScript` for updates, and `internal/soul.go` uses `assets.DefaultSoul` to initialize the user identity. Both work without a source checkout.
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 

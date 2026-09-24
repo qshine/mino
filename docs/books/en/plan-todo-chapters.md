@@ -2,7 +2,7 @@
 
 This tutorial builds a terminal agent from scratch in Go using the OpenAI Responses API. The official OpenAI Go SDK handles API communication; Mino implements the interaction flow and, in later chapters, the Agent loop. Each chapter follows one interaction: what the model receives, what the program does with the response, and how control or context reaches the next step. [Getting started](./getting-started.md) covers installation and API settings.
 
-Chapter 01 has working code, a lesson, and local verification. Its current development snapshot replaces project `AGENTS.md` instructions with a user identity in `~/.mino/SOUL.md`; this change is not yet in a release. The remaining chapters have not started. Statuses are **Not started**, **In progress**, and **Complete**. A chapter is complete only when its lesson, corresponding implementation, and necessary verification are all finished.
+Chapter 01 has working code, a lesson, and local verification. The reissued `v0.1.0` uses a user identity in `~/.mino/SOUL.md` and ignores project `AGENTS.md` instructions. The remaining chapters have not started. Statuses are **Not started**, **In progress**, and **Complete**. A chapter is complete only when its lesson, corresponding implementation, and necessary verification are all finished.
 
 | Chapter | Status | Title | What it covers |
 | --- | --- | --- | --- |
