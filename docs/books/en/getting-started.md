@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-Use this page to prepare Mino. Chapter 01 follows one question from terminal input to a model reply; Chapter 02 adds saved history and restart continuity. The latest published application is still `v0.1.0`. Chapter 02 targets `v0.2.0` and currently requires a development checkout containing its Unreleased implementation.
+Use this page to prepare Mino `v0.2.0`. Chapter 01 follows one question from terminal input to a model reply; Chapter 02 adds saved history and restart continuity. Both capabilities are available in the `v0.2.0` application package.
 
 ## Prepare your Mac
 
@@ -25,7 +25,7 @@ Run this in Bash or zsh:
 mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command uses the **Unreleased installer on `main`** to download the latest published application, currently the `v0.1.0` streaming reissue. It resolves one release tag, then downloads its macOS package and checksum file over HTTPS.
+This command uses the public-download installer on `main` to download the latest published application, currently `v0.2.0`. It resolves one release tag, then downloads its macOS package and checksum file over HTTPS.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -63,9 +63,9 @@ Enter a question after `You>`. Real questions contact your configured service an
 mino version
 ```
 
-To install the latest release without a GitHub login, rerun the installation command above. Download or verification failures preserve the existing executable; installation also preserves your model settings and custom `~/.mino/SOUL.md`.
+To install the latest release without a GitHub login, rerun the installation command above. Download or verification failures preserve the existing executable; installation also preserves your model settings, custom `~/.mino/SOUL.md`, and history.
 
-The published `v0.1.0` still embeds the earlier updater: its `mino update` command requires GitHub CLI and a GitHub login. The public-download updater is Unreleased and will be included in a future application release. See [public downloads and the embedded updater](./releases.md#public-downloads-and-the-embedded-updater) for the distinction.
+`v0.2.0` includes the public-download updater, so its `mino update` command uses `curl` without GitHub CLI or a GitHub login. The older `v0.1.0` binary still embeds the earlier updater and requires both GitHub CLI and a GitHub login. If you are using that version, rerun the installation command above, or use `mino update v0.2.0` when those requirements are met. Updating the installer on `main` does not change an already installed binary. See [public downloads and the embedded updater](./releases.md#public-downloads-and-the-embedded-updater).
 
 Earlier builds also report `0.1.0` but wait for the complete answer. If you used one of those builds, rerun the installation command to obtain streaming **even if `mino version` already reports `0.1.0`**. The [release reset note](./releases.md#chapter-01-baseline-reset) explains this owner-authorized replacement.
 
@@ -81,7 +81,7 @@ Use a regular file containing non-empty UTF-8 text, at most 64 KiB. Mino rejects
 
 ## Local history in Chapter 02
 
-After loading settings and identity, the Chapter 02 development build opens `~/.mino/history.jsonl` and restores completed turns. This file represents one conversation; records use `turn_id` to pair each input with its answer and ending. The file starts empty on first launch. Mino also opens a stable `~/.mino/history.lock` so only one process can use this history at a time. Close the other Mino process if startup reports that history is in use; the lock file can remain after exit and should not be deleted to bypass a running process.
+After loading settings and identity, Mino `v0.2.0` opens `~/.mino/history.jsonl` and restores completed turns. This file represents one conversation; records use `turn_id` to pair each input with its answer and ending. The file starts empty on first launch. Mino also opens a stable `~/.mino/history.lock` so only one process can use this history at a time. Close the other Mino process if startup reports that history is in use; the lock file can remain after exit and should not be deleted to bypass a running process.
 
 Both files use `0600` permissions under the `0700` user directory. Mino rejects symbolic links and non-regular history or lock files. Conversation text is stored locally in plain text; configuration credentials and raw API errors are not copied into the history. Text you submit is saved, including any sensitive data you put in it. Keep history and recovery copies out of Git, screenshots, and shared logs.
 
@@ -95,11 +95,12 @@ Earlier Unreleased development builds wrote `session_id` into every record. The 
 
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository and run from its directory. For Chapter 02, first ensure that your checkout contains its Unreleased implementation; the `v0.1.0` release does not include it.
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select Chapter 02's `v0.2.0` source, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
+git checkout v0.2.0
 go run ./cmd/mino
 ```
 
@@ -117,4 +118,4 @@ Downloaded and source builds share your home-directory settings. Chapter 02 sour
 bash scripts/check.sh
 ```
 
-Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md) for the original single-question interaction, or [Chapter 02: JSONL history](./chapters/02-jsonl-history.md) for continuity across questions and restarts. Run Chapter 01's source experiments at its linked historical revision; its request behavior differs from current development builds.
+Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md) for the original single-question interaction, or [Chapter 02: JSONL history](./chapters/02-jsonl-history.md) for continuity across questions and restarts. Run Chapter 01's source experiments at its linked historical revision; its request behavior differs from `v0.2.0`.

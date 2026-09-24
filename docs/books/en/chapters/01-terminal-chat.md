@@ -4,7 +4,7 @@ Applies to **0.1.x** · Source checked against the **v0.1.0 streaming reissue**,
 
 You type a question and want to see the answer begin before the model finishes. Mino must send your input, display incoming text, and decide when to ask for the next question. This chapter follows that exchange and explains why continuing in the same terminal does not give the model conversation memory.
 
-Complete [setup and installation](../getting-started.md) first. Use this chapter's checked source revision for its experiments; current development builds include Chapter 02 history. You will observe what you supply, what reaches the model, and how Mino hands control back to you.
+Complete [setup and installation](../getting-started.md) first. Use this chapter's checked source revision for its experiments; `v0.2.0` includes Chapter 02 history. You will observe what you supply, what reaches the model, and how Mino hands control back to you.
 
 ## 1. Observe one exchange
 
@@ -120,4 +120,4 @@ The model might guess the topic. **A correct guess does not demonstrate memory; 
 
 Mino can now carry one question through a streaming response, display its text, and return control to you after completion or an error. This is a foundation for an Agent; it cannot yet continue a task using conversation history or execute model-requested tools.
 
-[Chapter 02](./02-jsonl-history.md) addresses the missing history: save exchanges in a JSON Lines (JSONL) file, restore completed turns at startup, and include them with the next question. Its implementation targets `v0.2.0` and is Unreleased. Tool execution and the Agent loop remain planned for Chapter 03; see the [roadmap](../plan-todo-chapters.md).
+[Chapter 02](./02-jsonl-history.md), implemented in `v0.2.0`, addresses the missing history: save exchanges in a JSON Lines (JSONL) file, restore completed turns at startup, and include them with the next question. Tool execution and the Agent loop remain planned for Chapter 03; see the [roadmap](../plan-todo-chapters.md).

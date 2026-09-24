@@ -3,8 +3,8 @@
 English | [简体中文](README.zh-CN.md)
 
 A small terminal agent built chapter by chapter in Go with the OpenAI Responses API.
-Current source includes Chapter 02: continuous conversations with JSONL history
-and restart recovery. The published `v0.1.0` remains the Chapter 01 baseline. Runs on **macOS 13+**,
+Version `v0.2.0` includes Chapter 02: continuous conversations with JSONL history
+and restart recovery. Version `v0.1.0` remains the Chapter 01 baseline. Runs on **macOS 13+**,
 with downloads for **Apple Silicon and Intel**.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
@@ -67,17 +67,15 @@ from the working directory. `AGENTS.md` is only for developing this repository.
 The reissued `v0.1.0` includes this identity file.
 
 Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
-to quit. Chapter 01 does not retain conversation history.
+to quit. Completed conversations are restored when you restart Mino.
 
-The reissued `v0.1.0` streaming build displays answer fragments
+Mino displays answer fragments
 as they arrive after `Assistant>`. If a stream fails, the partial answer remains
-visible and an error is shown. Rerun the installation command above to get
-streaming, even if your installed version already reports `0.1.0`; earlier
-builds with this version number waited for the complete answer.
+visible and an error is shown.
 
-## Conversation history (Chapter 02 source)
+## Conversation history (Chapter 02)
 
-Run `go run ./cmd/mino` from this checkout to use Chapter 02 before its release.
+Install `v0.2.0` to use Chapter 02, or run `go run ./cmd/mino` from this checkout.
 Mino appends conversation records to `~/.mino/history.jsonl` and restores completed
 turns at startup. One local file holds one conversation; `turn_id` associates the
 records within each turn. Streamed answers remain immediate. Failed or interrupted turns
@@ -101,7 +99,7 @@ location. Keep recovery backups private too.
 ```bash
 mino version          # Show the installed version
 mino update           # Install the latest published release
-mino update v0.1.0    # Install a specific release, including a rollback
+mino update v0.2.0    # Install the Chapter 02 release
 ```
 
 Updates manage `~/.mino/bin/mino` and preserve your configuration and `SOUL.md`.
@@ -109,17 +107,13 @@ A failed download or verification keeps the existing executable.
 
 The published `v0.1.0` still embeds the earlier GitHub CLI updater. To update
 without GitHub CLI or a GitHub login, rerun the installation command above.
-Builds from the updated source also use public downloads for `mino update`.
-
-To get the reissued Chapter 01 build with streaming and `SOUL.md`, rerun the
-installation command even if `mino version` already reports `0.1.0`. The version
-number is unchanged.
+Version `v0.2.0` includes the public-download updater for subsequent updates.
 
 | Progress | Version | Git tag |
 | --- | --- | --- |
 | Chapter 01 | `0.1.0` | `v0.1.0` |
 | Future Chapter 01 fixes (examples) | `0.1.1`, `0.1.2` | `v0.1.1`, `v0.1.2` |
-| Chapter 02 (source; not released) | Target `0.2.0` | Not tagged yet |
+| Chapter 02 | `0.2.0` | `v0.2.0` |
 | Future Chapter 02 fixes (example) | `0.2.1` | `v0.2.1` |
 
 A push to `main` runs CI. A version tag runs tests, builds both macOS packages,

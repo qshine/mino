@@ -6,6 +6,8 @@ unchanged and fixes receive new patch versions.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-24
+
 ### Added
 
 - Chapter 02 conversation history in `~/.mino/history.jsonl`, with one conversation
@@ -19,7 +21,7 @@ unchanged and fixes receive new patch versions.
   storage failures stop chat and never silently retry a model request.
 - Bilingual Chapter 02 lessons and deterministic tests for restart continuity,
   streaming, cancellation, disk failures, truncation recovery, and file locking.
-  Chapter 02 targets `v0.2.0`; no release tag or package has been published.
+  Chapter 02 is available in `v0.2.0` for Apple Silicon and Intel Macs.
 
 ### Changed
 
@@ -32,8 +34,8 @@ unchanged and fixes receive new patch versions.
   streaming response, completion, and context explanations.
 - Download public macOS releases with `curl`, without GitHub CLI or a GitHub
   login, while preserving checksum/version verification and existing settings.
-  The published `v0.1.0` embeds the earlier updater; rerun the README installer
-  for public downloads until a new application release includes this change.
+  Version `v0.1.0` embeds the earlier updater; rerun the README installer to
+  upgrade without GitHub CLI. Version `v0.2.0` includes the public-download updater.
 - Update the bilingual installation guides for the public repository and add
   direct online reading links to the bilingual GitHub Pages book website.
 
