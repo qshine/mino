@@ -2,15 +2,31 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A small terminal agent built chapter by chapter in Go with the OpenAI Responses API.
-Version `v0.2.0` includes Chapter 02: continuous conversations with JSONL history
-and restart recovery. Version `v0.1.0` remains the Chapter 01 baseline. Runs on **macOS 13+**,
-with downloads for **Apple Silicon and Intel**.
+**Build your own agent from scratch in Go: understand each interaction,
+then verify how it works with code and experiments.**
+
+Mino is a chapter-by-chapter tutorial for readers new to agents, using Go and
+the OpenAI Responses API. Each chapter starts with an observable interaction,
+follows what the model receives and what the program handles, then uses a small
+experiment to check the result and its limits. Reading the source requires
+familiarity with Go variables, functions, and basic error handling; no prior
+model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
+**Current progress:** Chapters 01 and 02 are complete. Version `v0.1.0` covers
+streaming terminal conversations; `v0.2.0` adds JSONL history, continuous
+conversations, and restart recovery. Tool execution and the Agent loop remain
+on the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
+
+**By qqling | AI Builder.** I want to build an agent of my own from scratch and
+turn what I learn through ongoing research and practice into beginner tutorials.
+Read [about the author](docs/books/en/about-author.md) for the story behind Mino
+and links to follow or get in touch on X, GitHub, and Xiaohongshu.
+
 ## Install
 
+Runs on **macOS 13+**, with downloads for **Apple Silicon and Intel**.
 The repository and release downloads are public. No Go installation, GitHub CLI,
 or GitHub login is needed; the installer uses the `curl` included with macOS.
 

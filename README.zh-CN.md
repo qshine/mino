@@ -2,13 +2,23 @@
 
 [English](README.md) | 简体中文
 
-用 Go 和 OpenAI Responses API 从零实现终端 Agent 的分章教程。`v0.2.0` 包含第二章：JSONL 对话历史、多轮问答与重启恢复。`v0.1.0` 仍是第一章基线。
-支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
+**用 Go 从零构建自己的 Agent：从一次交互理解原理，用代码和实验验证能力。**
+
+Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses API。
+每章从一段可以观察的交互开始，看清模型收到什么、程序负责什么，再用小实验检查结果与边界。
+阅读源码需要了解 Go 的变量、函数和基本错误处理；第一次接触模型 API 也可以从第一章开始。
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
+**当前进度：**第 01、02 章已完成。`v0.1.0` 对应流式终端问答，`v0.2.0` 加入 JSONL 对话历史、多轮问答与重启恢复。
+工具调用与 Agent 循环等能力仍在[章节规划](docs/books/zh/plan-todo-chapters.md)中。
+
+**作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
+你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
+
 ## 安装
 
+支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
 仓库和安装包已公开，无需安装 Go、GitHub CLI，也无需登录 GitHub。
 安装程序使用 macOS 自带的 `curl` 下载。
 

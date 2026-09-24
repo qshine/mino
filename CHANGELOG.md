@@ -8,9 +8,17 @@ unchanged and fixes receive new patch versions.
 
 ### Added
 
+- Bilingual author pages for qqling | AI Builder, with links from the book and
+  READMEs to the author's X, GitHub, and Xiaohongshu profiles.
 - `./book_review.sh` installs missing book dependencies, builds the current
   checkout, and opens Chinese Chapter 01 in the default browser for local review.
   The preview uses an available port and stops with Ctrl+C.
+
+### Changed
+
+- Put the tutorial's audience, interaction-based learning approach, and completed
+  chapters before installation details in the READMEs; make the same information
+  prominent on both book homepages.
 
 ## [0.2.0] - 2026-09-24
 
