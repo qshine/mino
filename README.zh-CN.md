@@ -5,7 +5,7 @@
 用 Go 从零实现终端 Agent 的分章教程。第一章通过 OpenAI Responses API 实现独立的一问一答。
 支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
 
-**在线阅读：**[中文教程](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md) · [English book](https://github.com/qshine/mino/blob/main/docs/books/en/index.md)
+**在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
 ## 安装
 
@@ -113,7 +113,7 @@ bash scripts/check.sh
 
 ## 图文教程书
 
-[在线阅读中文版](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md) · [Read online in English](https://github.com/qshine/mino/blob/main/docs/books/en/index.md)
+[在线阅读中文版](https://qshine.github.io/mino/zh/) · [Read online in English](https://qshine.github.io/mino/)
 
 书籍源码分别位于 `docs/books/en/` 和 `docs/books/zh/`，网站默认英文，可切换简体中文。
 章节聚焦 Agent 交互，安装配置和发布细节放在配套页面中。
@@ -121,6 +121,6 @@ bash scripts/check.sh
 即可打开输出的本地地址预览。`npm run book:build` 检查站内链接并构建两种语言。
 
 项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
-GitHub Actions 已配置书籍检查。上方在线链接直接打开 GitHub 上的书籍页面；
-独立的 GitHub Pages 网站尚未启用。
+GitHub Actions 会在 `main` 上的相关内容更新后检查书籍并发布到 GitHub Pages。
+上方在线链接直接打开教程网站。
 详见[写作与发布流程](docs/books/zh/maintaining-the-book.md)。

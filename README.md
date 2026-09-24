@@ -6,7 +6,7 @@ A small terminal agent built chapter by chapter in Go. Chapter 01 provides
 independent conversations through the OpenAI Responses API. Runs on **macOS 13+**,
 with downloads for **Apple Silicon and Intel**.
 
-**Read online:** [English book](https://github.com/qshine/mino/blob/main/docs/books/en/index.md) · [简体中文教程](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md)
+**Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
 ## Install
 
@@ -125,7 +125,7 @@ with the race detector, then builds `bin/mino`. Tests use fake keys, temporary
 home directories, local mock HTTP servers, and fake release downloads. They do
 not call a paid model or modify your real configuration.
 
-- [Read the illustrated book](docs/books/en/index.md) · [简体中文](docs/books/zh/index.md)
+- [Read the illustrated book](https://qshine.github.io/mino/) · [简体中文](https://qshine.github.io/mino/zh/)
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; application code and tests: `internal/`.
@@ -142,6 +142,6 @@ With Node.js 24, run `npm ci --ignore-scripts` and
 checks the site's internal links and builds both languages.
 
 The project `book_writer` subagent maintains the book after Codex code changes.
-GitHub Actions checks the book. The online links above open the rendered book
-on GitHub; a separate GitHub Pages website has not been enabled.
+GitHub Actions checks and publishes the book to GitHub Pages after relevant
+updates to `main`. The online links above open the tutorial website.
 See [the writing and publishing workflow](docs/books/en/maintaining-the-book.md).

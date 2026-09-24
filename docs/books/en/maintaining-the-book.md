@@ -17,7 +17,7 @@ Wide diagrams can be scrolled horizontally to keep their labels readable.
 ```mermaid
 flowchart TD
     accTitle: Code and book update workflow
-    accDescr: After a verified code change, the primary Codex agent delegates documentation to the writer, reviews it, and builds the bilingual book before a commit. GitHub then builds the site; public deployment is disabled by default.
+    accDescr: After a verified code change, the primary Codex agent delegates documentation to the writer, reviews it, and builds the bilingual book before a commit. GitHub then builds the site and publishes it when the Pages deployment switch is enabled.
     A[Code change and relevant checks] --> B[Primary agent briefs book_writer]
     B --> C[Read the diff, code, and tests]
     C --> D[Update English and Chinese lessons and diagrams]
@@ -89,18 +89,12 @@ The lockfile pins the website dependencies. VitePress 1.6.4's default Vite depen
 
 The current book configuration also includes `mermaid` in `vite.optimizeDeps.include`. This pre-bundles the plugin-injected Mermaid imports for the development server, converting CommonJS dependencies such as `fastdom` for browser use. Without it, the pinned Mermaid 11.17.2 dependencies can leave local preview blank with an error about a missing default export. After dependency upgrades, check `npm run book:dev` in a browser as well as running the production build.
 
-## Publishing later
+## Publishing the website
 
-The repository is public, and you can already [read the English book on GitHub](https://github.com/qshine/mino/blob/main/docs/books/en/index.md). The [Tutorial book workflow](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) builds on relevant pushes and pull requests and stores a downloadable workflow artifact. **Pages deployment remains disabled by default.**
+The book is published on GitHub Pages: [English](https://qshine.github.io/mino/) and [Simplified Chinese](https://qshine.github.io/mino/zh/). The configured project path is `/mino/`; a separate domain or server is not required.
 
-GitHub Pages can host the static book without a separate server. Making the repository public does not enable the website automatically; publishing remains a separate owner decision.
+The owner has enabled publication. The [Tutorial book workflow](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) builds both languages, checks internal links, and stores a downloadable workflow artifact. Successful builds from `main` publish the website when the repository Actions variable `BOOK_PUBLISH_ENABLED` is `true`. Pull requests only build and check the book.
 
-When the owner explicitly decides to publish the website:
-
-1. Set the repository's Pages source to **GitHub Actions**.
-2. Set the repository Actions variable `BOOK_PUBLISH_ENABLED` to `true`.
-3. Run **Tutorial book**, or push a documentation update to `main`.
-
-The configured project path is `/mino/`. The planned English address is `https://qshine.github.io/mino/`, and Simplified Chinese is `https://qshine.github.io/mino/zh/`. Pages is not enabled yet; use the GitHub reading link above for the available book. A separate domain is optional.
+The repository's Pages source is **GitHub Actions**. To publish an update, push book changes to `main`, or manually run **Tutorial book** on `main`. Keep `BOOK_PUBLISH_ENABLED` set to `true` for automatic publishing.
 
 Removing the variable prevents future deployments; it does **not** remove an already published website. To take a published site offline, unpublish it in the repository's Pages settings.

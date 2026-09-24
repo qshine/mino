@@ -17,7 +17,7 @@
 ```mermaid
 flowchart TD
     accTitle: 代码与教程的更新流程
-    accDescr: Codex 完成代码修改和相关检查后，将文档交给写作 agent，审核双语内容并构建预览，再提交改动。GitHub 随后构建网站，公开发布默认关闭。
+    accDescr: Codex 完成代码修改和相关检查后，将文档交给写作 agent，审核双语内容并构建预览，再提交改动。GitHub 随后构建网站，并在 Pages 发布开关启用时发布。
     A[代码改动和相关检查] --> B[主 agent 将改动交给 book_writer]
     B --> C[阅读差异、代码和测试]
     C --> D[同步英文、中文教程及图表]
@@ -89,18 +89,12 @@ npm run book:preview
 
 当前书籍配置还在 `vite.optimizeDeps.include` 中显式包含 `mermaid`。开发服务器会预构建插件注入的 Mermaid 导入，将 `fastdom` 等 CommonJS 依赖转换为浏览器可用的格式。没有这一步，当前锁定的 Mermaid 11.17.2 依赖可能让本地预览显示空白页，并报告缺少默认导出。升级依赖后，除了运行正式构建，还要在浏览器中检查 `npm run book:dev` 的效果。
 
-## 以后如何发布
+## 发布教程网站
 
-仓库现已公开，你现在就可以[在 GitHub 上阅读中文版](https://github.com/qshine/mino/blob/main/docs/books/zh/index.md)。[Tutorial book 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) 会在相关代码推送和 PR 时构建，并保存可下载的工作流产物。**Pages 部署仍默认关闭。**
+教程已发布到 GitHub Pages：[英文版](https://qshine.github.io/mino/)和[简体中文版](https://qshine.github.io/mino/zh/)。项目路径为 `/mino/`，不需要另设域名或服务器。
 
-GitHub Pages 可以直接托管静态教程，不需要另租服务器。仓库改为公开不会自动启用网站，是否发布网站仍由所有者另行决定。
+所有者已开启发布。[Tutorial book 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/book.yml) 会构建两种语言、检查站内链接，并保存可下载的工作流产物。当仓库 Actions 变量 `BOOK_PUBLISH_ENABLED` 为 `true` 时，`main` 上成功的构建会发布网站。PR 只构建和检查书籍。
 
-仓库所有者明确决定发布网站后：
-
-1. 在仓库 Pages 设置中选择 **GitHub Actions** 作为来源。
-2. 把仓库 Actions 变量 `BOOK_PUBLISH_ENABLED` 设为 `true`。
-3. 手动运行 **Tutorial book**，或者向 `main` 推送教程更新。
-
-项目路径已经配置为 `/mino/`。英文预定地址是 `https://qshine.github.io/mino/`，简体中文是 `https://qshine.github.io/mino/zh/`。Pages 尚未启用；目前请通过上面的 GitHub 阅读链接访问书籍。自定义域名是可选项。
+仓库的 Pages 来源已设为 **GitHub Actions**。更新网站时，向 `main` 推送书籍改动，或者在 `main` 上手动运行 **Tutorial book**。保持 `BOOK_PUBLISH_ENABLED` 为 `true`，即可自动发布。
 
 删除该变量会停止之后的部署，但**不会下线已经发布的网站**。如果需要下线，请在仓库的 Pages 设置中取消发布。
