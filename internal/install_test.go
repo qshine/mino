@@ -15,7 +15,7 @@ import (
 
 func installerFixture(t *testing.T) (script, home, assets string) {
 	t.Helper()
-	script, err := filepath.Abs("install.sh")
+	script, err := filepath.Abs(filepath.Join("..", "install.sh"))
 	if err != nil {
 		t.Fatal(err)
 	}

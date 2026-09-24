@@ -59,7 +59,7 @@ bash scripts/package.sh v0.1.0
 
 ## 私有仓库安装
 
-README 的安装命令通过已经登录的 `gh api` 从 `main` 读取 `internal/install.sh`。安装器和内嵌的更新器使用 `gh` 获取 Release ID，再通过 GitHub 专门的附件接口下载文件，避免版本元数据中不完整的附件列表阻止安装。
+README 的安装命令通过已经登录的 `gh api` 从 `main` 读取根目录的 `install.sh`。这次脚本移动尚未发布，`v0.1.0` 源码中仍使用 `internal/install.sh`。安装器和内嵌的更新器使用 `gh` 获取 Release ID，再通过 GitHub 专门的附件接口下载文件，避免版本元数据中不完整的附件列表阻止安装。
 
 用户必须登录有权读取仓库的账号。令牌仍由 GitHub CLI 管理，不会复制到 Mino 配置中。
 

@@ -7,7 +7,7 @@ if [[ -n $unformatted ]]; then
   printf 'Format these Go files first:\n%s\n' "$unformatted" >&2
   exit 1
 fi
-bash -n internal/install.sh
+bash -n install.sh
 bash -n scripts/check.sh
 bash -n scripts/package.sh
 go vet ./...

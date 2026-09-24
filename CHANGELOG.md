@@ -4,6 +4,12 @@ Versions follow the tutorial chapters: `0.<chapter>.<patch>`. Git tags use a
 `v` prefix. After this owner-requested Chapter 01 reset, published releases stay
 unchanged and fixes receive new patch versions.
 
+## [Unreleased]
+
+- Move `install.sh` to the repository root and update installation links.
+  A small root `installer.go` embeds it for `mino update`, which continues to
+  work from any directory without a source checkout.
+
 ## [0.1.0] - 2026-09-24
 
 Chapter 01 is reissued as `v0.1.0` at the owner's request, replacing the original

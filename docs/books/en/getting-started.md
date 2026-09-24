@@ -28,7 +28,7 @@ Your GitHub login downloads the program. The model API key entered later accesse
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/internal/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(gh api --hostname github.com -H 'Accept: application/vnd.github.raw+json' 'repos/qshine/mino/contents/install.sh?ref=main')" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer verifies the package's SHA-256 checksum and executable version, installs `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
@@ -84,9 +84,11 @@ cd mino
 go run ./cmd/mino
 ```
 
-`cmd/mino/main.go` is the executable entry point. Application code and its tests live together in the `mino` package under `internal/`; `app.go` connects startup to the terminal loop. The installer lives there too so `cli.go` can embed it for `mino update`. Start with `app.go`, then follow `terminal.go` into `responses.go`.
+`cmd/mino/main.go` is the executable entry point. Application code and its tests live together in the `mino` package under `internal/`; `app.go` connects startup to the terminal loop. Start with `app.go`, then follow `terminal.go` into `responses.go`.
 
 The entry point imports `github.com/qshine/mino/internal` as `mino`, so the call remains `mino.Main(version)`.
+
+In the current checkout, root `installer.go` embeds root `install.sh`; `internal/cli.go` uses `installer.Script` for `mino update`. This keeps updates independent of the source checkout and working directory. The script move is unreleased: `v0.1.0` still has `internal/install.sh`, embedded directly by `internal/cli.go`.
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 

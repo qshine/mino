@@ -2,16 +2,14 @@ package mino
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"io"
 	"os/exec"
 	"strings"
 	"time"
-)
 
-//go:embed install.sh
-var installScript string
+	installer "github.com/qshine/mino"
+)
 
 func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
 	if len(args) == 0 {
@@ -22,7 +20,7 @@ func runCLI(ctx context.Context, version string, args []string, input io.Reader,
 		defer cancel()
 		commandArgs := append([]string{"-s", "--"}, args[1:]...)
 		command := exec.CommandContext(updateCtx, "/bin/bash", commandArgs...)
-		command.Stdin = strings.NewReader(installScript)
+		command.Stdin = strings.NewReader(installer.Script)
 		command.Stdout = output
 		command.Stderr = errorOutput
 		if err := command.Run(); err != nil {
