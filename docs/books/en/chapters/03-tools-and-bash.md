@@ -144,4 +144,4 @@ These checks establish the tested control flow and replay contents. They do not 
 
 The Go-version question now has a path to evidence: a complete tool call, your approval, a bounded Bash execution, and a paired result supplied to the model. Mino can continue within the same turn while recording enough to distinguish an unstarted command from an unknown outcome.
 
-All of this still belongs to one conversation in `history.jsonl`. [Chapter 04](../plan-todo-chapters.md), released as `chapter-04`, separates conversations into individual JSONL session files, so a new task can start with its own history while an earlier task remains available to resume.
+In the Chapter 03 release, all of this still belongs to one conversation in `history.jsonl`. [Chapter 04](./04-jsonl-sessions.md), available in the `chapter-04` release, separates conversations into individual JSONL session files, so a new task can start with its own history while an earlier task remains available to resume.

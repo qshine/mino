@@ -121,3 +121,45 @@ The owner has enabled publication. The [Tutorial book workflow](https://github.c
 The repository's Pages source is **GitHub Actions**. To publish an update, push book changes to `main`, or manually run **Tutorial book** on `main`. Keep `BOOK_PUBLISH_ENABLED` set to `true` for automatic publishing.
 
 Removing the variable prevents future deployments; it does **not** remove an already published website. To take a published site offline, unpublish it in the repository's Pages settings.
+
+## Website analytics with Umami
+
+You can use Umami Cloud to see which chapters readers visit and where they arrive from. Both languages share one website in Umami; Chinese pages retain `/mino/zh/` in their paths. With this integration, Views provides pageviews (PV), and Visitors estimates unique visitors (UV). These are recorded browser activity, not an exact count of people; blocked trackers can leave visits unrecorded. See [Umami's metric definitions](https://docs.umami.is/docs/metric-definitions).
+
+The hosted Hobby plan avoids maintaining a statistics server. As checked on September 25, 2026, it is free for one website, up to 100,000 events per month, and six months of retained data. Pageviews count toward the event allowance. This integration does not archive older data automatically; check the [current plans](https://umami.is/pricing) before relying on longer-term comparisons.
+
+### Configure and publish
+
+1. Sign in to [Umami Cloud](https://cloud.umami.is/), choose Hobby, and add a website named `Mino`. Set Domain to `qshine.github.io`, without `/mino/`.
+2. Open the website's **Tracking code** section, as shown in the [collection guide](https://docs.umami.is/docs/collect-data). Copy the two values below into repository **Settings → Secrets and variables → Actions → Variables**.
+
+| Repository variable | Value from the tracking code |
+| --- | --- |
+| `UMAMI_SCRIPT_URL` | The complete HTTPS URL in `src` |
+| `UMAMI_WEBSITE_ID` | The value of `data-website-id` |
+
+These values are public tracking identifiers, not account passwords. Keep them as Actions variables; no Umami login credentials are needed in the repository.
+
+3. Run **Tutorial book** on `main` with `BOOK_PUBLISH_ENABLED=true`. The publishing workflow enables analytics; local builds and pull-request builds omit the tracker. Collection is also restricted to `qshine.github.io`.
+
+Both Umami variables may be absent: the book then builds without analytics. Setting only one fails the build with an English error asking for both. Changing variables does not update already published pages, so rerun the workflow after each change. To disable collection, remove both variables and publish again.
+
+### Exclude your own visits
+
+Open the published book, then run this in your browser's developer console and reload:
+
+```javascript
+localStorage.setItem('umami.disabled', 1);
+```
+
+The setting applies to this browser at `https://qshine.github.io`, including both languages. Repeat it in other browsers you use. To resume tracking, run the following and reload. See [Umami's exclusion instructions](https://docs.umami.is/docs/exclude-my-own-visits).
+
+```javascript
+localStorage.removeItem('umami.disabled');
+```
+
+### Check collection after publishing
+
+Use a browser without the exclusion setting or a tracker blocker. Open the published homepage, navigate to a chapter, use Back and Forward, then switch languages. In the browser's Network panel, check that each page navigation sends one pageview and that the corresponding paths appear in Umami. Jumping between headings on the same page should add no pageview: chapter anchors are excluded.
+
+Also check that local preview sends no analytics requests. Block the tracker script and reload the book: reading and navigation should still work. These checks establish collection and navigation behavior for the tested browser; they do not prove that every visitor will be counted. A successful build alone cannot confirm delivery to your Umami account.

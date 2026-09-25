@@ -17,7 +17,6 @@ import (
 	"github.com/qshine/mino/internal/tools"
 )
 
-const historyLocation = "~/.mino/history.jsonl"
 const maxHistoryRecordBytes = 16 << 20
 const maxHistoryBytes = 64 << 20
 
@@ -55,44 +54,56 @@ func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := secureSessionDirectory(dir); err != nil {
+		return nil, err
+	}
+	return openSessionFile(filepath.Join(dir, "history.jsonl"), filepath.Join(dir, "history.lock"), registry, true)
+}
+
+func secureSessionDirectory(dir string) error {
 	if !filepath.IsAbs(dir) {
-		return nil, errors.New("Session directory must be absolute")
+		return errors.New("Session directory must be absolute")
 	}
 	if err := os.Mkdir(dir, 0700); err != nil && !errors.Is(err, os.ErrExist) {
-		return nil, err
+		return err
 	}
 	info, err := os.Lstat(dir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !info.IsDir() {
-		return nil, errors.New("Session directory must not be a file or symbolic link")
+		return errors.New("Session directory must not be a file or symbolic link")
 	}
-	if err := os.Chmod(dir, 0700); err != nil {
-		return nil, err
-	}
+	return os.Chmod(dir, 0700)
+}
+
+// A session store holds its own lock. The legacy opener supplies history.lock.
+func openSessionFile(path, lockPath string, registry map[string]tools.Tool, create bool) (_ *Session, err error) {
 	h := &Session{history: &history{}, state: historyState{turns: make(map[string]bool), tools: registry}}
 	defer func() {
 		if err != nil {
 			h.Close()
 		}
 	}()
-	h.lock, err = openPrivateHistoryFile(filepath.Join(dir, "history.lock"))
-	if err != nil {
-		return nil, err
+	if lockPath != "" {
+		h.lock, err = lockHistory(lockPath)
+		if err != nil {
+			return nil, err
+		}
 	}
-	if err = syscall.Flock(int(h.lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		return nil, errors.New("History is in use by another Mino process. Close it and try again.")
+	flags := 0
+	if create {
+		flags = syscall.O_CREAT
 	}
-	h.file, err = openPrivateHistoryFile(filepath.Join(dir, "history.jsonl"))
+	h.file, err = openPrivateFile(path, flags)
 	if err != nil {
 		return nil, err
 	}
 	h.writer = h.file
-	if err = syncHistoryDirectory(dir); err != nil {
+	if err = syncHistoryDirectory(filepath.Dir(path)); err != nil {
 		return nil, fmt.Errorf("Failed to sync history directory: %w", err)
 	}
-	info, err = h.file.Stat()
+	info, err := h.file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to inspect history: %w", err)
 	}
@@ -112,7 +123,7 @@ func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
 	if h.state.pending.id != "" {
 		hadTools := len(h.state.pending.calls) > 0
 		if err = h.finishTurn("interrupted"); err != nil {
-			return nil, err
+			return nil, &StorageError{err}
 		}
 		if hadTools {
 			h.notice += "An interrupted tool turn was recovered without executing commands.\n"
@@ -123,9 +134,25 @@ func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
 	return h, nil
 }
 
+func lockHistory(path string) (*os.File, error) {
+	lock, err := openPrivateHistoryFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		lock.Close()
+		return nil, errors.New("History is in use by another Mino process. Close it and try again.")
+	}
+	return lock, nil
+}
+
 func openPrivateHistoryFile(path string) (*os.File, error) {
+	return openPrivateFile(path, syscall.O_CREAT)
+}
+
+func openPrivateFile(path string, flags int) (*os.File, error) {
 	// O_NOFOLLOW closes the check/open symlink race; NONBLOCK avoids blocking on a FIFO.
-	fd, err := syscall.Open(path, syscall.O_RDWR|syscall.O_CREAT|syscall.O_APPEND|syscall.O_NOFOLLOW|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0600)
+	fd, err := syscall.Open(path, syscall.O_RDWR|flags|syscall.O_APPEND|syscall.O_NOFOLLOW|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open %s safely: %w", filepath.Base(path), err)
 	}
@@ -148,10 +175,12 @@ func (h *history) Close() error {
 	var err error
 	if h.file != nil {
 		err = h.file.Close()
+		h.file = nil
 	}
 	// Closing releases flock; never unlink the stable lock file.
 	if h.lock != nil {
 		err = errors.Join(err, h.lock.Close())
+		h.lock = nil
 	}
 	return err
 }
@@ -195,8 +224,13 @@ func (h *Session) load(data []byte) error {
 	return nil
 }
 
-func (h *Session) recoverTail(data []byte, offset int) error {
-	backup, err := os.CreateTemp(filepath.Dir(h.file.Name()), "history-recovery-*.jsonl")
+func (h *Session) recoverTail(data []byte, offset int) (err error) {
+	defer func() {
+		if err != nil {
+			err = &StorageError{err}
+		}
+	}()
+	backup, err := os.CreateTemp(filepath.Dir(h.file.Name()), strings.TrimSuffix(filepath.Base(h.file.Name()), ".jsonl")+"-recovery-*.jsonl")
 	if err != nil {
 		return fmt.Errorf("Failed to create history recovery backup: %w", err)
 	}

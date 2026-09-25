@@ -54,7 +54,7 @@ Mino 把这段对话保存在 `~/.mino/history.jsonl`，重启时打开同一个
 
 一个文件也让当前范围很明确：所有已完成的问答都属于同一段对话，启动时不需要选择会话。文件锁只允许一个 Mino 进程使用这份历史。**只能使用一段对话，是 Mino 当前的设计范围，不是 JSONL 格式的限制。**
 
-记录没有 `session_id` 字段，因为文件已经标明它们属于哪段对话。第 04 章（`chapter-04`）把会话分别放进 `~/.mino/sessions/<session_id>.jsonl`，由 `/new` 创建文件，文件名标识会话。`/new`、`/clear` 等命令在本章尚未实现。
+记录没有 `session_id` 字段，因为文件已经标明它们属于哪段对话。[第 04 章](./04-jsonl-sessions.md)已随 `chapter-04` 实现多会话，分别保存在 `~/.mino/sessions/<session_id>.jsonl`，由 `/new` 创建文件，文件名标识会话。`/new`、`/clear` 等命令在本章尚未实现。
 
 ## 3. 文件里的蓝色，怎样回到模型面前
 

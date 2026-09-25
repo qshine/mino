@@ -12,7 +12,7 @@ By [qqling | AI Builder](./about-author.md)
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: Tools and Bash](./chapters/03-tools-and-bash.md). Chapter 03 is available in `chapter-03` (version `0.3.0`); multiple sessions are available separately in `chapter-04`. Chapter 05 onward remains [planned](./plan-todo-chapters.md).
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: Tools and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Multiple sessions](./chapters/04-jsonl-sessions.md). Chapter 03 is available in `chapter-03` (version `0.3.0`); Chapter 04 is available in `chapter-04` (version `0.4.0`). Later capabilities remain [planned](./plan-todo-chapters.md).
 
 ## Who this book is for
 
@@ -30,20 +30,20 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-This edition contains Chapters 01–03, released on **2026-09-26** as `chapter-01` through `chapter-03`. Their application versions are `0.1.0` through `0.3.0`. Each lesson identifies the source tag for its experiments.
+This edition contains Chapters 01–04, released on **2026-09-26** as `chapter-01` through `chapter-04`. Their application versions are `0.1.0` through `0.4.0`. Each lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
 | [01 A terminal conversation](./chapters/01-terminal-chat.md) | How does a line of input become an HTTP request and then an answer? |
 | [02 JSONL conversation history](./chapters/02-jsonl-history.md) | What survives a restart, and which saved records become model context? |
 | [03 Tools and Bash](./chapters/03-tools-and-bash.md) | Who approves and executes a command, and what happens if its result is lost? |
-| 04 Multiple sessions (later release) | How do you start or restore a separate conversation? |
+| [04 Multiple sessions](./chapters/04-jsonl-sessions.md)  | How do you select one conversation's context, keep another, and safely clear the current one? |
 | 05–06 Context management | How can older interactions be summarized, and when should that happen? |
 | 07–09 Extensions and guardrails | How do knowledge and tools connect, and how are actual permissions enforced? |
 
 ## Read alongside the code
 
-Each chapter identifies its applicable version. Source links use the matching `chapter-NN` release tags. Chapter 03 follows [chapter-03](https://github.com/qshine/mino/tree/chapter-03).
+Each chapter identifies its applicable version. Source links use the matching `chapter-NN` release tags. Chapter 03 follows [chapter-03](https://github.com/qshine/mino/tree/chapter-03). Chapter 04 follows [chapter-04](https://github.com/qshine/mino/tree/chapter-04).
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-04.1` produces version `0.4.1` and updates the relevant lesson without creating an extra chapter.
 

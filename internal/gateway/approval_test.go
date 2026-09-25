@@ -83,3 +83,35 @@ func TestChatAndApprovalShareInput(t *testing.T) {
 		t.Fatalf("prompts=%v approvals=%v err=%v", prompts, approvals, err)
 	}
 }
+
+func TestClearRequiresExactSessionIDInInteractiveTerminal(t *testing.T) {
+	const id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	for _, tc := range []struct {
+		answer            string
+		interactive, want bool
+	}{
+		{id, true, true}, {"yes", true, false}, {strings.ToUpper(id), true, false}, {"", true, false}, {id, false, false},
+	} {
+		var output bytes.Buffer
+		lines := make(chan inputLine, 2)
+		lines <- inputLine{text: tc.answer}
+		lines <- inputLine{text: "next"}
+		close(lines)
+		cli := CLI{lines: lines, output: &output, interactive: tc.interactive}
+		approved, err := cli.Confirm(context.Background(), agent.Confirmation{Kind: "clear", SessionID: id, Warning: "Clear saved history?"})
+		if err != nil || approved != tc.want {
+			t.Fatalf("answer=%q approved=%v err=%v", tc.answer, approved, err)
+		}
+		next := <-lines
+		want := "next"
+		if !tc.interactive {
+			want = tc.answer
+		}
+		if next.text != want {
+			t.Fatal("clear consumed the wrong input")
+		}
+		if !strings.Contains(output.String(), id) {
+			t.Fatal("clear did not identify current session")
+		}
+	}
+}

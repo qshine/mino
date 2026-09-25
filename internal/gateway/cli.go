@@ -59,7 +59,7 @@ func (c *CLI) Command(ctx context.Context, version string, args []string) (bool,
 			_, err := fmt.Fprintln(c.output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nHistory: ~/.mino/history.jsonl")
+			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /help, /exit")
 			return true, err
 		}
 	}
@@ -82,8 +82,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 03: Tools and the Agent Loop")
-	fmt.Fprintln(c.output, "History is restored on startup. Bash commands require approval. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 04: Multiple Sessions")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Use /help for session commands. Bash commands require approval. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
 		select {
@@ -132,6 +132,8 @@ func (c *CLI) Emit(event agent.Event) error {
 		_, err = fmt.Fprint(c.output, "\nAssistant> ")
 	case "text":
 		_, err = fmt.Fprint(c.output, Text(event.Text))
+	case "info":
+		_, err = fmt.Fprint(c.output, Text(event.Text))
 	case "notice":
 		_, err = fmt.Fprint(c.errorOutput, Text(event.Text))
 	case "tool_result":
@@ -154,6 +156,18 @@ func (c *CLI) Emit(event agent.Event) error {
 }
 
 func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, error) {
+	if request.Kind == "clear" {
+		if _, err := fmt.Fprintf(c.output, "\nSession: %s\n%s\n", Text(request.SessionID), Text(request.Warning)); err != nil {
+			return false, errTerminalOutput
+		}
+		if !c.interactive {
+			if _, err := fmt.Fprintln(c.output, "Denied: clearing a session requires an interactive terminal."); err != nil {
+				return false, errTerminalOutput
+			}
+			return false, nil
+		}
+		return c.confirmAnswer(ctx, "Type the complete session ID to clear it: ", request.SessionID)
+	}
 	prompt := "Approve this operation? [y/N] "
 	if request.Kind == "recovery" {
 		if _, err := fmt.Fprintln(c.output, Text(request.Warning)); err != nil {
@@ -186,6 +200,10 @@ func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, er
 }
 
 func (c *CLI) confirm(ctx context.Context, prompt string) (bool, error) {
+	return c.confirmAnswer(ctx, prompt, "")
+}
+
+func (c *CLI) confirmAnswer(ctx context.Context, prompt, expected string) (bool, error) {
 	if !c.interactive {
 		return false, nil
 	}
@@ -202,10 +220,14 @@ func (c *CLI) confirm(ctx context.Context, prompt string) (bool, error) {
 		if line.err != nil {
 			return false, fmt.Errorf("Failed to read approval: %w", line.err)
 		}
-		answer := strings.ToLower(strings.TrimSpace(line.text))
+		answer := strings.TrimSpace(line.text)
 		if answer == "/exit" {
 			return false, io.EOF
 		}
+		if expected != "" {
+			return answer == expected, nil
+		}
+		answer = strings.ToLower(answer)
 		return answer == "y" || answer == "yes", nil
 	}
 }

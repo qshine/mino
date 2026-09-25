@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-09-26 发布的 `chapter-03`（程序版本 `0.3.0`）。本章包含终端问答、历史保存和获批的 Bash 执行。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-09-26 发布的 `chapter-04`（程序版本 `0.4.0`）。本章包含终端问答、历史保存、获批的 Bash 执行和独立会话。运行各章实验时，请使用该章注明的标签。
 
 ## 准备一台 Mac
 
@@ -22,10 +22,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-03`。省略 `-- chapter-03` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-04`。省略 `-- chapter-04` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -59,16 +59,16 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ## 查看版本和更新
 
-如果 Mino 安装于章节标签迁移之前，请先把上面的安装命令**重新运行一次**，即使 `mino version` 已显示 `0.3.0`。旧的内嵌更新器无法解析 `chapter-*` 标签。重新安装会保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。
+如果 Mino 安装于章节标签迁移之前，请先把上面的安装命令**重新运行一次**，即使 `mino version` 已显示 `0.4.0`。旧的内嵌更新器无法解析 `chapter-*` 标签。重新安装会保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。
 
 安装章节标签对应的发布版后，可以检查数字版本，再次选择本章：
 
 ```bash
 mino version
-mino update chapter-03
+mino update chapter-04
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.3.0` 或 `v0.3.0`，两者都指向 `chapter-03`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.4.0` 或 `v0.4.0`，两者都指向 `chapter-04`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -123,14 +123,54 @@ Bash 启动时不读取配置文件。程序提供的环境只有 `HOME`、`LANG
 
 命令和采集结果会以明文保存，并作为上下文发送到后续请求。它们可能包含敏感内容，包括命令从文件中读到的数据。切换配置中的服务，也会把这些可重放的历史发送给新服务。请妥善保管历史和恢复副本。
 
+## 从源码体验第四章
+
+第四章已随 [chapter-04](https://github.com/qshine/mino/releases/tag/chapter-04) 发布，程序版本为 `0.4.0`，安装包包含多会话功能。若要运行对应源码，请在仓库根目录选择该标签：
+
+```bash
+git checkout chapter-04
+go run ./cmd/mino
+```
+
+启动横幅标明 `Chapter 04: Multiple Sessions`，源码构建的版本仍显示为 `dev`。Go 和模型服务要求与[源码准备说明](#从源码学习)、[第三章工具说明](#从源码体验第三章)相同。运行这个工作区会使用真实用户目录中的配置，并在符合条件时进行下面的迁移。体验前，请关闭旧版 Mino 进程并保留私有备份。
+
+用 `/new` 开始独立对话，`/sessions` 列出 ID，`/resume <id>` 选择由 32 个小写十六进制字符组成的完整 ID，`/help` 查看命令。`/clear` 需要在交互式终端中准确输入当前会话 ID，`/exit` 退出。这些命令不会调用模型。如果启动时遇到未知工具结果，仍需完成已有的恢复确认才能继续。[第四章](./chapters/04-jsonl-sessions.md)展示了 A → B → A 实验和清空确认行为。
+
+切换会话不会重新加载 `~/.mino/SOUL.md`，也不会改变启动时确定的 Bash 目录。已有身份文件保持不变；如果其中仍称 Mino 只有一段对话，请自行更新这条指引并重启。所有会话共用已加载的模型配置：修改服务并重启后，下一次提问会把选中会话的可重放历史发送给该服务。
+
+## 第四章的存储与迁移
+
+第四章在 `~/.mino/` 中使用以下布局：
+
+```text
+sessions/<session_id>.jsonl
+active-session.json
+sessions.lock
+history-migration.json     （导入未完成时存在）
+history.jsonl             （导入后保留的旧历史留档）
+history.lock              （导入时使用的旧历史锁）
+```
+
+用户目录和会话目录使用 `0700`，会话日志、活动选择、迁移进度和锁使用 `0600`。程序打开它们时会拒绝符号链接和非预期文件类型。会话内容仍是明文，可能含有私人问题、命令和工具输出。不要把会话文件、留档或恢复副本放进 Git 和共享日志。每份 JSONL 仍限制为单条记录 16 MiB、整个文件 64 MiB；它们不是模型上下文预算。程序仍读取 `v: 1`、`v: 2` 记录，新记录写为 `v: 2`。
+
+Mino 在整次运行期间持有 `sessions.lock`，因此同一个会话库只能由一个 Mino 进程使用，即使你想选中不同会话也一样。应关闭另一个进程，而不是删除它的锁；退出后锁文件可以继续存在。
+
+首次使用时，程序新建会话；已有活动选择时，恢复对应会话。选择缺失或损坏、选中日志不可用，或迁移目标存在冲突时，Mino 可能等待你重新选择。先用 `/sessions` 查看，再用完整的已有 ID 执行 `/resume`，也可以选择 `/new`。列表显示 ID 和更新时间，不代表日志已经通过校验，加载时仍会检查。修复不完整尾部时，程序在 `sessions/` 中保存私有的 `<session_id>-recovery-*.jsonl` 备份。中间损坏或无效记录会导致日志被拒绝，不会悄悄丢弃内容；恢复写入失败则停止程序。
+
+没有已有会话和活动选择、但存在 `history.jsonl` 时，Mino 会取得旧的 `history.lock`，校验并恢复旧历史，再将其复制为一个会话。有效且完整的日志按原样复制；尚未结束的问答和不完整尾部，可能需要先按既有规则补充恢复记录和备份。旧文件会保留为迁移留档。复制和保存新选择期间，程序一直持有旧锁，因此仍在运行的旧版 Mino 会阻止迁移。
+
+复制之前，Mino 把目标 ID 保存到 `history-migration.json`。导入中断后，重试沿用同一个目标。已有目标必须与经过校验的旧日志字节一致；内容不同则保持原样，要求你明确选择。启动时，已成功保存的活动选择优先，避免再次导入；恢复时也会清理匹配的迁移进度。不要期待旧版本与新版本共享历史：旧程序继续使用 `history.jsonl`，其中的变化不会与新会话同步。
+
+`/clear` 保留当前会话 ID 和其他会话，确认后将活动日志替换为空历史。它不删除旧的 `history.jsonl` 留档、恢复副本或手工备份，也不会撤销命令或安全擦除磁盘数据。保存或同步会话变更可能失败，Mino 此时停止聊天，不会承诺成功。请保留文件并检查错误提示，再重启让程序重新核对保存状态。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-03`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-04`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-03
+git checkout chapter-04
 go run ./cmd/mino
 ```
 
@@ -138,10 +178,10 @@ go run ./cmd/mino
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
-安装包和源码运行共用用户目录中的配置，第二章和第三章源码运行也会使用用户目录中的历史。自动化测试使用临时目录和模拟模型服务，不改动真实历史，也不需要真实 API Key：
+安装包和源码运行共用用户目录中的配置，第二章和第三章源码运行会使用用户目录中的历史，第四章源码运行则按上文使用和迁移它。自动化测试使用临时目录和模拟模型服务，不改动真实历史，也不需要真实 API Key：
 
 ```bash
 bash scripts/check.sh
 ```
 
-接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)，或[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。
+接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)、[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)，或[第四章：多会话](./chapters/04-jsonl-sessions.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。

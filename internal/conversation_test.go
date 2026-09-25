@@ -14,7 +14,7 @@ import (
 )
 
 func TestRunRestoresConversationHistory(t *testing.T) {
-	path := filepath.Join(filepath.Dir(isolateConfig(t)), "history.jsonl")
+	dir := filepath.Dir(isolateConfig(t))
 	var inputs [][]map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
@@ -56,6 +56,17 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 	if inputs[1][0]["content"] != "My favorite color is blue." || inputs[1][1]["encrypted_content"] != "opaque-state" || inputs[1][2]["phase"] != "final_answer" || inputs[1][3]["content"] != "What color?" {
 		t.Fatalf("history lost content or protocol fields: %#v", inputs[1])
 	}
+	pointerData, err := os.ReadFile(filepath.Join(dir, "active-session.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pointer struct {
+		ID string `json:"session_id"`
+	}
+	if err := json.Unmarshal(pointerData, &pointer); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "sessions", pointer.ID+".jsonl")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -87,8 +98,8 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 	if strings.Contains(string(data), "test-key") {
 		t.Fatal("configuration key was saved in history")
 	}
-	for _, name := range []string{"history.jsonl", "history.lock"} {
-		info, err := os.Stat(filepath.Join(filepath.Dir(path), name))
+	for _, name := range []string{"active-session.json", "sessions.lock", filepath.Join("sessions", pointer.ID+".jsonl")} {
+		info, err := os.Stat(filepath.Join(dir, name))
 		if err != nil || info.Mode().Perm() != 0600 {
 			t.Fatalf("permissions for %s: %v, %v", name, info, err)
 		}

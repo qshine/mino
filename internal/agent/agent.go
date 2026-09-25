@@ -38,16 +38,17 @@ type Interaction interface {
 }
 
 type Event struct {
-	Kind   string // response_started, text, tool_result, notice
+	Kind   string // response_started, text, tool_result, notice, info
 	Text   string
 	Result tools.Result
 }
 
 type Confirmation struct {
-	Kind     string // tool or recovery
-	ToolName string
-	Fields   []tools.Field
-	Warning  string
+	Kind      string // tool, recovery, or clear
+	SessionID string
+	ToolName  string
+	Fields    []tools.Field
+	Warning   string
 }
 
 type Options struct{ BaseURL, APIKey, Model, Instructions string }

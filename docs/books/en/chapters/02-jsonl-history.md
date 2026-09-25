@@ -54,7 +54,7 @@ A `turn_id` ties the three records together. Each turn receives a fresh ID of 32
 
 One file also keeps the current scope explicit: every completed turn belongs to the same conversation, with no session to select at startup. A file lock allows only one Mino process to use this history at a time. **The single-conversation limit comes from Mino's current design, not from JSONL.**
 
-Records have no `session_id` field because the file identifies their conversation. Chapter 04 (`chapter-04`) separates sessions into `~/.mino/sessions/<session_id>.jsonl`, with `/new` creating a file and its name identifying the session. Commands such as `/new` and `/clear` are not implemented in this chapter.
+Records have no `session_id` field because the file identifies their conversation. [Chapter 04](./04-jsonl-sessions.md), available in the `chapter-04` release, separates sessions into `~/.mino/sessions/<session_id>.jsonl`, with `/new` creating a file and its name identifying the session. Commands such as `/new` and `/clear` are not implemented in this chapter.
 
 ## 3. Bring the blue in the file back to the model
 

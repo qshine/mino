@@ -14,10 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains released Chapters 01–03, tagged
-`chapter-01` through `chapter-03` with application versions `0.1.0` through `0.3.0`.
+**Current progress:** This snapshot contains released Chapters 01–04, tagged
+`chapter-01` through `chapter-04` with application versions `0.1.0` through `0.4.0`.
 Chapter 01 introduces streaming terminal conversations; Chapter 02 adds JSONL
-history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop.
+history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop. Chapter 04 adds isolated sessions, selection, and confirmed clearing.
 Gateway and Agent directories are consistent from Chapter 01 onward. See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
@@ -34,10 +34,10 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-The installer selects your Mac architecture, downloads this chapter release,
+The installer selects your Mac architecture, downloads the latest release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -94,7 +94,7 @@ visible and an error is shown.
 
 Version `chapter-02` introduces Chapter 02 history; Chapter 03 adds the tool-aware
 recovery described below.
-Mino appends conversation records to `~/.mino/history.jsonl` and restores completed
+In Chapters 02 and 03, Mino appends conversation records to `~/.mino/history.jsonl` and restores completed
 turns at startup. One local file holds one conversation; `turn_id` associates the
 records within each turn. Streamed answers remain immediate. In `chapter-02`, failed
 or interrupted turns are retained but excluded from later requests. Chapter 03
@@ -105,7 +105,7 @@ History and recovery backups contain private conversation data. Files use `0600`
 permissions, and only one Mino process can use the history at a time. History
 write failures stop chat. An incomplete tail is backed up before repair; invalid
 records in the middle stop startup. Limits are 16 MiB per record and 64 MiB per
-file; context compaction and `/new` are later chapters.
+file. Chapter 04 adds `/new`; context compaction remains planned.
 
 Existing `~/.mino/SOUL.md` files are preserved. If yours still says every question
 is independent, edit that sentence to reflect supplied conversation history; the
@@ -140,12 +140,38 @@ Existing `~/.mino/SOUL.md` files are preserved. If yours still says Mino cannot
 execute tools, update those outdated capability sentences using the bundled
 [SOUL.md](SOUL.md) as a reference, while keeping your own instructions.
 
+## Multiple sessions (Chapter 04)
+
+Install `chapter-04` with `mino update chapter-04` to use Chapter 04. Startup restores
+the last active session and displays its ID. Each session has its own private
+`~/.mino/sessions/<id>.jsonl`; only that session supplies request context.
+
+| Command | Behavior |
+| --- | --- |
+| `/new` | Start an empty session and keep the previous one. |
+| `/sessions` | List full IDs and update times; `*` marks the active session. |
+| `/resume <id>` | Restore the full ID shown by `/sessions`. |
+| `/clear` | Clear the current session after typing its complete ID in an interactive terminal. |
+| `/help` | Show the available commands. |
+
+Commands do not call the model. Clearing keeps the session ID and other sessions;
+it does not undo tool effects or delete archives and backups. One Mino process
+holds the session store at a time. Switching keeps this launch's SOUL and Bash
+working directory. If the saved selection is damaged, Mino asks you to choose a
+session instead of silently starting over.
+
+The first upgrade imports legacy `history.jsonl` under its old lock and retains
+it as a private archive. Interrupted imports reuse their destination; conflicting
+files are not overwritten. Old releases keep using the archive and do not see
+new session activity. See [Chapter 04](docs/books/en/chapters/04-jsonl-sessions.md)
+for isolation, recovery, and the request-level experiment.
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-03   # Install this snapshot's chapter
+mino update chapter-04   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-04` reports
@@ -162,6 +188,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 01 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
 | Chapter 02 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | Chapter 03 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
+| Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. This tag migration is
@@ -191,9 +218,10 @@ not call a paid model or modify your real configuration.
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter 02: JSONL conversation history](docs/books/en/chapters/02-jsonl-history.md)
 - [Chapter 03: tools and the Agent loop](docs/books/en/chapters/03-tools-and-bash.md)
+- [Chapter 04: multiple sessions](docs/books/en/chapters/04-jsonl-sessions.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
-- Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.
+- Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.
 - [`Session`](internal/agent/session.go) owns in-memory history; [`history.go`](internal/agent/history.go) manages the JSONL file. Memory advances only after a successful write and sync.
 - [`Tool`](internal/tools/tool.go) defines preparation and execution; Bash implements it in `internal/tools/bash.go`. Constructors inject dependencies. Gateway handles display and confirmation through the Agent contract.
 - The SDK handles API communication. Mino owns terminal interaction, the Agent loop, approval, and local tool execution.

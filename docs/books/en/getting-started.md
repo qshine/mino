@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-03` release (application version `0.3.0`), published on 2026-09-26. This chapter includes terminal conversation, saved history, and approved Bash execution. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-04` release (application version `0.4.0`), published on 2026-09-26. This chapter includes terminal conversation, saved history, approved Bash execution, and separate sessions. Use the tag named in each lesson when running its experiments.
 
 ## Prepare your Mac
 
@@ -22,10 +22,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-03`. Omit `-- chapter-03` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-04`. Omit `-- chapter-04` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -59,16 +59,16 @@ Enter a question after `You>`. Real questions contact your configured service an
 
 ## Check the version and update
 
-If Mino was installed before the chapter-tag migration, rerun the installation command above **once**, even if `mino version` already reports `0.3.0`. The old embedded updater cannot resolve `chapter-*` tags. Reinstallation preserves your settings, custom `~/.mino/SOUL.md`, and any history.
+If Mino was installed before the chapter-tag migration, rerun the installation command above **once**, even if `mino version` already reports `0.4.0`. The old embedded updater cannot resolve `chapter-*` tags. Reinstallation preserves your settings, custom `~/.mino/SOUL.md`, and any history.
 
 After installing a chapter-tag release, you can check the numeric version and select this chapter again:
 
 ```bash
 mino version
-mino update chapter-03
+mino update chapter-04
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.3.0` or `v0.3.0` as aliases for `chapter-03`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.4.0` or `v0.4.0` as aliases for `chapter-04`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
 
 ## Mino identity
 
@@ -123,14 +123,54 @@ Unlike Chapter 02's completed-only replay, failed or interrupted tool turns reta
 
 Commands and captured results are saved in plain text and supplied as context on later requests. They may contain sensitive content, including data a command reads from a file. Switching the configured service also sends this replayable history to the new service. Keep history and recovery copies private.
 
+## Try Chapter 04 from source
+
+Chapter 04 is available as the [chapter-04 release](https://github.com/qshine/mino/releases/tag/chapter-04), with application version `0.4.0`. The installed package includes multiple sessions. To run the matching source, use this tag from the repository root:
+
+```bash
+git checkout chapter-04
+go run ./cmd/mino
+```
+
+The banner identifies `Chapter 04: Multiple Sessions`, and source builds still report `dev`. Go and model-service requirements are the same as in [the source setup](#learn-from-the-source) and [Chapter 03's tool notes](#try-chapter-03-from-source). Running this checkout uses your real home-directory settings and performs the migration below when applicable. Close older Mino processes and keep private backups before trying it.
+
+Use `/new` to start a separate conversation, `/sessions` to list IDs, `/resume <id>` to select a complete 32-character lowercase hexadecimal ID, and `/help` to list commands. `/clear` requires typing the current session's exact ID in an interactive terminal; `/exit` exits. These commands do not call the model. If startup encounters an unknown tool result, it requires the existing recovery acknowledgment before continuing. See [Chapter 04](./chapters/04-jsonl-sessions.md) for the A → B → A experiment and clear-confirmation behavior.
+
+Changing sessions does not reload `~/.mino/SOUL.md` or change the Bash directory captured at startup. Existing identity files remain untouched. If yours claims that Mino only has one conversation, update that guidance yourself and restart. All sessions use the same loaded model settings: changing the configured service and restarting sends the selected session's replayable history to that service on your next question.
+
+## Chapter 04 storage and migration
+
+Chapter 04 uses this layout under `~/.mino/`:
+
+```text
+sessions/<session_id>.jsonl
+active-session.json
+sessions.lock
+history-migration.json     (present during an unfinished import)
+history.jsonl             (retained legacy archive after import)
+history.lock              (legacy lock used during import)
+```
+
+The user and sessions directories use `0700`; session logs, selection, migration marker, and locks use `0600`. The program rejects symbolic links and unexpected file types when opening them. Session content remains plain text and may contain private questions, commands, and tool output. Keep session files, archives, and recovery copies out of Git and shared logs. Each JSONL file retains the 16 MiB per-record and 64 MiB per-file limits; these are not model context budgets. Records still read `v: 1` and `v: 2`, with new records written as `v: 2`.
+
+Mino holds `sessions.lock` for the whole run, so only one Mino process can use this session store, even if you intend to select different sessions. Close the other process instead of deleting its lock. The lock file can remain after exit.
+
+On a fresh setup, startup creates a session. With a saved selection, it restores that session. A missing or damaged selection, an unavailable selected log, or a conflicting migration target can instead leave Mino waiting for a selection. Use `/sessions`, then `/resume` with an existing complete ID, or choose `/new`. The list shows IDs and modification times, not a validation report; loading still checks the log. Recovery of an incomplete tail makes a private `<session_id>-recovery-*.jsonl` backup in `sessions/`. Corruption in the middle or invalid records reject that log rather than silently discarding content; failed recovery writes stop the program.
+
+When no sessions or active selection exist and `history.jsonl` is present, Mino acquires the legacy `history.lock`, validates and recovers the old history, then copies it to one session. A valid completed log is copied unchanged; pending turns and incomplete tails can require the established recovery records and backups before copying. The old file remains as a migration archive. The program keeps the legacy lock through copying and saving the new selection, so a still-running older Mino blocks migration.
+
+Before copying, Mino saves the destination ID in `history-migration.json`. If importing is interrupted, retrying uses the same destination. An existing target must match the validated legacy bytes; differing content is left untouched and requires explicit selection. A successfully saved active selection takes precedence at startup, avoiding another import. Matching migration progress is cleaned up on recovery. Do not run an older version expecting shared history: older versions continue to use `history.jsonl`, and their changes do not synchronize with the new sessions.
+
+`/clear` keeps the current session ID and other sessions, but replaces the active log with empty history after confirmation. It does not remove the old `history.jsonl` archive, recovery copies, or manual backups, and it does not undo commands or securely erase disk data. Saving or syncing session changes can fail; Mino stops chat instead of promising success. Preserve the files and inspect the reported error before restarting, when the program checks the saved state again.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-03`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-04`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-03
+git checkout chapter-04
 go run ./cmd/mino
 ```
 
@@ -138,10 +178,10 @@ Application code and tests live under `internal/`. The chapter snapshots share `
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 
-Downloaded and source builds share your home-directory settings. Chapter 02 and Chapter 03 source runs also use your home-directory history. Automated tests use temporary directories and mock model services, leaving your real history untouched; no real API key is needed:
+Downloaded and source builds share your home-directory settings. Chapter 02 and Chapter 03 source runs use your home-directory history; Chapter 04 source runs use and migrate it as described above. Automated tests use temporary directories and mock model services, leaving your real history untouched; no real API key is needed:
 
 ```bash
 bash scripts/check.sh
 ```
 
-Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), or [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md). Run each chapter's experiments at its stated source version; the request and history formats differ.
+Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md), or [Chapter 04: multiple sessions](./chapters/04-jsonl-sessions.md). Run each chapter's experiments at its stated source version; the request and history formats differ.

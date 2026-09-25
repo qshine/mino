@@ -11,6 +11,36 @@ were reissued, and Chapters 03 and 04 published, on 2026-09-26. All four install
 understand chapter tags and numeric version aliases. This authorized replacement
 is an exception; future fixes receive new patch tags.
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- Optional Umami Cloud analytics for the published book, with shared English and
+  Chinese pageview/visitor statistics, domain-restricted collection, and setup
+  instructions. Local previews and pull requests stay untracked; chapter
+  navigation and browser back/forward are counted without counting hash anchors.
+- Chapter 04 multiple sessions (`chapter-04`, version `0.4.0`): `/new`, `/sessions`,
+  `/resume <id>`, `/clear`, and `/help`. Each private JSONL file carries its
+  session ID in its filename; startup restores the last selection.
+- Interactive clearing requires the complete current session ID. It keeps other
+  sessions, configuration, SOUL, migration archives, and recovery backups; it
+  does not undo commands or promise secure disk erasure.
+- Recoverable import of legacy `history.jsonl`, retaining its archive and holding
+  its legacy lock during migration. A durable marker prevents duplicate imports;
+  conflicting targets are never overwritten.
+- Bilingual Chapter 04 lesson and tests for request isolation, tool recovery,
+  migration retries, corrupt selection, process locking, safe paths, and failed
+  publication. Unknown tool results still require acknowledgement, never re-execution.
+
+### Changed
+
+- Store sessions under `~/.mino/sessions/`, track selection in
+  `active-session.json`, and serialize the store with `sessions.lock`. Selection
+  damage enters a command-only recovery state; storage write failures stop chat.
+- Publish selection and clearing atomically after syncing temporary files, then
+  sync their directory before advancing memory. Tool protocol and record versions
+  remain unchanged. Existing SOUL files remain untouched.
+
 ## [0.3.0] - 2026-09-26
 
 ### Added

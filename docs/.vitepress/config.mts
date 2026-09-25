@@ -1,6 +1,29 @@
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import type { HeadConfig } from 'vitepress'
 
 const repository = 'https://github.com/qshine/mino'
+const umamiScriptUrl = process.env.UMAMI_SCRIPT_URL?.trim()
+const umamiWebsiteId = process.env.UMAMI_WEBSITE_ID?.trim()
+const analyticsHead: HeadConfig[] = []
+
+if (Boolean(umamiScriptUrl) !== Boolean(umamiWebsiteId)) {
+  throw new Error('Set both UMAMI_SCRIPT_URL and UMAMI_WEBSITE_ID, or leave both unset.')
+}
+
+// The publishing workflow opts in; local builds and pull requests stay untracked.
+if (process.env.BOOK_ANALYTICS_ENABLED === 'true' && umamiScriptUrl && umamiWebsiteId) {
+  if (new URL(umamiScriptUrl).protocol !== 'https:') {
+    throw new Error('UMAMI_SCRIPT_URL must use HTTPS.')
+  }
+  analyticsHead.push(['script', {
+    id: 'mino-umami',
+    defer: '',
+    src: umamiScriptUrl,
+    'data-website-id': umamiWebsiteId,
+    'data-domains': 'qshine.github.io',
+    'data-exclude-hash': 'true'
+  }])
+}
 
 export default withMermaid({
   title: 'Mino',
@@ -11,7 +34,7 @@ export default withMermaid({
   rewrites: { 'en/:path*': ':path*' },
   lastUpdated: true,
   cleanUrls: false,
-  head: [['meta', { name: 'theme-color', content: '#176b58' }]],
+  head: [['meta', { name: 'theme-color', content: '#176b58' }], ...analyticsHead],
   vite: {
     // The plugin injects Mermaid imports; pre-bundle its CommonJS dependencies for local preview.
     optimizeDeps: { include: ['mermaid'] }
@@ -54,6 +77,9 @@ export default withMermaid({
           { text: 'Part II · Let the agent act', items: [
             { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' }
           ] },
+          { text: 'Part III · Manage conversations', items: [
+            { text: '04 Multiple sessions', link: '/chapters/04-jsonl-sessions' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -87,6 +113,9 @@ export default withMermaid({
           ] },
           { text: '第二部分 · 让 Agent 行动', items: [
             { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' }
+          ] },
+          { text: '第三部分 · 管理对话', items: [
+            { text: '04 JSONL 多会话', link: '/zh/chapters/04-jsonl-sessions' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

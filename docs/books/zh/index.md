@@ -12,7 +12,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**已完成：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)。第三章随 `chapter-03` 发布（版本 `0.3.0`），多会话由单独的 `chapter-04` 提供，第五章及以后仍在[规划中](./plan-todo-chapters.md)。
+**已完成：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md) · [第四章：多会话](./chapters/04-jsonl-sessions.md)。第三章随 `chapter-03` 发布（版本 `0.3.0`）；第四章随 `chapter-04` 发布（版本 `0.4.0`）。后续能力仍在[规划中](./plan-todo-chapters.md)。
 
 ## 适合谁读
 
@@ -30,20 +30,20 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-本版包含第 01–03 章，于 **2026-09-26** 以 `chapter-01` 至 `chapter-03` 发布，程序版本为 `0.1.0` 至 `0.3.0`。各章注明了实验所需的源码标签。
+本版包含第 01–04 章，于 **2026-09-26** 以 `chapter-01` 至 `chapter-04` 发布，程序版本为 `0.1.0` 至 `0.4.0`。各章注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
 | [01 与模型对话](./chapters/01-terminal-chat.md) | 一行问题如何变成 HTTP 请求，再变成终端里的回答？ |
 | [02 JSONL 对话历史](./chapters/02-jsonl-history.md) | 哪些内容能在重启后保留，哪些记录会成为模型上下文？ |
 | [03 工具调用与 Bash](./chapters/03-tools-and-bash.md) | 命令由谁批准和执行？结果丢失后怎么办？ |
-| 04 多会话（后续发布版） | 怎样新建或恢复另一段对话？ |
+| [04 多会话](./chapters/04-jsonl-sessions.md) | 怎样选择一段对话的上下文、保留另一段，并确认清空当前会话？ |
 | 05–06 上下文管理 | 放不下的历史如何整理，何时需要压缩？ |
 | 07–09 扩展与安全防护 | 如何接入知识和工具，如何约束程序的实际权限？ |
 
 ## 如何配合代码阅读
 
-章节开头会注明适用版本，源码链接使用对应的 `chapter-NN` 发布标签。第三章对应 [chapter-03](https://github.com/qshine/mino/tree/chapter-03)。
+章节开头会注明适用版本，源码链接使用对应的 `chapter-NN` 发布标签。第三章对应 [chapter-03](https://github.com/qshine/mino/tree/chapter-03)。第四章对应 [chapter-04](https://github.com/qshine/mino/tree/chapter-04)。
 
 发布标签使用 `chapter-NN`，程序版本采用 `0.章节.修订号`。例如，补丁标签 `chapter-04.1` 生成版本 `0.4.1`，并更新对应章节的说明，无需新增一章。
 
