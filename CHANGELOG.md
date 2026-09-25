@@ -18,6 +18,34 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-21
+
+### Added
+
+- Chapter 03 Bash tool and Agent loop. `internal/tools/` holds tool definitions,
+  strict arguments, and execution; calls and results retain their Responses
+  `call_id` during replay. Tools implement `Definition`, `Prepare`, and `Execute`,
+  so a new tool needs no Bash-specific branch in the Agent loop.
+- Per-call, default-deny interactive approval showing the escaped command, real
+  working directory, minimal environment, and limits. Piped input cannot approve.
+  Commands use a 30 second timeout, a combined 64 KiB output cap, and process-group
+  cleanup; turns stop at 8 model requests or 16 calls. Bash is not an OS sandbox.
+- Durable tool start and result records: each step is synced before the next. On
+  restart, unfinished tool turns are closed without re-execution (`not_executed` or
+  `unknown`) and excluded from context with a notice.
+
+### Changed
+
+- Separate CLI Gateway from Agent processing with synchronous interaction contracts
+  and constructor injection. `Agent.Handle` saves the user message before `runLoop`,
+  which directly calls the Responses SDK and saves every completed response.
+- Make `Session` the owner of in-memory history, committing changes only after
+  JSONL writes and syncs succeed.
+- History writes format `v: 2` and still reads Chapter 02's `v: 1`. Older releases
+  reject new records; retain a private pre-upgrade backup if rollback is needed.
+- Default SOUL now describes approved Bash use and untrusted tool results. Existing
+  user SOUL files remain untouched.
+
 ## [0.2.0] - 2026-10-21
 
 ### Added

@@ -163,4 +163,4 @@ go test ./internal/... -run 'TestRunRestoresConversationHistory|TestRunFailedTur
 
 目前每次请求仍会重放全部已完成的历史。对话增长后，可能超过模型的上下文限制；上下文压缩和上下文预算还在规划中。
 
-`chapter-02` 下一步缺少的是行动。[第 03 章](../plan-todo-chapters.md)（见 `chapter-03` 版本）补上这次交接：模型提出工具调用，你批准命令，程序再把工具结果交回模型。后面的步骤见[章节规划](../plan-todo-chapters.md)。
+`chapter-02` 下一步缺少的是行动。[第 03 章](./03-tools-and-bash.md)（见 `chapter-03` 版本）补上这次交接：模型提出工具调用，你批准命令，程序再把工具结果交回模型。后面的步骤见[章节规划](../plan-todo-chapters.md)。

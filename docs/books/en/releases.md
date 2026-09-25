@@ -2,7 +2,7 @@
 
 This page covers application releases. For the book website, see [writing and updating the book](./maintaining-the-book.md).
 
-This checkout corresponds to the [chapter-02](https://github.com/qshine/mino/releases/tag/chapter-02) release, application version **0.2.0**, published on **2026-10-21** with macOS packages for Apple Silicon and Intel. Each lesson uses its matching source tag, and each later chapter has its own release. Building the working tree does not create a release or change published tags.
+This checkout corresponds to the [chapter-03](https://github.com/qshine/mino/releases/tag/chapter-03) release, application version **0.3.0**, published on **2026-10-21** with macOS packages for Apple Silicon and Intel. Each lesson uses its matching source tag, and each later chapter has its own release. Building the working tree does not create a release or change published tags.
 
 ## Republished releases
 
@@ -10,6 +10,11 @@ On 2026-10-21 the tutorial was restructured from nine chapters into ten, and eve
 
 An executable installed before 2026-10-21 still reports its old version number; run `mino update` to switch to a republished release. Sessions that earlier releases wrote under `~/.mino/sessions/` remain readable, but a legacy `~/.mino/history.jsonl` is not imported. Keep it as a private backup.
 
+## Session compatibility
+
+Each release reads the session records written by earlier chapters, but an older release may refuse a session once a newer one has written records it does not know. Before switching versions, close Mino and keep private copies of your session files.
+
+Chapter 03 writes version 2 session records and reads versions 1–2; `chapter-02` cannot read a session after version 2 records are appended. See [Chapter 03 setup](./getting-started.md#try-chapter-03-from-source).
 
 ## Version policy
 
@@ -36,7 +41,7 @@ Packaging derives `0.<chapter>.<patch>` from the tag and supplies it through Go 
 
 **An updater installed before the chapter-tag migration cannot resolve `chapter-*` tags.** Rerun the [current installation command](./getting-started.md#install-with-one-command) once, even if the displayed numeric version is unchanged. This fetches the new installer and replaces the executable while preserving settings, custom `~/.mino/SOUL.md`, and any history. Updating a tag or the script on `main` does not change an installed binary.
 
-After that installation, `mino update` selects the latest release and `mino update chapter-02` selects this chapter. The installer also accepts `0.2.0` or `v0.2.0` as aliases for `chapter-02`; these are version selectors, not additional Git tags.
+After that installation, `mino update` selects the latest release and `mino update chapter-03` selects this chapter. The installer also accepts `0.3.0` or `v0.3.0` as aliases for `chapter-03`; these are version selectors, not additional Git tags.
 
 ## Publish a version
 
@@ -63,10 +68,10 @@ The workflow uploads to a draft release, then publishes after all uploads succee
 
 ## Local packaging and recovery
 
-From the repository root at `chapter-02`, inspect this chapter's packages:
+From the repository root at `chapter-03`, inspect this chapter's packages:
 
 ```bash
-bash scripts/package.sh chapter-02
+bash scripts/package.sh chapter-03
 ```
 
 Packaging accepts the canonical chapter tag and builds the current working tree; it does not check out the tag. Output goes to the ignored `dist/` directory without creating a Git tag or release. If publishing fails, inspect the logs and any incomplete draft before rerunning the job.

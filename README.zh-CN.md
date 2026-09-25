@@ -10,9 +10,10 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–02 章，对应发布版本 `chapter-02`（程序版本 `0.2.0`）。
+**当前进度：**本快照包含第 01–03 章，对应发布版本 `chapter-03`（程序版本 `0.3.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
+第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -28,10 +29,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-02` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载本快照对应的 `chapter-03` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -91,12 +92,31 @@ Mino 把对话保存在 `~/.mino/sessions/` 中，启动时恢复成功完成的
 可参考更新后的默认 [SOUL.md](SOUL.md)。会话命令实现前，如需重新开始，先退出 Mino，
 再将 `~/.mino/sessions/` 中的会话文件移到私有备份位置；恢复副本同样需要妥善保管。
 
+## Bash 与 Agent 循环（第 03 章）
+
+执行 `mino update chapter-03` 安装第 03 章，或检出该标签后运行 `go run ./cmd/mino`。
+你可以问“这台电脑安装的 Go 是什么版本？”模型提出 Bash 调用后，Mino 会显示经过转义的命令、工作目录、环境和执行限制。
+输入 `y` 批准当前命令，直接回车则拒绝。每次调用都需要单独批准，管道输入不能批准命令。
+结果交回模型后，模型可以回答，也可以继续请求工具。
+
+工具统一放在 `internal/tools/` 目录，目前只有 Bash。单条命令最多执行 30 秒，stdout 与 stderr 合计最多 64 KiB；
+每轮问答最多 8 次模型请求、16 次工具调用。Bash 使用你的账户权限，可以访问文件和网络；批准与执行限额不构成操作系统沙箱。
+完整交互、保存节点与验证方法见[第 03 章](docs/books/zh/chapters/03-tools-and-bash.md)。
+
+每一步都先在同一个会话文件中保存并同步，再进行下一步。第 03 章写入 `v: 2` 格式，同时兼容第 02 章的 `v: 1` 记录。
+旧版程序无法读取包含新记录的历史；如果需要退回 `chapter-02`，请在升级到 `chapter-03` 前保存私有备份。
+如果 Mino 在工具问答中途停止，重启时会在不执行任何命令的情况下在磁盘上补齐这一轮，并显示提示。
+在第 03 章中，这一轮不会进入后续请求，因此模型不知道命令可能已经执行；第 04 章解决这个问题。
+
+已有的 `~/.mino/SOUL.md` 会保留。如果其中仍写着不能执行工具，请参考内置 [SOUL.md](SOUL.md)
+更新过时的能力描述，同时保留你自己的指令。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-02   # 安装本快照对应的章节
+mino update chapter-03   # 安装本快照对应的章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -113,6 +133,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | --- | --- | --- |
 | 第 01 章 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
 | 第 02 章 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
+| 第 03 章 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -135,11 +156,13 @@ bash scripts/check.sh
 
 - [第 01 章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
 - [第 02 章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
+- [第 03 章：工具调用与 Agent 循环](docs/books/zh/chapters/03-tools-and-bash.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
-- 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/`。
-- `internal/app.go` 负责组装，`internal/gateway/` 负责终端交互，
-  `internal/agent/` 负责模型请求、Agent 处理和 JSONL 历史；配置和 SOUL 保留在 `internal/`。
-- SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
+- 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
+- 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。
+- [`Session`](internal/agent/session.go) 管理内存历史，[`history.go`](internal/agent/history.go) 管理 JSONL 文件。写入并同步成功后才提交内存状态。
+- [`Tool`](internal/tools/tool.go) 定义准备与执行接口，Bash 在 `internal/tools/bash.go` 中实现；使用构造函数注入依赖。Gateway 通过 Agent 的交互契约完成显示和确认。
+- SDK 负责 API 通信，Mino 负责终端交互、Agent 循环、授权和本地工具执行。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 
 ## 图文教程书

@@ -22,7 +22,7 @@ func TestTerminalReadsQuestionsAndExits(t *testing.T) {
 				prompts = append(prompts, prompt)
 				return emit("中文回答")
 			}
-			err := Run(context.Background(), strings.NewReader(tc.input), &output, &errorOutput, respond)
+			err := runTerminal(context.Background(), strings.NewReader(tc.input), &output, &errorOutput, respond)
 			if err != nil || errorOutput.Len() != 0 {
 				t.Fatalf("error = %v, stderr = %q", err, errorOutput.String())
 			}
@@ -41,7 +41,7 @@ func TestTerminalContinuesAfterRequestError(t *testing.T) {
 		}
 		return emit("恢复正常")
 	}
-	err := Run(context.Background(), strings.NewReader("第一次\n第二次\n/exit\n"), &output, &errorOutput, respond)
+	err := runTerminal(context.Background(), strings.NewReader("第一次\n第二次\n/exit\n"), &output, &errorOutput, respond)
 	if err != nil || !strings.Contains(errorOutput.String(), "HTTP 429") || !strings.Contains(output.String(), "恢复正常") {
 		t.Fatalf("error = %v, output = %q, stderr = %q", err, output.String(), errorOutput.String())
 	}
@@ -62,7 +62,7 @@ func TestTerminalCancellation(t *testing.T) {
 				<-ctx.Done()
 				return ctx.Err()
 			}
-			go func() { done <- Run(ctx, reader, io.Discard, io.Discard, respond) }()
+			go func() { done <- runTerminal(ctx, reader, io.Discard, io.Discard, respond) }()
 			if waitingForResponse {
 				if _, err := io.WriteString(writer, "你好\n"); err != nil {
 					t.Fatal(err)
@@ -83,7 +83,7 @@ func TestTerminalCancellation(t *testing.T) {
 }
 
 func TestTerminalRejectsOversizedInput(t *testing.T) {
-	err := Run(context.Background(), strings.NewReader(strings.Repeat("a", 1<<20)), io.Discard, io.Discard,
+	err := runTerminal(context.Background(), strings.NewReader(strings.Repeat("a", 1<<20)), io.Discard, io.Discard,
 		func(context.Context, string, func(string) error) error {
 			t.Fatal("oversized input was sent")
 			return nil
@@ -95,7 +95,7 @@ func TestTerminalRejectsOversizedInput(t *testing.T) {
 
 func TestTerminalTreatsControlSequencesAsText(t *testing.T) {
 	var output bytes.Buffer
-	err := Run(context.Background(), strings.NewReader("你好\n/exit\n"), &output, io.Discard,
+	err := runTerminal(context.Background(), strings.NewReader("你好\n/exit\n"), &output, io.Discard,
 		func(_ context.Context, _ string, emit func(string) error) error {
 			return emit("你好\x1b[2J\x00\r\n世界\t！")
 		})
@@ -104,5 +104,22 @@ func TestTerminalTreatsControlSequencesAsText(t *testing.T) {
 	}
 	if strings.ContainsAny(output.String(), "\x1b\x00\r") || !strings.Contains(output.String(), "世界\t！") {
 		t.Fatalf("unsafe terminal output: %q", output.String())
+	}
+}
+
+func TestTerminalKeepsPartialAnswerAndContinuesAfterStreamFailure(t *testing.T) {
+	var output, errorOutput bytes.Buffer
+	err := runTerminal(context.Background(), strings.NewReader("first\nsecond\n/exit\n"), &output, &errorOutput,
+		func(_ context.Context, prompt string, emit func(string) error) error {
+			if prompt == "first" {
+				if err := emit("partial\x1b"); err != nil {
+					return err
+				}
+				return errors.New("Model response is incomplete")
+			}
+			return emit("recovered")
+		})
+	if err != nil || strings.Contains(output.String(), "\x1b") || !strings.Contains(output.String(), "Assistant> partial\n") || !strings.Contains(output.String(), "Assistant> recovered\n") || !strings.Contains(errorOutput.String(), "incomplete") {
+		t.Fatalf("output = %q, stderr = %q, error = %v", output.String(), errorOutput.String(), err)
 	}
 }

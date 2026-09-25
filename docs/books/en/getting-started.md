@@ -9,9 +9,11 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-02` release (application version `0.2.0`), published on 2026-10-21. It covers the book up to Chapter 02; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-03` release (application version `0.3.0`), published on 2026-10-21. It covers the book up to Chapter 03; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
+
+Chapter 03 adds [approved Bash execution](#try-chapter-03-from-source). New records use version 2, which `chapter-02` cannot read.
 
 ## Prepare your Mac
 
@@ -24,10 +26,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-02`. Omit `-- chapter-02` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-03`. Omit `-- chapter-03` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -51,7 +53,7 @@ Press Enter to use the official OpenAI API URL. **There is no default model**: e
 
 A custom service must support Responses API streaming: `stream: true` requests and `text/event-stream` responses. Mino rejects endpoints that return only complete JSON. Enter the API prefix, such as `https://gateway.example.com/v1`, without appending `/responses` or `/chat/completions`. Remote addresses require HTTPS.
 
-Mino sends an ordered `input` list and requests `reasoning.encrypted_content`. A compatible service must accept these fields and accept its returned response items on subsequent requests. For a text-only response that omits output items on successful completion, Mino uses the completed streamed text as the saved answer.
+Mino sends an ordered `input` list and requests `reasoning.encrypted_content`. A compatible service must accept these fields and accept its returned response items on subsequent requests. Chapter 03 and later also require [Responses function-tool support](#try-chapter-03-from-source). For a text-only response that omits output items on successful completion, Mino uses the completed streamed text as the saved answer.
 
 Settings are saved in `~/.mino/config.json`. Later launches enter chat directly when settings are complete. Updates preserve them. The key is stored locally in plain text, with directory permissions `0700` and file permissions `0600`.
 
@@ -67,10 +69,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-02
+mino update chapter-03
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.2.0` or `v0.2.0` as aliases for `chapter-02`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.3.0` or `v0.3.0` as aliases for `chapter-03`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -98,18 +100,47 @@ History is limited to 16 MiB per record and 64 MiB per file. These are file limi
 
 Releases published before 2026-10-21 kept this conversation in `~/.mino/history.jsonl`. Current releases do not read or migrate that file; keep it as a private backup.
 
+## Try Chapter 03 from source
+
+Chapter 03 is available as `chapter-03` (application version `0.3.0`). To follow its source, use the [checkout steps below](#learn-from-the-source), select `chapter-03`, and run from the repository root:
+
+```bash
+git checkout chapter-03
+go run ./cmd/mino
+```
+
+The startup banner identifies `Chapter 03: Tools and the Agent Loop`; source builds report `dev` for their version. Use an interactive terminal to approve commands. Input redirected from a file or pipe cannot approve execution. Each command starts in the directory where you launched Mino, resolved to a real absolute path, and the approval screen shows that directory.
+
+The configured model and service must support Responses function tools, strict parameter schemas, `parallel_tool_calls: false`, and replay of `function_call` and `function_call_output` items alongside messages and any returned encrypted reasoning. A service that only streams text is insufficient. Local mock tests verify the request structure; they do not certify your provider's compatibility.
+
+When upgrading, review [Mino identity](#mino-identity): existing `~/.mino/SOUL.md` instructions are preserved. The new default describes tool calls, untrusted tool output, and execution limits.
+
+Bash starts without profile files. Its supplied environment consists of `HOME`, `LANG=en_US.UTF-8`, and this fixed `PATH`:
+
+```text
+/opt/homebrew/bin:/usr/local/bin:/usr/local/go/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+Programs installed elsewhere may need an absolute executable path. Mino does not inherit your shell's aliases or other environment variables, and does not copy API configuration into the child environment. **Approved Bash still has your account's filesystem and network access**, including access to configuration files that account can read; this is not a sandbox. Review the complete command and displayed environment before approving it.
+
+The same session file, `~/.mino/sessions/<session_id>.jsonl`, now also records model tool calls, starts, and results. Chapter 03 reads Chapter 02's `v: 1` records and writes new `v: 2` records; it does not rewrite older records. Back up the session file privately before running the Chapter 03 release. Once version 2 records have been appended, `chapter-02` cannot read that file: close Mino and preserve it separately before restoring your pre-upgrade backup for an older executable. Do not relabel version 2 records as version 1.
+
+Like Chapter 02, Chapter 03 replays only completed turns. Startup never reruns a command: an unfinished tool turn is closed on disk with `not_executed` or `unknown` results and reported with a notice, but it is excluded from context, as are tool turns that failed or were cancelled. See [Chapter 03's restart behavior](./chapters/03-tools-and-bash.md#_4-2-what-a-restart-leaves-out).
+
+Commands and captured results are saved in plain text and supplied as context on later requests. They may contain sensitive content, including data a command reads from a file. Switching the configured service also sends this replayable history to the new service. Keep history and recovery copies private.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-02`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-03`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-02
+git checkout chapter-03
 go run ./cmd/mino
 ```
 
-Application code and tests live under `internal/`. `internal/gateway/` handles terminal interaction, and `internal/agent/` handles model requests and saved history. Configuration and identity loading remain in `internal/`; no code-generation step is needed.
+Application code and tests live under `internal/`. `internal/gateway/` handles terminal interaction, and `internal/agent/` handles model requests and saved history. Chapter 03 adds tools under `internal/tools/`. Configuration and identity loading remain in `internal/`; no code-generation step is needed.
 
 The module files remain at the repository root. `go.mod` pins the official `github.com/openai/openai-go/v3` SDK to v3.66.0, and `go.sum` records dependency checksums. Go downloads the dependencies when you first build. You do not need a separate SDK installation.
 

@@ -9,9 +9,11 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-02`（程序版本 `0.2.0`），覆盖本书到第 02 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-21 发布的 `chapter-03`（程序版本 `0.3.0`），覆盖本书到第 03 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
+
+第三章加入[获批的 Bash 执行](#从源码体验第三章)。新记录采用版本 2，`chapter-02` 无法读取。
 
 ## 准备一台 Mac
 
@@ -24,10 +26,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-02`。省略 `-- chapter-02` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-03`。省略 `-- chapter-03` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -51,7 +53,7 @@ API 地址可以直接回车使用 OpenAI 官方地址。**模型没有默认值
 
 自定义服务必须支持 Responses API 流式输出：接受 `stream: true` 请求并返回 `text/event-stream`。Mino 会拒绝仅返回完整 JSON 的端点。填写 API 前缀，例如 `https://gateway.example.com/v1`，不要加上 `/responses` 或 `/chat/completions`。远程地址必须使用 HTTPS。
 
-Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`。兼容服务需要接受这些字段，以及它返回后又被程序重放的响应项。如果纯文本响应在成功完成时没有提供输出项，Mino 会用已完成的流式文本保存回答。
+Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`。兼容服务需要接受这些字段，以及它返回后又被程序重放的响应项。第三章及之后的版本还要求服务[支持 Responses 函数工具](#从源码体验第三章)。如果纯文本响应在成功完成时没有提供输出项，Mino 会用已完成的流式文本保存回答。
 
 设置保存在 `~/.mino/config.json`。之后配置齐全就直接进入聊天；升级不会覆盖这些设置。密钥以明文保存在本地，目录和文件分别使用 `0700`、`0600` 权限。
 
@@ -67,10 +69,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-02
+mino update chapter-03
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.2.0` 或 `v0.2.0`，两者都指向 `chapter-02`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.3.0` 或 `v0.3.0`，两者都指向 `chapter-03`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -98,18 +100,47 @@ mino update chapter-02
 
 2026-10-21 之前发布的版本把这段对话保存在 `~/.mino/history.jsonl`。当前各版本不会读取或迁移这个文件，请把它作为私有备份保留。
 
+## 从源码体验第三章
+
+第三章已随 `chapter-03` 发布（程序版本 `0.3.0`）。若要跟随源码学习，请按[下面的检出步骤](#从源码学习)选择 `chapter-03`，再在仓库根目录运行：
+
+```bash
+git checkout chapter-03
+go run ./cmd/mino
+```
+
+启动横幅标明 `Chapter 03: Tools and the Agent Loop`，源码构建的版本显示为 `dev`。批准命令需要交互式终端，从文件或管道重定向的输入不能批准执行。每条命令都从启动 Mino 的目录开始，程序将其解析为真实绝对路径，并在批准界面显示。
+
+配置的模型和服务必须支持 Responses 函数工具、严格参数结构、`parallel_tool_calls: false`，以及把 `function_call`、`function_call_output` 与消息、返回的加密推理内容一起重放。仅支持文本流式输出还不够。本机模拟测试验证请求结构，但不证明你的服务商已经兼容。
+
+升级时请检查 [Mino 的身份](#mino-的身份)：已有的 `~/.mino/SOUL.md` 指令会保留。新版默认身份已经说明工具调用、不可信工具输出和执行限制。
+
+Bash 启动时不读取配置文件。程序提供的环境只有 `HOME`、`LANG=en_US.UTF-8` 和下面固定的 `PATH`：
+
+```text
+/opt/homebrew/bin:/usr/local/bin:/usr/local/go/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+安装在其他目录中的程序可能需要使用可执行文件的绝对路径。Mino 不继承你的 Shell 别名或其他环境变量，也不把 API 配置复制进子进程环境。**获批的 Bash 仍有你账户的文件和网络访问权限**，包括账户可读取的配置文件；这不是沙箱。批准前，应查看完整命令和显示的环境。
+
+同一个会话文件 `~/.mino/sessions/<session_id>.jsonl` 现在还会保存模型工具调用、开始和结果。第三章能够读取第二章的 `v: 1` 记录，新记录写为 `v: 2`，不会重写旧记录。运行第三章发布版前，请私下备份会话文件。一旦追加了版本 2 记录，`chapter-02` 就不能再读取这份文件：使用旧程序前，应关闭 Mino，另行保留新版文件，再恢复升级前的备份。不要把版本 2 记录直接改标为版本 1。
+
+与第二章一样，第三章只重放已完成的问答。启动恢复绝不重跑命令：未结束的工具问答会在磁盘上补上 `not_executed` 或 `unknown` 结果，并以提示告知你，但它不会进入上下文；失败或被取消的工具问答同样如此。详见[第三章的重启行为](./chapters/03-tools-and-bash.md#_4-2-重启时留在上下文之外的工具问答)。
+
+命令和采集结果会以明文保存，并作为上下文发送到后续请求。它们可能包含敏感内容，包括命令从文件中读到的数据。切换配置中的服务，也会把这些可重放的历史发送给新服务。请妥善保管历史和恢复副本。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-02`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-03`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-02
+git checkout chapter-03
 go run ./cmd/mino
 ```
 
-应用代码及测试位于 `internal/`。`internal/gateway/` 处理终端交互，`internal/agent/` 负责模型请求和历史保存。配置和身份加载保留在 `internal/`，无需代码生成步骤。
+应用代码及测试位于 `internal/`。`internal/gateway/` 处理终端交互，`internal/agent/` 负责模型请求和历史保存。第三章在 `internal/tools/` 中加入工具。配置和身份加载保留在 `internal/`，无需代码生成步骤。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 

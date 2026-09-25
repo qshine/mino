@@ -14,33 +14,11 @@ import (
 	"syscall"
 	"unicode/utf8"
 
-	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/tools"
 )
 
 const maxHistoryRecordBytes = 16 << 20
 const maxHistoryBytes = 64 << 20
-
-type historyRecord struct {
-	Version int               `json:"v"`
-	Seq     int               `json:"seq"`
-	TurnID  string            `json:"turn_id"`
-	Kind    string            `json:"kind"`
-	Text    string            `json:"text,omitempty"`
-	Output  []json.RawMessage `json:"output,omitempty"`
-	Status  string            `json:"status,omitempty"`
-}
-
-type pendingTurn struct {
-	id, prompt string
-	reply      *modelReply
-}
-
-type historyState struct {
-	seq     int
-	pending pendingTurn
-	turns   map[string]bool
-	input   responses.ResponseInputParam
-}
 
 // Only the write/sync boundary is replaceable, to test short writes and disk failures.
 type historyWriter interface {
@@ -48,10 +26,9 @@ type historyWriter interface {
 	Sync() error
 }
 
-type Session struct {
+type history struct {
 	file, lock *os.File
 	writer     historyWriter
-	state      historyState
 	size       int64
 	broken     bool
 	notice     string
@@ -71,11 +48,18 @@ func validHistoryID(id string) bool {
 	return err == nil
 }
 
-// OpenSession opens the one saved conversation in the private application
-// directory prepared at startup. The file is named by its session ID, so later
-// releases can add more conversations beside it without moving this one.
-func OpenSession(dir string) (_ *Session, err error) {
-	h := &Session{state: historyState{turns: make(map[string]bool)}}
+// OpenSession restores the one saved conversation without executing tools. The
+// file is named by its session ID, so later releases can add more conversations
+// beside it without moving this one.
+func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
+	registry, err := toolRegistry(available)
+	if err != nil {
+		return nil, err
+	}
+	if err := secureSessionDirectory(dir); err != nil {
+		return nil, err
+	}
+	h := &Session{history: &history{}, state: historyState{turns: make(map[string]bool), tools: registry}}
 	defer func() {
 		if err != nil {
 			h.Close()
@@ -124,10 +108,15 @@ func OpenSession(dir string) (_ *Session, err error) {
 		return nil, err
 	}
 	if h.state.pending.id != "" {
-		if err = h.append(historyRecord{TurnID: h.state.pending.id, Kind: "turn_end", Status: "interrupted"}); err != nil {
+		hadTools := len(h.state.pending.calls) > 0
+		if err = h.finishTurn("interrupted"); err != nil {
 			return nil, err
 		}
-		h.notice += "An interrupted turn was retained but excluded from context. It was not retried.\n"
+		if hadTools {
+			h.notice += "An interrupted tool turn was retained but excluded from context. Commands it started may already have run; none was retried.\n"
+		} else {
+			h.notice += "An interrupted turn was retained but excluded from context. It was not retried.\n"
+		}
 	}
 	return h, nil
 }
@@ -192,7 +181,7 @@ func openPrivateHistoryFile(path string) (*os.File, error) {
 	return f, nil
 }
 
-func (h *Session) Close() error {
+func (h *history) Close() error {
 	var err error
 	if h.file != nil {
 		err = h.file.Close()
@@ -202,95 +191,6 @@ func (h *Session) Close() error {
 		err = errors.Join(err, h.lock.Close())
 	}
 	return err
-}
-
-func (h *Session) append(records ...historyRecord) error {
-	if h.broken {
-		return errors.New("History is unavailable after a write failure. Restart Mino.")
-	}
-	var data bytes.Buffer
-	for i := range records {
-		r := &records[i]
-		r.Version, r.Seq = 1, h.state.seq+i+1
-		line, err := json.Marshal(r)
-		if err != nil {
-			return errors.New("Failed to encode history record")
-		}
-		if len(line)+1 > maxHistoryRecordBytes {
-			return errors.New("History record exceeds the 16 MiB limit")
-		}
-		data.Write(line)
-		data.WriteByte('\n')
-	}
-	if h.size+int64(data.Len()) > maxHistoryBytes {
-		return errors.New("History reached the 64 MiB limit. Back it up and move it aside before restarting.")
-	}
-	n, err := h.writer.Write(data.Bytes())
-	if err == nil && n != data.Len() {
-		err = io.ErrShortWrite
-	}
-	if err == nil {
-		err = h.writer.Sync()
-	}
-	if err != nil {
-		h.broken = true
-		return fmt.Errorf("Failed to save history: %w", err)
-	}
-	h.size += int64(n)
-	for _, record := range records {
-		if err := h.state.apply(record); err != nil {
-			h.broken = true
-			return fmt.Errorf("Invalid history transition: %w", err)
-		}
-	}
-	return nil
-}
-
-func (s *historyState) apply(r historyRecord) error {
-	if r.Version != 1 || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
-		return errors.New("invalid version, sequence, or identifier")
-	}
-	switch r.Kind {
-	case "user_message":
-		if s.pending.id != "" || s.turns[r.TurnID] || !validHistoryText(r.Text) || r.Status != "" || len(r.Output) != 0 {
-			return errors.New("invalid user message or turn order")
-		}
-		s.pending = pendingTurn{id: r.TurnID, prompt: r.Text}
-		s.turns[r.TurnID] = true
-	case "assistant_message":
-		if s.pending.id != r.TurnID || s.pending.reply != nil || !validHistoryText(r.Text) || r.Status != "" {
-			return errors.New("invalid assistant message or turn order")
-		}
-		reply := modelReply{Text: r.Text, Output: r.Output}
-		if _, err := reply.inputItems(); err != nil {
-			return err
-		}
-		s.pending.reply = &reply
-	case "turn_end":
-		if s.pending.id != r.TurnID || r.Text != "" || len(r.Output) != 0 {
-			return errors.New("invalid turn ending")
-		}
-		switch r.Status {
-		case "completed":
-			if s.pending.reply == nil {
-				return errors.New("completed turn has no answer")
-			}
-			items, err := s.pending.reply.inputItems()
-			if err != nil {
-				return err
-			}
-			s.input = append(s.input, userInput(s.pending.prompt))
-			s.input = append(s.input, items...)
-		case "failed", "cancelled", "interrupted":
-		default:
-			return errors.New("unknown turn status")
-		}
-		s.pending = pendingTurn{}
-	default:
-		return errors.New("unknown record kind")
-	}
-	s.seq = r.Seq
-	return nil
 }
 
 func validHistoryText(text string) bool {
@@ -371,5 +271,3 @@ func syncHistoryDirectory(path string) error {
 	defer dir.Close()
 	return dir.Sync()
 }
-
-func (h *Session) Notice() string { return h.notice }

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func PromptConfigValue(ctx context.Context, input *os.File, reader *bufio.Reader, output io.Writer, label, fallback string, secret bool, validate func(string) error) (value string, err error) {
+func promptConfigValue(ctx context.Context, input *os.File, reader *bufio.Reader, output io.Writer, label, fallback string, secret bool, validate func(string) error) (value string, err error) {
 	state, err := stty(input, "-g")
 	if err != nil {
 		return "", fmt.Errorf("Config is incomplete. Start Mino in an interactive terminal to finish setup before using piped input.")
@@ -81,4 +81,13 @@ func readConfigLine(ctx context.Context, reader *bufio.Reader) (string, error) {
 	case result := <-line:
 		return result.text, result.err
 	}
+}
+
+// PromptConfig uses the same buffered reader later consumed by Run.
+func (c *CLI) PromptConfig(ctx context.Context, label, fallback string, secret bool, validate func(string) error) (string, error) {
+	file, ok := c.input.(*os.File)
+	if !ok {
+		return "", fmt.Errorf("Config is incomplete. Start Mino in a terminal to finish setup.")
+	}
+	return promptConfigValue(ctx, file, c.reader, c.output, label, fallback, secret, validate)
 }
