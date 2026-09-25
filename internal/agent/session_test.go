@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/qshine/mino/internal/gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -28,13 +27,13 @@ func TestConversationStopsWhenSavingDisplayedAnswerFails(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	chat := Agent{h, newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")}
+	chat := turnFixture{history: h, client: newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")}
 	output := &observingWriter{onWrite: func(text string) {
 		if strings.Contains(text, "Assistant> answer") {
 			h.writer = failingHistoryWriter{h.file, "write"}
 		}
 	}}
-	err = gateway.Run(context.Background(), strings.NewReader("first\nsecond\n"), output, io.Discard, chat.Handle)
+	err = runTerminal(context.Background(), strings.NewReader("first\nsecond\n"), output, io.Discard, chat.respond)
 	var storageErr *StorageError
 	if !errors.As(err, &storageErr) || !strings.Contains(err.Error(), "Answer displayed") || requests != 1 || len(h.state.input) != 0 {
 		t.Fatalf("error=%v, requests=%d, context=%v", err, requests, h.state.input)
@@ -62,8 +61,8 @@ func TestConversationCancellationAndRefusalHistory(t *testing.T) {
 			defer server.Close()
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			chat := Agent{h, newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")}
-			err = chat.Handle(ctx, "question", func(s string) error {
+			chat := turnFixture{history: h, client: newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")}
+			err = chat.respond(ctx, "question", func(s string) error {
 				if cancelled {
 					cancel()
 				}

@@ -143,4 +143,4 @@ After you close the program, the color statement now has a path back: Mino saves
 
 Every request still replays all completed history. As the conversation grows, it may exceed the model's context limit; context compaction and context budgets remain planned.
 
-The next missing interaction is an action. Mino can continue a conversation, but cannot yet execute a tool requested by the model. Chapter 03 (`chapter-03`) adds that handoff: the model requests a tool call, the program decides whether to execute it, and the tool result goes back to the model. See the [chapter roadmap](../plan-todo-chapters.md) for the remaining steps.
+The next missing interaction in `chapter-02` is an action. [Chapter 03](./03-tools-and-bash.md), available in `chapter-03`, adds that handoff: the model requests a tool call, you approve the command, and the program returns its result to the model. See the [chapter roadmap](../plan-todo-chapters.md) for the remaining steps.

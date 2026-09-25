@@ -143,4 +143,4 @@ go test ./internal/... -run 'TestRunRestoresConversationHistory|TestRunFailedTur
 
 目前每次请求仍会重放全部已完成的历史。对话增长后，可能超过模型的上下文限制；上下文压缩和上下文预算还在规划中。
 
-下一步缺少的是行动。Mino 已经能接续对话，还不能执行模型请求的工具。第 03 章（`chapter-03`）补上这次交接：模型提出工具调用，程序决定是否执行，再把工具结果交回模型。后面的步骤见[章节规划](../plan-todo-chapters.md)。
+`chapter-02` 下一步缺少的是行动。[第 03 章](./03-tools-and-bash.md)在 `chapter-03` 中补上这次交接：模型提出工具调用，你批准命令，程序再把工具结果交回模型。后面的步骤见[章节规划](../plan-todo-chapters.md)。

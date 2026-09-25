@@ -10,12 +10,12 @@
 
 | 位置 | 当前职责 | 后续演进时要保留的行为 |
 | --- | --- | --- |
-| [`internal/gateway/cli.go`](../../internal/gateway/cli.go) | 聊天入口、版本、帮助和更新命令 | 版本和帮助不要求完成 API 配置 |
-| [`internal/app.go`](../../internal/app.go) | 共用输入缓冲区，完成配置，加载身份，连接终端与客户端 | 首次配置不能吞掉后续聊天输入 |
-| [`internal/config.go`](../../internal/config.go) | 读取和补齐 API URL、模型、密钥 | 从用户 HOME 定位；目录 `0700`，文件 `0600`；配置取消不改旧设置 |
-| [`internal/soul.go`](../../internal/soul.go) | 首次创建并读取用户 SOUL | 启动读取一次，保留用户编辑；拒绝符号链接、空白、无效 UTF-8 和超 64 KiB 文件 |
-| [`internal/agent/responses.go`](../../internal/agent/responses.go) | 官方 SDK 发起流式 Responses 请求 | `store: false`；不跟随重定向，不自动重试，响应上限 8 MiB，请求超时 2 分钟 |
-| [`internal/gateway/terminal.go`](../../internal/gateway/terminal.go) | 输入循环、文本显示、退出和取消 | 空行不请求；`/exit`、EOF、Ctrl+C 退出；过滤显示中的终端控制字符 |
+| [`internal/gateway/cli.go`](https://github.com/qshine/mino/blob/chapter-01/internal/gateway/cli.go) | 聊天入口、版本、帮助和更新命令 | 版本和帮助不要求完成 API 配置 |
+| [`internal/app.go`](https://github.com/qshine/mino/blob/chapter-01/internal/app.go) | 共用输入缓冲区，完成配置，加载身份，连接终端与客户端 | 首次配置不能吞掉后续聊天输入 |
+| [`internal/config.go`](https://github.com/qshine/mino/blob/chapter-01/internal/config.go) | 读取和补齐 API URL、模型、密钥 | 从用户 HOME 定位；目录 `0700`，文件 `0600`；配置取消不改旧设置 |
+| [`internal/soul.go`](https://github.com/qshine/mino/blob/chapter-01/internal/soul.go) | 首次创建并读取用户 SOUL | 启动读取一次，保留用户编辑；拒绝符号链接、空白、无效 UTF-8 和超 64 KiB 文件 |
+| [`internal/agent/responses.go`](https://github.com/qshine/mino/blob/chapter-01/internal/agent/responses.go) | 官方 SDK 发起流式 Responses 请求 | `store: false`；不跟随重定向，不自动重试，响应上限 8 MiB，请求超时 2 分钟 |
+| [`internal/gateway/terminal.go`](https://github.com/qshine/mino/blob/chapter-01/internal/gateway/terminal.go) | 输入循环、文本显示、退出和取消 | 空行不请求；`/exit`、EOF、Ctrl+C 退出；过滤显示中的终端控制字符 |
 
 现有客户端的调用形状为 `respond(ctx, prompt, emit) error`：`prompt` 是单个字符串，`emit` 负责显示增量，没有返回可持久化的回答对象。终端对每个输入调用一次它；这个循环还不是工具 Agent 循环。
 

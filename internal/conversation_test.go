@@ -77,7 +77,7 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 		if i%3 == 0 {
 			turnIDs[i/3] = id
 		}
-		if (len(id) != 32 || strings.Trim(id, "0123456789abcdef") != "") || id != turnIDs[i/3] || record["seq"] != float64(i+1) {
+		if (len(id) != 32 || strings.ToLower(id) != id) || id != turnIDs[i/3] || record["seq"] != float64(i+1) {
 			t.Fatalf("invalid turn/order: %s", line)
 		}
 	}

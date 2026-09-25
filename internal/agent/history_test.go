@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/qshine/mino/internal/gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -260,8 +259,8 @@ func TestHistoryFailureStopsBeforeFurtherRequests(t *testing.T) {
 				t.Error("request sent after storage failure")
 			}))
 			defer server.Close()
-			chat := Agent{h, newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")}
-			err = gateway.Run(context.Background(), strings.NewReader("first\nsecond\n"), io.Discard, io.Discard, chat.Handle)
+			chat := turnFixture{history: h, client: newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")}
+			err = runTerminal(context.Background(), strings.NewReader("first\nsecond\n"), io.Discard, io.Discard, chat.respond)
 			var storageErr *StorageError
 			if !errors.As(err, &storageErr) || requests != 0 || len(h.state.input) != 0 {
 				t.Fatalf("err=%v requests=%d", err, requests)

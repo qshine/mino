@@ -51,6 +51,9 @@ export default withMermaid({
             { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' },
             { text: '02 JSONL conversation history', link: '/chapters/02-jsonl-history' }
           ] },
+          { text: 'Part II · Let the agent act', items: [
+            { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -81,6 +84,9 @@ export default withMermaid({
           { text: '第一部分 · 搭通对话', items: [
             { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' },
             { text: '02 JSONL 对话历史', link: '/zh/chapters/02-jsonl-history' }
+          ] },
+          { text: '第二部分 · 让 Agent 行动', items: [
+            { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

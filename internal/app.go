@@ -1,18 +1,19 @@
 package mino
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/qshine/mino/internal/agent"
-	"github.com/qshine/mino/internal/gateway"
 	"io"
 	"os"
 	"os/signal"
+
+	"github.com/qshine/mino/internal/agent"
+	"github.com/qshine/mino/internal/gateway"
+	"github.com/qshine/mino/internal/tools"
 )
 
-// Main runs the terminal application and returns its process exit code.
+// Main is the composition root: configuration, Session, tools, Agent, then CLI.
 func Main(version string) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	err := runCLI(ctx, version, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
@@ -24,15 +25,21 @@ func Main(version string) int {
 	return 0
 }
 
-func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) (err error) {
-	// 配置与聊天共用缓冲区，避免首次配置吞掉已经读入的第一条问题。
-	reader := bufio.NewReader(input)
+func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
+	cli := gateway.NewCLI(input, output, errorOutput)
+	if handled, err := cli.Command(ctx, version, args); handled {
+		return err
+	}
+	return runChat(ctx, cli, output)
+}
+
+func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) error {
+	return runChat(ctx, gateway.NewCLI(input, output, errorOutput), output)
+}
+
+func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error) {
 	setup := false
 	cfg, err := loadConfig(func(label, fallback string, secret bool) (string, error) {
-		file, ok := input.(*os.File)
-		if !ok {
-			return "", fmt.Errorf("Config is incomplete. Start Mino in a terminal to finish setup.")
-		}
 		if !setup {
 			fmt.Fprintln(output, "Complete the missing settings. Press Enter to accept a value in brackets, or Ctrl+C to cancel. Settings will be saved to "+configLocation+".")
 			setup = true
@@ -41,7 +48,7 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) (e
 		if label == "API URL" {
 			validate = validateBaseURL
 		}
-		return gateway.PromptConfigValue(ctx, file, reader, output, label, fallback, secret, validate)
+		return cli.PromptConfig(ctx, label, fallback, secret, validate)
 	})
 	if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
 		fmt.Fprintln(output, "\nSetup cancelled.")
@@ -61,23 +68,27 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) (e
 	if err != nil {
 		return err
 	}
-	history, err := agent.OpenSession(directory)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return errors.New("Cannot determine the Bash working directory")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return errors.New("Cannot determine the user home directory")
+	}
+	bash, err := tools.NewBash(cwd, home)
 	if err != nil {
 		return err
 	}
-	defer func() { err = errors.Join(err, history.Close()) }()
-	if history.Notice() != "" {
-		if _, err := fmt.Fprint(errorOutput, gateway.Text(history.Notice())); err != nil {
-			return err
-		}
-	}
-	chat := agent.New(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model}, instructions, history)
-	return gateway.Run(ctx, reader, output, errorOutput, chat.Handle)
-}
-
-func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
-	if handled, err := gateway.Command(ctx, version, args, output, errorOutput); handled {
+	available := []tools.Tool{bash}
+	session, err := agent.OpenSession(directory, available)
+	if err != nil {
 		return err
 	}
-	return run(ctx, input, output, errorOutput)
+	defer func() { err = errors.Join(err, session.Close()) }()
+	runner, err := agent.New(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions}, session, available)
+	if err != nil {
+		return err
+	}
+	return cli.Run(ctx, runner)
 }

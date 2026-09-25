@@ -30,7 +30,7 @@
 
 ## 3. 请求、显示与提交
 
-在 `internal/agent/conversation.go` 中实现具体的对话控制器，在 `internal/agent/history.go` 实现读写。最初无需通用存储接口。客户端改为接收有序消息集合，回调显示增量，并返回一个只有成功完成时才有效的回答结果。
+第二章的 `chapter-02` 快照在 `internal/agent/conversation.go` 实现对话控制，在 `internal/agent/history.go` 实现读写。最初无需通用存储接口。客户端改为接收有序消息集合，回调显示增量，并返回一个只有成功完成时才有效的回答结果。
 
 一次输入按以下顺序处理：
 

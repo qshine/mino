@@ -1,37 +1,17 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/qshine/mino/internal/gateway"
+	"github.com/openai/openai-go/v3/responses"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/openai/openai-go/v3/responses"
 )
-
-func streamEvent(w http.ResponseWriter, event string) {
-	w.Header().Set("Content-Type", "text/event-stream")
-	fmt.Fprintf(w, "data: %s\n\n", event)
-	w.(http.Flusher).Flush()
-}
-
-type observingWriter struct {
-	bytes.Buffer
-	onWrite func(string)
-}
-
-func (w *observingWriter) Write(p []byte) (int, error) {
-	n, err := w.Buffer.Write(p)
-	w.onWrite(w.String())
-	return n, err
-}
 
 func TestRespondStreamsRefusalWithoutRepeatingDoneText(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +21,7 @@ func TestRespondStreamsRefusalWithoutRepeatingDoneText(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
+	client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")
 	got, err := collectResponse(client, context.Background(), "Hello")
 	if err != nil || got != "Model refused: 无法帮助完成此请求。" {
 		t.Fatalf("refusal = %q, error = %v", got, err)
@@ -60,7 +40,7 @@ func TestRespondStopsWhileStreamIsOpen(t *testing.T) {
 				<-r.Context().Done()
 			}))
 			defer server.Close()
-			client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
+			client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 			if mode == "timeout" {
@@ -92,27 +72,10 @@ func TestRespondRejectsNonStreamingEndpoint(t *testing.T) {
 		fmt.Fprint(w, `{"status":"completed","output":[],"private":"test-key"}`)
 	}))
 	defer server.Close()
-	client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
+	client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")
 	_, err := collectResponse(client, context.Background(), "Hello")
 	if err == nil || !strings.Contains(err.Error(), "supports streaming") || strings.Contains(err.Error(), "test-key") {
 		t.Fatalf("non-streaming endpoint error = %v", err)
-	}
-}
-
-func TestTerminalKeepsPartialAnswerAndContinuesAfterStreamFailure(t *testing.T) {
-	var output, errorOutput bytes.Buffer
-	err := gateway.Run(context.Background(), strings.NewReader("first\nsecond\n/exit\n"), &output, &errorOutput,
-		func(_ context.Context, prompt string, emit func(string) error) error {
-			if prompt == "first" {
-				if err := emit("partial\x1b"); err != nil {
-					return err
-				}
-				return errors.New("Model response is incomplete")
-			}
-			return emit("recovered")
-		})
-	if err != nil || strings.Contains(output.String(), "\x1b") || !strings.Contains(output.String(), "Assistant> partial\n") || !strings.Contains(output.String(), "Assistant> recovered\n") || !strings.Contains(errorOutput.String(), "incomplete") {
-		t.Fatalf("output = %q, stderr = %q, error = %v", output.String(), errorOutput.String(), err)
 	}
 }
 

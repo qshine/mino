@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/openai/openai-go/v3/responses"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/openai/openai-go/v3/responses"
 )
 
 func TestRespondSendsOnlySuppliedInput(t *testing.T) {
@@ -33,7 +32,7 @@ func TestRespondSendsOnlySuppliedInput(t *testing.T) {
 		if body["model"] != "test-model" || body["instructions"] != "请用中文回答。\n" || body["store"] != false || body["stream"] != true {
 			t.Errorf("unexpected request: %#v", body)
 		}
-		for _, field := range []string{"previous_response_id", "conversation", "messages", "tools"} {
+		for _, field := range []string{"previous_response_id", "conversation", "messages"} {
 			if _, ok := body[field]; ok {
 				t.Errorf("single-turn request contains %s", field)
 			}
@@ -53,8 +52,9 @@ func TestRespondSendsOnlySuppliedInput(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"你好，世界！\n第二段。"}]}]}}`)
 	}))
 	defer server.Close()
-	client := newResponsesClient(Options{server.URL + "/custom/v1", "test-key", "test-model"}, "请用中文回答。\n")
+
 	for _, prompt := range []string{"我叫小明。", "我叫什么？"} {
+		client := newModelFixture(t, testConfig{server.URL + "/custom/v1", "test-key", "test-model"}, "请用中文回答。\n")
 		got, err := collectResponse(client, context.Background(), prompt)
 		if err != nil || got != "你好，世界！\n第二段。" {
 			t.Fatalf("response = %q, error = %v", got, err)
@@ -95,7 +95,7 @@ func TestRespondHandlesFailuresAndRefusal(t *testing.T) {
 				fmt.Fprintf(w, "data: %s\n\n", tc.body)
 			}))
 			defer server.Close()
-			client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "instructions")
+			client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "instructions")
 			got, err := collectResponse(client, context.Background(), "你好")
 			if tc.wantError != "" {
 				if err == nil || !strings.Contains(err.Error(), tc.wantError) {
@@ -147,7 +147,7 @@ func TestRespondIgnoresEnvironmentConfiguration(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","error":null}}`)
 	}))
 	defer server.Close()
-	client := newResponsesClient(Options{server.URL + "/custom/v1", "configured-key", "configured-model"}, "")
+	client := newModelFixture(t, testConfig{server.URL + "/custom/v1", "configured-key", "configured-model"}, "")
 	if got, err := collectResponse(client, context.Background(), "Hello"); err != nil || got != "Hello" {
 		t.Fatalf("response = %q, error = %v", got, err)
 	}
@@ -163,7 +163,7 @@ func TestRespondDoesNotRetry(t *testing.T) {
 				fmt.Fprint(w, `{"error":{"message":"private-data"}}`)
 			}))
 			defer server.Close()
-			client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
+			client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "")
 			_, err := collectResponse(client, context.Background(), "Hello")
 			if err == nil || !strings.Contains(err.Error(), fmt.Sprint(status)) || strings.Contains(err.Error(), "private-data") {
 				t.Fatalf("unexpected API error: %v", err)
@@ -184,7 +184,7 @@ func TestRespondDoesNotFollowRedirects(t *testing.T) {
 		http.Redirect(w, r, target.URL, http.StatusTemporaryRedirect)
 	}))
 	defer server.Close()
-	client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "instructions")
+	client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "instructions")
 	if _, err := collectResponse(client, context.Background(), "你好"); err == nil || !strings.Contains(err.Error(), "307") {
 		t.Fatalf("redirect error = %v", err)
 	}
@@ -200,7 +200,7 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 			<-r.Context().Done()
 		}))
 		defer server.Close()
-		client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "instructions")
+		client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "instructions")
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		go func() { <-started; cancel() }()
@@ -214,7 +214,7 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 			<-r.Context().Done()
 		}))
 		defer server.Close()
-		client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "instructions")
+		client := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "instructions")
 		client.httpClient.Timeout = 20 * time.Millisecond
 		if _, err := collectResponse(client, context.Background(), "你好"); !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("timeout error = %v", err)
@@ -223,7 +223,7 @@ func TestRespondHonorsCancellationAndTimeout(t *testing.T) {
 }
 
 // Collecting is test-only; the terminal receives deltas without waiting for completion.
-func collectResponse(client *responsesClient, ctx context.Context, prompt string) (string, error) {
+func collectResponse(client *modelFixture, ctx context.Context, prompt string) (string, error) {
 	var output strings.Builder
 	_, err := client.respond(ctx, responses.ResponseInputParam{userInput(prompt)}, func(delta string) error {
 		output.WriteString(delta)
