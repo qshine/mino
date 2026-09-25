@@ -113,7 +113,7 @@ func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
 			return nil, err
 		}
 		if hadTools {
-			h.notice += "An interrupted tool turn was retained but excluded from context. Commands it started may already have run; none was retried.\n"
+			h.notice += "An interrupted tool turn was recovered without executing commands.\n"
 		} else {
 			h.notice += "An interrupted turn was retained but excluded from context. It was not retried.\n"
 		}

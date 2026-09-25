@@ -10,10 +10,11 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–03 章，对应发布版本 `chapter-03`（程序版本 `0.3.0`）。
+**当前进度：**本快照包含第 01–04 章，对应发布版本 `chapter-04`（程序版本 `0.4.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
+第 04 章如实恢复中断的工具调用：结果交回模型，结果未知的操作需要你确认。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -29,10 +30,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-03` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载本快照对应的 `chapter-04` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -111,12 +112,28 @@ Mino 把对话保存在 `~/.mino/sessions/` 中，启动时恢复成功完成的
 已有的 `~/.mino/SOUL.md` 会保留。如果其中仍写着不能执行工具，请参考内置 [SOUL.md](SOUL.md)
 更新过时的能力描述，同时保留你自己的指令。
 
+## 恢复中断的工具调用（第 04 章）
+
+执行 `mino update chapter-04` 安装第 04 章。失败、取消或中断且包含工具调用的回合，现在会连同配对结果交回模型，
+后面附一条 Mino 运行时提示，说明没有自动重试任何命令。恢复过程从不执行命令：尚未开始的调用标记为 `not_executed`，
+已经开始却没有保存结果的命令标记为 `unknown`。
+
+遇到 `unknown` 结果时，启动会停下来显示警告，并询问
+`Do you understand that these commands may already have run? [y/N]`。只有 `y` 或 `yes` 会继续；
+Mino 保存一条 `recovery_ack` 记录，之后不再询问。其他回答会直接退出，下次启动再次询问。管道输入不能确认。
+确认不会重跑、检查或改变命令结果；命令造成的影响需要你自己核实。
+
+第 04 章仍在同一个会话文件中写入 `v: 2` 记录。它可以读取 `chapter-03` 的会话，其中有 `unknown` 结果时同样要求确认；
+一旦保存了 `recovery_ack` 记录，`chapter-03` 就无法打开该文件。如果保留了早先的 `~/.mino/SOUL.md`，
+请对照内置 [SOUL.md](SOUL.md)：其中新增说明，结果未知不等于成功，也绝不能自动重试。
+详见[第 04 章](docs/books/zh/chapters/04-recovering-tool-turns.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-03   # 安装本快照对应的章节
+mino update chapter-04   # 安装本快照对应的章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -134,6 +151,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 01 章 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
 | 第 02 章 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | 第 03 章 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
+| 第 04 章 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -157,6 +175,7 @@ bash scripts/check.sh
 - [第 01 章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
 - [第 02 章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
 - [第 03 章：工具调用与 Agent 循环](docs/books/zh/chapters/03-tools-and-bash.md)
+- [第 04 章：恢复中断的工具调用](docs/books/zh/chapters/04-recovering-tool-turns.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。

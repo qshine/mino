@@ -44,7 +44,7 @@ type Event struct {
 }
 
 type Confirmation struct {
-	Kind     string // tool
+	Kind     string // tool or recovery
 	ToolName string
 	Fields   []tools.Field
 	Warning  string
@@ -112,6 +112,19 @@ func (a *Agent) Start(ctx context.Context, interaction Interaction) error {
 			return err
 		}
 	}
+	if len(a.session.state.uncertain) == 0 {
+		return nil
+	}
+	approved, err := interaction.Confirm(ctx, Confirmation{Kind: "recovery", Warning: "A previous command started, but its result is unknown. It may have changed files or external systems. Mino has not rerun it. Review those effects before continuing."})
+	if err != nil {
+		return err
+	}
+	if !approved {
+		return io.EOF
+	}
+	if err := a.session.acknowledgeRecovery(); err != nil {
+		return &StorageError{err}
+	}
 	return nil
 }
 
@@ -127,6 +140,9 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	}
 	if !validHistoryText(message) {
 		return errors.New("Input must be non-empty UTF-8 text")
+	}
+	if len(a.session.state.uncertain) > 0 {
+		return errors.New("Acknowledge unknown tool results before continuing")
 	}
 	if err := a.session.append(historyRecord{TurnID: newHistoryID(), Kind: "user_message", Text: message}); err != nil {
 		return &StorageError{err}

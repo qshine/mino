@@ -14,11 +14,13 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–03, release
-`chapter-03` (application version `0.3.0`).
+**Current progress:** This snapshot contains Chapters 01–04, release
+`chapter-04` (application version `0.4.0`).
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
+Chapter 04 recovers interrupted tool turns honestly: their results return to the
+model, and unknown outcomes need your acknowledgement.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -36,11 +38,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-03` release,
+this snapshot's `chapter-04` release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -150,12 +152,34 @@ Existing `~/.mino/SOUL.md` files are preserved. If yours still says Mino cannot
 execute tools, update those outdated capability sentences using the bundled
 [SOUL.md](SOUL.md) as a reference, while keeping your own instructions.
 
+## Recovering interrupted tool turns (Chapter 04)
+
+Install `chapter-04` with `mino update chapter-04`. A failed, cancelled, or
+interrupted turn that contains tool calls now returns to the model with its paired
+results, followed by a Mino runtime notice that no command was automatically retried.
+Recovery never runs anything: a call that never started is marked `not_executed`,
+and a started command with no saved result is marked `unknown`.
+
+An `unknown` result stops startup with a warning and asks
+`Do you understand that these commands may already have run? [y/N]`. Only `y` or
+`yes` continues; Mino saves a `recovery_ack` record, and the question does not
+return. Any other answer exits, and the next start asks again. Piped input cannot
+acknowledge. Acknowledging does not rerun, check, or change the command's result;
+inspect its effects yourself.
+
+Chapter 04 keeps writing `v: 2` records in the same session file. It reads
+`chapter-03` sessions and asks for acknowledgement if they contain `unknown` results;
+once a `recovery_ack` record is saved, `chapter-03` cannot open the file. If you kept
+an earlier `~/.mino/SOUL.md`, compare it with the bundled [SOUL.md](SOUL.md), which
+now says an unknown result is not success and must never be retried automatically.
+See [Chapter 04](docs/books/en/chapters/04-recovering-tool-turns.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-03   # Install this snapshot's chapter
+mino update chapter-04   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -177,6 +201,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 01 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
 | Chapter 02 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | Chapter 03 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
+| Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -207,6 +232,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
 - [Chapter 02: JSONL conversation history](docs/books/en/chapters/02-jsonl-history.md)
 - [Chapter 03: tools and the Agent loop](docs/books/en/chapters/03-tools-and-bash.md)
+- [Chapter 04: recovering interrupted tool turns](docs/books/en/chapters/04-recovering-tool-turns.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

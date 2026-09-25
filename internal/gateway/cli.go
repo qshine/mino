@@ -82,7 +82,7 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 03: Tools and the Agent Loop")
+	fmt.Fprintln(c.output, "Mino - Chapter 04: Recovering Tool Turns")
 	fmt.Fprintln(c.output, "History is restored on startup. Bash commands require approval. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
@@ -154,24 +154,35 @@ func (c *CLI) Emit(event agent.Event) error {
 }
 
 func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, error) {
-	if _, err := fmt.Fprintf(c.output, "\n[Tool: %s]\n", Text(request.ToolName)); err != nil {
-		return false, errTerminalOutput
-	}
-	for _, field := range request.Fields {
-		if _, err := fmt.Fprintf(c.output, "%s: %s\n", Text(field.Label), strconv.QuoteToASCII(field.Value)); err != nil {
+	prompt := "Approve this operation? [y/N] "
+	if request.Kind == "recovery" {
+		if _, err := fmt.Fprintln(c.output, Text(request.Warning)); err != nil {
 			return false, errTerminalOutput
 		}
-	}
-	if _, err := fmt.Fprintln(c.output, Text(request.Warning)); err != nil {
-		return false, errTerminalOutput
-	}
-	if !c.interactive {
-		if _, err := fmt.Fprintln(c.output, "Denied: command approval requires an interactive terminal."); err != nil {
+		if !c.interactive {
+			return false, errors.New("Unknown tool results require acknowledgement in an interactive terminal")
+		}
+		prompt = "Do you understand that these commands may already have run? [y/N] "
+	} else {
+		if _, err := fmt.Fprintf(c.output, "\n[Tool: %s]\n", Text(request.ToolName)); err != nil {
 			return false, errTerminalOutput
 		}
-		return false, nil
+		for _, field := range request.Fields {
+			if _, err := fmt.Fprintf(c.output, "%s: %s\n", Text(field.Label), strconv.QuoteToASCII(field.Value)); err != nil {
+				return false, errTerminalOutput
+			}
+		}
+		if _, err := fmt.Fprintln(c.output, Text(request.Warning)); err != nil {
+			return false, errTerminalOutput
+		}
+		if !c.interactive {
+			if _, err := fmt.Fprintln(c.output, "Denied: command approval requires an interactive terminal."); err != nil {
+				return false, errTerminalOutput
+			}
+			return false, nil
+		}
 	}
-	return c.confirm(ctx, "Approve this operation? [y/N] ")
+	return c.confirm(ctx, prompt)
 }
 
 func (c *CLI) confirm(ctx context.Context, prompt string) (bool, error) {

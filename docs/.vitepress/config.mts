@@ -75,7 +75,8 @@ export default withMermaid({
             { text: '02 JSONL conversation history', link: '/chapters/02-jsonl-history' }
           ] },
           { text: 'Part II · Let the agent act', items: [
-            { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' }
+            { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' },
+            { text: '04 Recovering tool turns', link: '/chapters/04-recovering-tool-turns' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -109,7 +110,8 @@ export default withMermaid({
             { text: '02 JSONL 对话历史', link: '/zh/chapters/02-jsonl-history' }
           ] },
           { text: '第二部分 · 让 Agent 行动', items: [
-            { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' }
+            { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' },
+            { text: '04 恢复中断的工具调用', link: '/zh/chapters/04-recovering-tool-turns' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

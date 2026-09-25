@@ -9,11 +9,13 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-03` release (application version `0.3.0`), published on 2026-10-21. It covers the book up to Chapter 03; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-04` release (application version `0.4.0`), published on 2026-10-21. It covers the book up to Chapter 04; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
 Chapter 03 adds [approved Bash execution](#try-chapter-03-from-source). New records use version 2, which `chapter-02` cannot read.
+
+Chapter 04 [recovers interrupted tool turns](#try-chapter-04-from-source) and can ask you to acknowledge an unknown result before chat continues.
 
 ## Prepare your Mac
 
@@ -26,10 +28,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-03 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-03`. Omit `-- chapter-03` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-04`. Omit `-- chapter-04` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -69,10 +71,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-03
+mino update chapter-04
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.3.0` or `v0.3.0` as aliases for `chapter-03`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.4.0` or `v0.4.0` as aliases for `chapter-04`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -129,14 +131,31 @@ Like Chapter 02, Chapter 03 replays only completed turns. Startup never reruns a
 
 Commands and captured results are saved in plain text and supplied as context on later requests. They may contain sensitive content, including data a command reads from a file. Switching the configured service also sends this replayable history to the new service. Keep history and recovery copies private.
 
+## Try Chapter 04 from source
+
+Chapter 04 is available as `chapter-04` (application version `0.4.0`). Select it with the [checkout steps below](#learn-from-the-source) and run from the repository root:
+
+```bash
+git checkout chapter-04
+go run ./cmd/mino
+```
+
+The banner identifies `Chapter 04: Recovering Tool Turns`, and source builds report `dev`. Go, model-service, and Bash requirements are the same as in [Chapter 03's notes](#try-chapter-03-from-source). Running this checkout uses your real home-directory settings and session file.
+
+Chapter 04 replays failed, cancelled, or interrupted tool turns with their paired results and a runtime notice. If the session contains an `unknown` result that has not been acknowledged, startup asks `Do you understand that these commands may already have run? [y/N]` before the banner. Answer in an interactive terminal; redirected or piped input cannot acknowledge, and any answer other than `y` or `yes` exits without saving an acknowledgement. The question returns on every start until a `recovery_ack` record is saved. Review the command's possible effects first; see [Chapter 04](./chapters/04-recovering-tool-turns.md).
+
+The new default identity adds that an unknown result is not success and must never be retried automatically. Existing `~/.mino/SOUL.md` files are preserved; update that line yourself if you want it, then restart.
+
+Chapter 04 keeps `v: 2` records and reads Chapter 03 session files as they are. Tool turns that Chapter 03 excluded from context are now replayed, and an `unknown` result left by Chapter 03 triggers the acknowledgement question. After a `recovery_ack` record has been written, `chapter-03` refuses to open the file because it does not know that record kind. Close Mino and keep a private backup of `~/.mino/sessions/` before switching between these releases.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-03`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-04`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-03
+git checkout chapter-04
 go run ./cmd/mino
 ```
 

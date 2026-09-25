@@ -2,10 +2,12 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"github.com/qshine/mino/internal/tools"
+	"io"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -18,7 +20,7 @@ func callReply(ids ...string) modelReply {
 	return r
 }
 
-func TestInterruptedToolTurnIsClosedButNotReplayed(t *testing.T) {
+func TestToolHistoryRecoveryPreservesPairsAndAcknowledgement(t *testing.T) {
 	for _, stage := range []string{"response", "start", "result"} {
 		t.Run(stage, func(t *testing.T) {
 			isolateConfig(t)
@@ -43,18 +45,35 @@ func TestInterruptedToolTurnIsClosedButNotReplayed(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// The turn is closed on disk without running anything, but it does not
-			// enter context: only completed turns are replayed in this release.
-			defer h.Close()
-			if len(h.state.input) != 0 || h.state.pending.id != "" {
+			if len(h.state.input) != 6 || h.state.pending.id != "" {
 				t.Fatalf("recovery input=%v pending=%v", h.state.input, h.state.pending)
 			}
-			if !strings.Contains(h.notice, "excluded from context") {
-				t.Fatalf("notice=%q", h.notice)
+			if (len(h.state.uncertain) > 0) != (stage == "start") {
+				t.Fatalf("uncertainty=%v", h.state.uncertain)
 			}
 			data, _ := os.ReadFile(h.file.Name())
-			if !bytes.Contains(data, []byte(`"status":"not_executed"`)) || (stage == "start") != bytes.Contains(data, []byte(`"status":"unknown"`)) {
+			if !bytes.Contains(data, []byte(`"status":"not_executed"`)) || (stage == "start" && !bytes.Contains(data, []byte(`"status":"unknown"`))) {
 				t.Fatalf("history=%s", data)
+			}
+			h.Close()
+			h, err = openHistory()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if (len(h.state.uncertain) > 0) != (stage == "start") {
+				t.Fatal("uncertainty lost across restart")
+			}
+			if err := h.acknowledgeRecovery(); err != nil {
+				t.Fatal(err)
+			}
+			h.Close()
+			h, err = openHistory()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer h.Close()
+			if len(h.state.uncertain) != 0 {
+				t.Fatal("acknowledgement was not persisted")
 			}
 		})
 	}
@@ -93,5 +112,57 @@ func TestInvalidToolHistoryDoesNotReachDisk(t *testing.T) {
 				t.Fatal("invalid transition reached disk")
 			}
 		})
+	}
+}
+
+func TestUnknownResultGatesChatUntilAcknowledged(t *testing.T) {
+	isolateConfig(t)
+	h, err := openHistory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := newHistoryID()
+	if err := h.append(
+		historyRecord{TurnID: id, Kind: "user_message", Text: "Go version?"},
+		historyRecord{TurnID: id, Kind: "model_response", Output: callReply("a").Output},
+		historyRecord{TurnID: id, Kind: "tool_start", CallID: "a", Name: "bash", Arguments: json.RawMessage(`{"command":"go version"}`), CWD: t.TempDir()},
+	); err != nil {
+		t.Fatal(err)
+	}
+	h.Close()
+	h, err = openHistory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	// The interrupted tool turn is replayed with its paired unknown result and a
+	// runtime notice, so the model can see that the command may have run.
+	input, _ := json.Marshal(h.state.input)
+	if !bytes.Contains(input, []byte(`"call_id":"a"`)) || !bytes.Contains(input, []byte("unknown")) || !bytes.Contains(input, []byte("Mino runtime notice")) {
+		t.Fatalf("input=%s", input)
+	}
+	a, err := New(Options{}, h, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Handle(context.Background(), "continue", testInteraction{}); err == nil {
+		t.Fatal("accepted a question before acknowledgement")
+	}
+	var kinds []string
+	confirm := func(answer bool) testInteraction {
+		return testInteraction{confirm: func(_ context.Context, c Confirmation) (bool, error) {
+			kinds = append(kinds, c.Kind)
+			return answer, nil
+		}}
+	}
+	if err := a.Start(context.Background(), confirm(false)); !errors.Is(err, io.EOF) {
+		t.Fatalf("declined acknowledgement: %v", err)
+	}
+	if err := a.Start(context.Background(), confirm(true)); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(h.file.Name())
+	if len(kinds) != 2 || kinds[0] != "recovery" || len(h.state.uncertain) != 0 || bytes.Count(data, []byte(`"kind":"recovery_ack"`)) != 1 {
+		t.Fatalf("kinds=%v history=%s", kinds, data)
 	}
 }

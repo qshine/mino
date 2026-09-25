@@ -162,4 +162,4 @@ These checks establish the tested control flow and replay contents. They do not 
 
 The Go-version question now has a path to evidence: a complete tool call, your approval, a bounded Bash execution, and a paired result supplied to the model. Every step reaches disk before the next one starts, so a crash never causes Mino to rerun a command.
 
-What a crash still hides is the evidence itself: the file knows a command may have run, but the model does not. [Chapter 04](../plan-todo-chapters.md), available in the `chapter-04` release, replays interrupted tool turns with their paired results and asks you to acknowledge unknown outcomes before the conversation continues.
+What a crash still hides is the evidence itself: the file knows a command may have run, but the model does not. [Chapter 04](./04-recovering-tool-turns.md), available in the `chapter-04` release, replays interrupted tool turns with their paired results and asks you to acknowledge unknown outcomes before the conversation continues.

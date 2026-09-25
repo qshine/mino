@@ -50,11 +50,12 @@ type pendingTurn struct {
 }
 
 type historyState struct {
-	tools   map[string]tools.Tool
-	seq     int
-	pending pendingTurn
-	turns   map[string]bool
-	input   responses.ResponseInputParam
+	tools     map[string]tools.Tool
+	seq       int
+	pending   pendingTurn
+	turns     map[string]bool
+	input     responses.ResponseInputParam
+	uncertain map[string]bool
 }
 
 func (h *Session) append(records ...historyRecord) error {
@@ -105,6 +106,7 @@ type pendingCall struct {
 
 func (s historyState) clone() historyState {
 	s.turns = maps.Clone(s.turns)
+	s.uncertain = maps.Clone(s.uncertain)
 	s.input = slices.Clone(s.input)
 	s.pending.items = slices.Clone(s.pending.items)
 	s.pending.calls = slices.Clone(s.pending.calls)
@@ -199,6 +201,12 @@ func (s *historyState) apply(r historyRecord) error {
 		}
 		p.items = append(p.items, toolResultInput(r.CallID, *r.Result))
 		call.resolved = true
+		if r.Result.Status == "unknown" {
+			if s.uncertain == nil {
+				s.uncertain = make(map[string]bool)
+			}
+			s.uncertain[r.TurnID] = true
+		}
 	case "turn_end":
 		if p.id != r.TurnID || r.Text != "" || len(r.Output) != 0 || p.unresolved() != nil {
 			return invalid
@@ -218,13 +226,21 @@ func (s *historyState) apply(r historyRecord) error {
 		default:
 			return invalid
 		}
-		// Only completed turns enter context. A failed tool turn stays on disk,
-		// including results that may describe real effects, but is not replayed.
-		if r.Status == "completed" {
+		// Failed tool turns still contain real effects. Replay all paired items,
+		// then an explicit local interruption notice, never partial streamed text.
+		if r.Status == "completed" || len(p.calls) > 0 {
 			s.input = append(s.input, userInput(p.prompt))
 			s.input = append(s.input, p.items...)
+			if r.Status != "completed" {
+				s.input = append(s.input, responses.ResponseInputItemParamOfMessage("Mino runtime notice: the previous turn ended with status "+r.Status+". Tool results above are retained; no command was automatically retried.", responses.EasyInputMessageRoleAssistant))
+			}
 		}
 		*p = pendingTurn{}
+	case "recovery_ack":
+		if p.id != "" || !s.uncertain[r.TurnID] || r.Text != "" || r.Status != "" || len(r.Output) != 0 {
+			return invalid
+		}
+		delete(s.uncertain, r.TurnID)
 	default:
 		return errors.New("unknown record kind")
 	}
@@ -287,6 +303,17 @@ func (h *Session) finishTurn(status string) error {
 		records = append(records, historyRecord{TurnID: h.state.pending.id, Kind: "tool_result", CallID: call.call.CallID, Result: &result})
 	}
 	records = append(records, historyRecord{TurnID: h.state.pending.id, Kind: "turn_end", Status: status})
+	return h.append(records...)
+}
+
+func (h *Session) acknowledgeRecovery() error {
+	var records []historyRecord
+	for _, id := range slices.Sorted(maps.Keys(h.state.uncertain)) {
+		records = append(records, historyRecord{TurnID: id, Kind: "recovery_ack"})
+	}
+	if len(records) == 0 {
+		return nil
+	}
 	return h.append(records...)
 }
 

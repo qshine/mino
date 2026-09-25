@@ -18,6 +18,25 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-21
+
+### Added
+
+- Chapter 04 recovery of interrupted tool turns. Failed, cancelled, or interrupted
+  turns that contain tool calls are replayed with their paired results and an
+  explicit Mino runtime notice, so the model can see that commands may have had
+  effects. Text-only unfinished turns are still excluded.
+- Unknown results (a saved start without a saved result) require acknowledgement at
+  startup before chat continues. The acknowledgement is saved as a `recovery_ack`
+  record and survives restarts; piped input cannot acknowledge. Nothing is rerun.
+
+### Changed
+
+- Records remain version 2. `chapter-03` cannot read a session after a
+  `recovery_ack` record has been written; `chapter-04` reads `chapter-03` sessions
+  and asks for acknowledgement when they contain unknown results.
+- The default SOUL tells the model never to retry an unknown operation automatically.
+
 ## [0.3.0] - 2026-10-21
 
 ### Added
