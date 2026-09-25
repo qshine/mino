@@ -31,6 +31,10 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=moderate
       - name: Build both languages and check internal links
+        env:
+          BOOK_ANALYTICS_ENABLED: ${{ vars.BOOK_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          UMAMI_SCRIPT_URL: ${{ vars.UMAMI_SCRIPT_URL }}
+          UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
         run: npm run book:build
       - name: Keep the built site as a workflow artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

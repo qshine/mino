@@ -121,3 +121,45 @@ npm run book:preview
 仓库的 Pages 来源已设为 **GitHub Actions**。更新网站时，向 `main` 推送书籍改动，或者在 `main` 上手动运行 **Tutorial book**。保持 `BOOK_PUBLISH_ENABLED` 为 `true`，即可自动发布。
 
 删除该变量会停止之后的部署，但**不会下线已经发布的网站**。如果需要下线，请在仓库的 Pages 设置中取消发布。
+
+## 用 Umami 统计书站访问
+
+你可以通过 Umami Cloud 查看读者访问了哪些章节、从哪里进入书站。中英文共用 Umami 中的一个网站，中文页面保留 `/mino/zh/` 路径。本次接入中，Views 对应页面浏览量（PV），Visitors 用于估算独立访客数（UV）。这些指标反映记录到的浏览器访问，不是精确的自然人数；统计脚本被拦截时，部分访问会漏记。具体口径见 [Umami 指标说明](https://docs.umami.is/docs/metric-definitions)。
+
+使用托管的 Hobby 方案，无需维护统计服务器。截至 2026 年 9 月 25 日，该免费方案支持 1 个网站、每月最多 10 万个事件，数据保留 6 个月。页面浏览会消耗事件额度。本次接入不会自动归档旧数据；需要比较更长时间的趋势时，先核对[当前方案](https://umami.is/pricing)。
+
+### 配置与发布
+
+1. 登录 [Umami Cloud](https://cloud.umami.is/)，选择 Hobby，添加名为 `Mino` 的网站。Domain 填 `qshine.github.io`，不带 `/mino/`。
+2. 按照[采集说明](https://docs.umami.is/docs/collect-data)，打开该网站的 **Tracking code**，将下面两个值填入 GitHub 仓库的 **Settings → Secrets and variables → Actions → Variables**。
+
+| 仓库变量 | 跟踪代码中的值 |
+| --- | --- |
+| `UMAMI_SCRIPT_URL` | `src` 中完整的 HTTPS 地址 |
+| `UMAMI_WEBSITE_ID` | `data-website-id` 的值 |
+
+这两个值是公开的统计标识，不是账户密码。将它们保存为 Actions 变量即可，仓库不需要 Umami 登录凭据。
+
+3. 保持 `BOOK_PUBLISH_ENABLED=true`，在 `main` 上运行 **Tutorial book**。发布工作流会启用统计，本地构建和 PR 构建不包含统计脚本。采集域名还被限定为 `qshine.github.io`。
+
+两个 Umami 变量都不配置时，书站可以正常构建，但不启用统计。只配置一个会让构建失败，并显示要求同时配置两项的英文错误。修改变量不会更新已发布页面，每次修改后都要重新运行工作流。需要停用时，删除两个变量并重新发布。
+
+### 排除自己的访问
+
+打开已发布的书站，在浏览器开发者控制台中执行下面的代码，然后刷新页面：
+
+```javascript
+localStorage.setItem('umami.disabled', 1);
+```
+
+此设置对当前浏览器中的 `https://qshine.github.io` 生效，包含中英文页面。换用其他浏览器时需分别设置。恢复统计时，执行下面的代码并刷新。具体操作见 [Umami 排除本人访问说明](https://docs.umami.is/docs/exclude-my-own-visits)。
+
+```javascript
+localStorage.removeItem('umami.disabled');
+```
+
+### 发布后检查采集
+
+使用未设置访问排除、也未拦截统计脚本的浏览器，打开线上首页，进入一个章节，依次后退、前进，再切换语言。在浏览器的 Network 面板中检查每次页面导航是否只发送一次页面浏览事件，并在 Umami 中核对对应路径。同一页面内跳转标题不应增加 PV：章节锚点已被排除。
+
+同时检查本地预览没有统计请求。拦截统计脚本并刷新书站，阅读和导航仍应正常。这些检查能验证当前浏览器的采集与导航行为，不能证明所有访客都会被统计。仅有构建成功，也不能确认数据已进入你的 Umami 账户。

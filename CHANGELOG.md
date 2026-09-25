@@ -8,6 +8,10 @@ unchanged and fixes receive new patch versions.
 
 ### Added
 
+- Optional Umami Cloud analytics for the published book, with shared English and
+  Chinese pageview/visitor statistics, domain-restricted collection, and setup
+  instructions. Local previews and pull requests stay untracked; chapter
+  navigation and browser back/forward are counted without counting hash anchors.
 - Bilingual author pages for qqling | AI Builder, with links from the book and
   READMEs to the author's X, GitHub, and Xiaohongshu profiles.
 - `./book_review.sh` installs missing book dependencies, builds the current

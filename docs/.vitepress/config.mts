@@ -1,6 +1,29 @@
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import type { HeadConfig } from 'vitepress'
 
 const repository = 'https://github.com/qshine/mino'
+const umamiScriptUrl = process.env.UMAMI_SCRIPT_URL?.trim()
+const umamiWebsiteId = process.env.UMAMI_WEBSITE_ID?.trim()
+const analyticsHead: HeadConfig[] = []
+
+if (Boolean(umamiScriptUrl) !== Boolean(umamiWebsiteId)) {
+  throw new Error('Set both UMAMI_SCRIPT_URL and UMAMI_WEBSITE_ID, or leave both unset.')
+}
+
+// The publishing workflow opts in; local builds and pull requests stay untracked.
+if (process.env.BOOK_ANALYTICS_ENABLED === 'true' && umamiScriptUrl && umamiWebsiteId) {
+  if (new URL(umamiScriptUrl).protocol !== 'https:') {
+    throw new Error('UMAMI_SCRIPT_URL must use HTTPS.')
+  }
+  analyticsHead.push(['script', {
+    id: 'mino-umami',
+    defer: '',
+    src: umamiScriptUrl,
+    'data-website-id': umamiWebsiteId,
+    'data-domains': 'qshine.github.io',
+    'data-exclude-hash': 'true'
+  }])
+}
 
 export default withMermaid({
   title: 'Mino',
@@ -11,7 +34,7 @@ export default withMermaid({
   rewrites: { 'en/:path*': ':path*' },
   lastUpdated: true,
   cleanUrls: false,
-  head: [['meta', { name: 'theme-color', content: '#176b58' }]],
+  head: [['meta', { name: 'theme-color', content: '#176b58' }], ...analyticsHead],
   vite: {
     // The plugin injects Mermaid imports; pre-bundle its CommonJS dependencies for local preview.
     optimizeDeps: { include: ['mermaid'] }
