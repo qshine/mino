@@ -12,7 +12,7 @@ By [qqling | AI Builder](./about-author.md)
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md). This snapshot covers the book up to Chapter 04, release `chapter-04` (version `0.4.0`); later chapters arrive in their own releases.
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md). This snapshot covers the book up to Chapter 05, release `chapter-05` (version `0.5.0`); later chapters arrive in their own releases.
 
 ## Who this book is for
 
@@ -30,7 +30,7 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-This snapshot is `chapter-04` (application version `0.4.0`), released on **2026-10-21**. Rows after Chapter 04 describe later releases and link to the [chapter roadmap](./plan-todo-chapters.md). Each released lesson identifies the source tag for its experiments.
+This snapshot is `chapter-05` (application version `0.5.0`), released on **2026-10-21**. Rows after Chapter 05 describe later releases and link to the [chapter roadmap](./plan-todo-chapters.md). Each released lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
@@ -38,7 +38,7 @@ This snapshot is `chapter-04` (application version `0.4.0`), released on **2026-
 | [02 JSONL conversation history](./chapters/02-jsonl-history.md) | What survives a restart, and which saved records become model context? |
 | [03 The Agent loop and Bash](./chapters/03-tools-and-bash.md) | Who approves and executes a command, and how does its result return to the model? |
 | [04 Recovering tool turns](./chapters/04-recovering-tool-turns.md) | When a command may have run but its result was lost, how does the model find out? |
-| [05 Multiple sessions](plan-todo-chapters.md) | How do you select one conversation's context, keep another, and safely clear the current one? |
+| [05 Multiple sessions](./chapters/05-jsonl-sessions.md) | How do you select one conversation's context, keep another, and safely clear the current one? |
 | [06 Context compaction](plan-todo-chapters.md) | How do manual and automatic compaction share a budget and preserve useful context? |
 | [07 Skills](plan-todo-chapters.md) | How does a fixed catalog guide the model to request task knowledge with `skill_view`? |
 | [08 File tools](plan-todo-chapters.md) | How can the program confine the model's project-file reads and bind each approved write to the file you saw? |
@@ -47,7 +47,7 @@ This snapshot is `chapter-04` (application version `0.4.0`), released on **2026-
 
 ## Read alongside the code
 
-Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 04, follows [chapter-04](https://github.com/qshine/mino/tree/chapter-04); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
+Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 05, follows [chapter-05](https://github.com/qshine/mino/tree/chapter-05); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-05.1` produces version `0.5.1` and updates the relevant lesson without creating an extra chapter.
 

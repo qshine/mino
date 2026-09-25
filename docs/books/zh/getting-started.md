@@ -9,13 +9,15 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-04`（程序版本 `0.4.0`），覆盖本书到第 04 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-21 发布的 `chapter-05`（程序版本 `0.5.0`），覆盖本书到第 05 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
 第三章加入[获批的 Bash 执行](#从源码体验第三章)。新记录采用版本 2，`chapter-02` 无法读取。
 
 第四章[如实恢复中断的工具问答](#从源码体验第四章)，可能要求你先确认结果未知的操作，才能继续聊天。
+
+第五章加入[多会话](#从源码体验第五章)。创建第二个会话前，请阅读[第五章的会话存储](#第五章的会话存储)：更早的版本只保留一段对话。
 
 ## 准备一台 Mac
 
@@ -28,10 +30,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-04`。省略 `-- chapter-04` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-05`。省略 `-- chapter-05` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -71,10 +73,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-04
+mino update chapter-05
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.4.0` 或 `v0.4.0`，两者都指向 `chapter-04`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.5.0` 或 `v0.5.0`，两者都指向 `chapter-05`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -148,14 +150,49 @@ go run ./cmd/mino
 
 第四章仍写 `v: 2` 记录，能直接读取第三章的会话文件。第三章排除在上下文之外的工具问答现在会被重放，第三章留下的 `unknown` 结果会触发确认询问。一旦写入 `recovery_ack` 记录，`chapter-03` 不认识这种记录，会拒绝打开文件。在这两个版本之间切换前，请关闭 Mino，并私下备份 `~/.mino/sessions/`。
 
+## 从源码体验第五章
+
+第五章已随 [chapter-05](https://github.com/qshine/mino/releases/tag/chapter-05) 发布，程序版本为 `0.5.0`，安装包包含多会话功能。若要运行对应源码，请在仓库根目录选择该标签：
+
+```bash
+git checkout chapter-05
+go run ./cmd/mino
+```
+
+启动横幅标明 `Chapter 05: Multiple Sessions`，源码构建的版本仍显示为 `dev`。Go 和模型服务要求与[源码准备说明](#从源码学习)、[第三章工具说明](#从源码体验第三章)相同。运行这个工作区会使用真实用户目录中的配置，以及前几章保存的对话。体验前，请关闭其他 Mino 进程，并私下备份 `~/.mino/sessions/`。
+
+用 `/new` 开始独立对话，`/sessions` 列出 ID，`/resume <id>` 选择由 32 个小写十六进制字符组成的完整 ID，`/help` 查看命令。`/clear` 需要在交互式终端中准确输入当前会话 ID，`/exit` 退出。这些命令不会调用模型。如果启动或 `/resume` 时遇到未知工具结果，需要先完成第四章的恢复确认才能继续。[第五章](./chapters/05-jsonl-sessions.md)展示了 A → B → A 实验和清空确认行为。
+
+切换会话不会重新加载 `~/.mino/SOUL.md`，也不会改变启动时确定的 Bash 目录。已有身份文件保持不变；如果其中仍称 Mino 只有一段对话，请自行更新这条指引并重启。所有会话共用已加载的模型配置：修改服务并重启后，下一次提问会把选中会话的可重放历史发送给该服务。
+
+## 第五章的会话存储
+
+第五章在 `~/.mino/` 中使用以下布局：
+
+```text
+sessions/<session_id>.jsonl
+active-session.json
+sessions.lock
+```
+
+用户目录和会话目录使用 `0700`，会话日志、选择文件和锁使用 `0600`。程序打开它们时会拒绝符号链接和非预期文件类型。会话内容仍是明文，可能含有私人问题、命令和工具输出。不要把会话文件或恢复副本放进 Git 和共享日志。每份 JSONL 仍限制为单条记录 16 MiB、整个文件 64 MiB；它们不是模型上下文预算。程序仍读取 `v: 1`、`v: 2` 记录，新记录写为 `v: 2`。
+
+Mino 在整次运行期间持有 `sessions.lock`，因此同一个会话库只能由一个 Mino 进程使用，即使你想选中不同会话也一样。第二至第四章使用同一把锁，所以仍在运行的旧版 Mino 也会阻止启动。应关闭另一个进程，而不是删除它的锁；退出后锁文件可以继续存在。
+
+首次使用时，程序新建会话；已有活动选择时，恢复对应会话。没有 `active-session.json`、而 `sessions/` 中恰好有一段对话时（第二至第四章留下的正是这种状态），Mino 原地选中该文件并保存选择，不复制也不改写文件。有多个会话却缺少选择、选择已损坏，或选中日志不可用时，Mino 会等待你重新选择。先用 `/sessions` 查看，再用完整的已有 ID 执行 `/resume`，也可以选择 `/new`。列表显示 ID 和更新时间，不代表日志已经通过校验，加载时仍会检查。修复不完整尾部时，程序在 `sessions/` 中保存私有的 `<session_id>-recovery-*.jsonl` 备份。中间损坏或无效记录会导致日志被拒绝，不会悄悄丢弃内容；恢复写入失败则停止程序。
+
+第二至第四章只支持一段对话，也不读取 `active-session.json`。一旦 `/new` 创建了第二个会话文件，它们会在启动时以 `~/.mino/sessions contains more than one conversation` 停止。若要回退到旧程序，请先关闭 Mino，私下复制一份 `~/.mino/sessions/`，并在该目录中只保留你想继续的那段对话。
+
+`/clear` 保留当前会话 ID 和其他会话，确认后将活动日志替换为空历史。它不删除恢复副本或手工备份，也不会撤销命令或安全擦除磁盘数据。保存或同步会话变更可能失败，Mino 此时停止聊天，不会承诺成功。请保留文件并检查错误提示，再重启让程序重新核对保存状态。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-04`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-05`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-04
+git checkout chapter-05
 go run ./cmd/mino
 ```
 

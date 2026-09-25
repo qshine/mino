@@ -14,13 +14,14 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–04, release
-`chapter-04` (application version `0.4.0`).
+**Current progress:** This snapshot contains Chapters 01–05, release
+`chapter-05` (application version `0.5.0`).
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
 Chapter 04 recovers interrupted tool turns honestly: their results return to the
 model, and unknown outcomes need your acknowledgement.
+Chapter 05 adds isolated sessions, selection, and confirmed clearing.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -38,11 +39,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-04` release,
+this snapshot's `chapter-05` release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -174,12 +175,39 @@ an earlier `~/.mino/SOUL.md`, compare it with the bundled [SOUL.md](SOUL.md), wh
 now says an unknown result is not success and must never be retried automatically.
 See [Chapter 04](docs/books/en/chapters/04-recovering-tool-turns.md).
 
+## Multiple sessions (Chapter 05)
+
+Install `chapter-05` with `mino update chapter-05` to use Chapter 05. Startup restores
+the last active session and displays its ID. Each session has its own private
+`~/.mino/sessions/<id>.jsonl`; only that session supplies request context.
+
+| Command | Behavior |
+| --- | --- |
+| `/new` | Start an empty session and keep the previous one. |
+| `/sessions` | List full IDs and update times; `*` marks the active session. |
+| `/resume <id>` | Restore the full ID shown by `/sessions`. |
+| `/clear` | Clear the current session after typing its complete ID in an interactive terminal. |
+| `/help` | Show the available commands. |
+
+The commands above do not call the model. Clearing keeps the session ID and other sessions;
+it does not undo tool effects or delete recovery copies and backups. One Mino process
+holds the session store at a time. Switching keeps this launch's SOUL and Bash
+working directory. If the saved selection is damaged, Mino asks you to choose a
+session instead of silently starting over.
+
+Upgrading from Chapters 02–04 imports nothing. When `active-session.json` is missing
+and `~/.mino/sessions/` holds exactly one session, Mino selects that file in place
+and saves the selection; the file is not copied or rewritten. With several sessions
+and no saved selection, Mino accepts only commands until you choose one. See
+[Chapter 05](docs/books/en/chapters/05-jsonl-sessions.md) for isolation, recovery,
+and the request-level experiment.
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-04   # Install this snapshot's chapter
+mino update chapter-05   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -202,6 +230,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 02 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | Chapter 03 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 | Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
+| Chapter 05 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -233,9 +262,11 @@ not call a paid model or modify your real configuration.
 - [Chapter 02: JSONL conversation history](docs/books/en/chapters/02-jsonl-history.md)
 - [Chapter 03: tools and the Agent loop](docs/books/en/chapters/03-tools-and-bash.md)
 - [Chapter 04: recovering interrupted tool turns](docs/books/en/chapters/04-recovering-tool-turns.md)
+- [Chapter 05: multiple sessions](docs/books/en/chapters/05-jsonl-sessions.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.
+- From Chapter 05, [`SessionManager`](internal/agent/session_commands.go) sits between `CLI.Run` and the Agent: it handles session commands and serializes turns.
 - [`Session`](internal/agent/session.go) owns in-memory history; [`history.go`](internal/agent/history.go) manages the JSONL file. Memory advances only after a successful write and sync.
 - [`Tool`](internal/tools/tool.go) defines preparation and execution; Bash implements it in `internal/tools/bash.go`. Constructors inject dependencies. Gateway handles display and confirmation through the Agent contract.
 - The SDK handles API communication. Mino owns terminal interaction, the Agent loop, approval, and local tool execution.

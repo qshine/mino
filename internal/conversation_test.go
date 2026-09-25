@@ -56,7 +56,17 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 	if inputs[1][0]["content"] != "My favorite color is blue." || inputs[1][1]["encrypted_content"] != "opaque-state" || inputs[1][2]["phase"] != "final_answer" || inputs[1][3]["content"] != "What color?" {
 		t.Fatalf("history lost content or protocol fields: %#v", inputs[1])
 	}
-	path := savedConversation(t, dir)
+	pointerData, err := os.ReadFile(filepath.Join(dir, "active-session.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pointer struct {
+		ID string `json:"session_id"`
+	}
+	if err := json.Unmarshal(pointerData, &pointer); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "sessions", pointer.ID+".jsonl")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -88,9 +98,9 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 	if strings.Contains(string(data), "test-key") {
 		t.Fatal("configuration key was saved in history")
 	}
-	for name, perm := range map[string]os.FileMode{path: 0600, filepath.Join(dir, "sessions.lock"): 0600, filepath.Dir(path): 0700} {
-		info, err := os.Stat(name)
-		if err != nil || info.Mode().Perm() != perm {
+	for _, name := range []string{"active-session.json", "sessions.lock", filepath.Join("sessions", pointer.ID+".jsonl")} {
+		info, err := os.Stat(filepath.Join(dir, name))
+		if err != nil || info.Mode().Perm() != 0600 {
 			t.Fatalf("permissions for %s: %v, %v", name, info, err)
 		}
 	}
@@ -127,14 +137,4 @@ func TestRunFailedTurnDoesNotEnterContext(t *testing.T) {
 	if requests != 2 || !strings.Contains(stderr.String(), "incomplete") {
 		t.Fatalf("requests=%d, errors=%s", requests, &stderr)
 	}
-}
-
-// savedConversation returns the single session file written by this release.
-func savedConversation(t *testing.T, dir string) string {
-	t.Helper()
-	matches, err := filepath.Glob(filepath.Join(dir, "sessions", "*.jsonl"))
-	if err != nil || len(matches) != 1 {
-		t.Fatalf("saved conversations: %v, %v", matches, err)
-	}
-	return matches[0]
 }

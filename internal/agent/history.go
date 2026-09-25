@@ -48,77 +48,24 @@ func validHistoryID(id string) bool {
 	return err == nil
 }
 
-// OpenSession restores the one saved conversation without executing tools. The
-// file is named by its session ID, so later releases can add more conversations
-// beside it without moving this one.
+// OpenSession restores the only conversation in dir without executing tools,
+// as single-session releases did. The application uses OpenSessions instead.
 func OpenSession(dir string, available []tools.Tool) (_ *Session, err error) {
 	registry, err := toolRegistry(available)
 	if err != nil {
 		return nil, err
 	}
-	if err := secureSessionDirectory(dir); err != nil {
-		return nil, err
-	}
-	h := &Session{history: &history{}, state: historyState{turns: make(map[string]bool), tools: registry}}
-	defer func() {
-		if err != nil {
-			h.Close()
-		}
-	}()
-	h.lock, err = openPrivateHistoryFile(filepath.Join(dir, "sessions.lock"))
-	if err != nil {
-		return nil, err
-	}
-	if err = syscall.Flock(int(h.lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		return nil, errors.New("History is in use by another Mino process. Close it and try again.")
-	}
 	sessions := filepath.Join(dir, "sessions")
-	if err = secureSessionDirectory(sessions); err != nil {
-		return nil, err
+	for _, d := range []string{dir, sessions} {
+		if err := secureSessionDirectory(d); err != nil {
+			return nil, err
+		}
 	}
 	path, err := conversationPath(sessions)
 	if err != nil {
 		return nil, err
 	}
-	h.file, err = openPrivateHistoryFile(path)
-	if err != nil {
-		return nil, err
-	}
-	h.writer = h.file
-	for _, d := range []string{sessions, dir} {
-		if err = syncHistoryDirectory(d); err != nil {
-			return nil, fmt.Errorf("Failed to sync history directory: %w", err)
-		}
-	}
-	info, err := h.file.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to inspect history: %w", err)
-	}
-	if info.Size() > maxHistoryBytes {
-		return nil, errors.New("History exceeds the 64 MiB limit. Back it up and move it aside before restarting.")
-	}
-	data, err := io.ReadAll(io.LimitReader(h.file, maxHistoryBytes+1))
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read history: %w", err)
-	}
-	if len(data) > maxHistoryBytes {
-		return nil, errors.New("History exceeds the 64 MiB limit")
-	}
-	if err = h.load(data); err != nil {
-		return nil, err
-	}
-	if h.state.pending.id != "" {
-		hadTools := len(h.state.pending.calls) > 0
-		if err = h.finishTurn("interrupted"); err != nil {
-			return nil, err
-		}
-		if hadTools {
-			h.notice += "An interrupted tool turn was recovered without executing commands.\n"
-		} else {
-			h.notice += "An interrupted turn was retained but excluded from context. It was not retried.\n"
-		}
-	}
-	return h, nil
+	return openSessionFile(path, filepath.Join(dir, "sessions.lock"), registry, true)
 }
 
 func secureSessionDirectory(dir string) error {
@@ -157,12 +104,85 @@ func conversationPath(dir string) (string, error) {
 	case 1:
 		return filepath.Join(dir, found[0]), nil
 	}
-	return "", errors.New("~/.mino/sessions contains more than one conversation. This release keeps one conversation; use a release that supports multiple sessions.")
+	return "", errors.New("~/.mino/sessions contains more than one conversation. Select one with /sessions and /resume <id>.")
+}
+
+// A session store holds its own lock; OpenSession supplies sessions.lock.
+func openSessionFile(path, lockPath string, registry map[string]tools.Tool, create bool) (_ *Session, err error) {
+	h := &Session{history: &history{}, state: historyState{turns: make(map[string]bool), tools: registry}}
+	defer func() {
+		if err != nil {
+			h.Close()
+		}
+	}()
+	if lockPath != "" {
+		h.lock, err = lockHistory(lockPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+	flags := 0
+	if create {
+		flags = syscall.O_CREAT
+	}
+	h.file, err = openPrivateFile(path, flags)
+	if err != nil {
+		return nil, err
+	}
+	h.writer = h.file
+	if err = syncHistoryDirectory(filepath.Dir(path)); err != nil {
+		return nil, fmt.Errorf("Failed to sync history directory: %w", err)
+	}
+	info, err := h.file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to inspect history: %w", err)
+	}
+	if info.Size() > maxHistoryBytes {
+		return nil, errors.New("History exceeds the 64 MiB limit. Back it up and move it aside before restarting.")
+	}
+	data, err := io.ReadAll(io.LimitReader(h.file, maxHistoryBytes+1))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read history: %w", err)
+	}
+	if len(data) > maxHistoryBytes {
+		return nil, errors.New("History exceeds the 64 MiB limit")
+	}
+	if err = h.load(data); err != nil {
+		return nil, err
+	}
+	if h.state.pending.id != "" {
+		hadTools := len(h.state.pending.calls) > 0
+		if err = h.finishTurn("interrupted"); err != nil {
+			return nil, &StorageError{err}
+		}
+		if hadTools {
+			h.notice += "An interrupted tool turn was recovered without executing commands.\n"
+		} else {
+			h.notice += "An interrupted turn was retained but excluded from context. It was not retried.\n"
+		}
+	}
+	return h, nil
+}
+
+func lockHistory(path string) (*os.File, error) {
+	lock, err := openPrivateHistoryFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		lock.Close()
+		return nil, errors.New("History is in use by another Mino process. Close it and try again.")
+	}
+	return lock, nil
 }
 
 func openPrivateHistoryFile(path string) (*os.File, error) {
+	return openPrivateFile(path, syscall.O_CREAT)
+}
+
+func openPrivateFile(path string, flags int) (*os.File, error) {
 	// O_NOFOLLOW closes the check/open symlink race; NONBLOCK avoids blocking on a FIFO.
-	fd, err := syscall.Open(path, syscall.O_RDWR|syscall.O_CREAT|syscall.O_APPEND|syscall.O_NOFOLLOW|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0600)
+	fd, err := syscall.Open(path, syscall.O_RDWR|flags|syscall.O_APPEND|syscall.O_NOFOLLOW|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open %s safely: %w", filepath.Base(path), err)
 	}
@@ -185,10 +205,12 @@ func (h *history) Close() error {
 	var err error
 	if h.file != nil {
 		err = h.file.Close()
+		h.file = nil
 	}
 	// Closing releases flock; never unlink the stable lock file.
 	if h.lock != nil {
 		err = errors.Join(err, h.lock.Close())
+		h.lock = nil
 	}
 	return err
 }
@@ -232,7 +254,12 @@ func (h *Session) load(data []byte) error {
 	return nil
 }
 
-func (h *Session) recoverTail(data []byte, offset int) error {
+func (h *Session) recoverTail(data []byte, offset int) (err error) {
+	defer func() {
+		if err != nil {
+			err = &StorageError{err}
+		}
+	}()
 	backup, err := os.CreateTemp(filepath.Dir(h.file.Name()), strings.TrimSuffix(filepath.Base(h.file.Name()), ".jsonl")+"-recovery-*.jsonl")
 	if err != nil {
 		return fmt.Errorf("Failed to create history recovery backup: %w", err)

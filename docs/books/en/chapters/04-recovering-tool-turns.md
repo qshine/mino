@@ -150,4 +150,4 @@ These tests establish what context is rebuilt and when the gate opens. They do n
 
 The milk command no longer disappears from the conversation. After a crash, the model receives the call, its honest `unknown` result, and Mino's notice, and you confirm that you know the command may have run before anything else happens. Nothing is retried; deciding what to do about the possible effect is still up to you and a new, approved tool call.
 
-All of this still happens inside one conversation file. [Chapter 05](../plan-todo-chapters.md), available in the `chapter-05` release, lets you start a new session for an unrelated task while an earlier one, along with its recovered tool turns, stays available to resume.
+All of this still happens inside one conversation file. [Chapter 05](./05-jsonl-sessions.md), available in the `chapter-05` release, lets you start a new session for an unrelated task while an earlier one, along with its recovered tool turns, stays available to resume.

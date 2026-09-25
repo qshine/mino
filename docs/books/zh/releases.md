@@ -2,7 +2,7 @@
 
 本页说明应用发布。书籍网站见[写作与更新流程](./maintaining-the-book.md)。
 
-当前工作区对应发布版 [chapter-04](https://github.com/qshine/mino/releases/tag/chapter-04)，程序版本 **0.4.0**，于 **2026-10-21** 发布，提供 Apple Silicon 和 Intel 的 macOS 安装包。各章使用对应的源码标签，之后的每一章都有各自的发布版。构建当前工作区不会创建发布版，也不会改变已发布标签。
+当前工作区对应发布版 [chapter-05](https://github.com/qshine/mino/releases/tag/chapter-05)，程序版本 **0.5.0**，于 **2026-10-21** 发布，提供 Apple Silicon 和 Intel 的 macOS 安装包。各章使用对应的源码标签，之后的每一章都有各自的发布版。构建当前工作区不会创建发布版，也不会改变已发布标签。
 
 ## 重新发布的版本
 
@@ -17,6 +17,8 @@
 第 03 章写入版本 2 的会话记录，读取版本 1–2；追加版本 2 记录后，`chapter-02` 无法再读取该会话。见[第 03 章的准备说明](./getting-started.md#从源码体验第三章)。
 
 第 04 章沿用版本 2，但第 04 章保存 `recovery_ack` 记录后，`chapter-03` 无法打开该会话；见[第 04 章的准备说明](./getting-started.md#从源码体验第四章)。
+
+第 05 章同样沿用版本 2，并加入多会话。一旦 `/new` 创建了第二个会话，第 02–04 章会在启动时停止；见[第 05 章的会话存储](./getting-started.md#第五章的会话存储)。
 
 ## 版本规则
 
@@ -43,7 +45,7 @@
 
 **章节标签迁移前安装的更新器无法解析 `chapter-*` 标签。** 请先把[当前安装命令](./getting-started.md#一行安装)重新运行一次，即使程序显示的数字版本没有变化。这会获取新版安装器并替换程序，保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。修改标签或 `main` 上的脚本不会改变已安装的程序。
 
-完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-04` 选择本章。安装器也接受 `0.4.0` 或 `v0.4.0`，两者都指向 `chapter-04`；这些是版本选择别名，不是额外的 Git 标签。
+完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-05` 选择本章。安装器也接受 `0.5.0` 或 `v0.5.0`，两者都指向 `chapter-05`；这些是版本选择别名，不是额外的 Git 标签。
 
 ## 发布一个版本
 
@@ -70,10 +72,10 @@ checksums.txt
 
 ## 本地打包与恢复
 
-在 `chapter-04` 的仓库根目录检查本章安装包：
+在 `chapter-05` 的仓库根目录检查本章安装包：
 
 ```bash
-bash scripts/package.sh chapter-04
+bash scripts/package.sh chapter-05
 ```
 
 打包接受规范的章节标签，使用当前工作区源码，不会检出标签。结果写入被 Git 忽略的 `dist/`，不创建 Git 标签或 Release。发布失败时，检查日志及可能残留的未完成草稿，再重新运行任务。

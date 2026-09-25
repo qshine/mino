@@ -10,11 +10,12 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–04 章，对应发布版本 `chapter-04`（程序版本 `0.4.0`）。
+**当前进度：**本快照包含第 01–05 章，对应发布版本 `chapter-05`（程序版本 `0.5.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
 第 04 章如实恢复中断的工具调用：结果交回模型，结果未知的操作需要你确认。
+第 05 章加入独立会话、新建、恢复和确认清空。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -30,10 +31,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-04` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载本快照对应的 `chapter-05` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -128,12 +129,33 @@ Mino 保存一条 `recovery_ack` 记录，之后不再询问。其他回答会�
 请对照内置 [SOUL.md](SOUL.md)：其中新增说明，结果未知不等于成功，也绝不能自动重试。
 详见[第 04 章](docs/books/zh/chapters/04-recovering-tool-turns.md)。
 
+## 多会话（第 05 章）
+
+执行 `mino update chapter-05` 即可安装第 05 章。启动时恢复上次会话并显示 ID。
+每段对话独立保存在私有的 `~/.mino/sessions/<id>.jsonl` 中，模型请求只带上当前会话的上下文。
+
+| 命令 | 行为 |
+| --- | --- |
+| `/new` | 新建空白会话，保留原会话。 |
+| `/sessions` | 列出完整 ID 和更新时间，`*` 标记当前会话。 |
+| `/resume <id>` | 使用列表中的完整 ID 恢复会话。 |
+| `/clear` | 在交互终端输入当前完整 ID 确认后，清空当前会话。 |
+| `/help` | 查看可用命令。 |
+
+这些命令不会请求模型。清空保留会话 ID 和其他会话，不撤销工具执行效果，也不删除恢复副本和备份。
+同一时间只允许一个 Mino 进程使用会话库。切换会话沿用本次启动加载的 SOUL 和 Bash 工作目录。
+保存的活动会话指针损坏时，程序会要求重新选择，不会悄悄用空对话替换。
+
+从第 02–04 章升级无需导入。缺少 `active-session.json` 且 `~/.mino/sessions/` 中恰好有一个会话时，
+Mino 原地选中该文件并保存选择，不复制也不改写文件。有多个会话却没有已保存的选择时，Mino 只接受命令，直到你选定一个。
+会话隔离、恢复和请求级验证见[第 05 章](docs/books/zh/chapters/05-jsonl-sessions.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-04   # 安装本快照对应的章节
+mino update chapter-05   # 安装本快照对应的章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -152,6 +174,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 02 章 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | 第 03 章 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 | 第 04 章 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
+| 第 05 章 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -176,9 +199,11 @@ bash scripts/check.sh
 - [第 02 章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
 - [第 03 章：工具调用与 Agent 循环](docs/books/zh/chapters/03-tools-and-bash.md)
 - [第 04 章：恢复中断的工具调用](docs/books/zh/chapters/04-recovering-tool-turns.md)
+- [第 05 章：JSONL 多会话](docs/books/zh/chapters/05-jsonl-sessions.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。
+- 从第 05 章起，[`SessionManager`](internal/agent/session_commands.go) 位于 `CLI.Run` 与 Agent 之间，负责处理会话命令并串行执行各轮问答。
 - [`Session`](internal/agent/session.go) 管理内存历史，[`history.go`](internal/agent/history.go) 管理 JSONL 文件。写入并同步成功后才提交内存状态。
 - [`Tool`](internal/tools/tool.go) 定义准备与执行接口，Bash 在 `internal/tools/bash.go` 中实现；使用构造函数注入依赖。Gateway 通过 Agent 的交互契约完成显示和确认。
 - SDK 负责 API 通信，Mino 负责终端交互、Agent 循环、授权和本地工具执行。

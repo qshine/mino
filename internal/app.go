@@ -81,12 +81,12 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		return err
 	}
 	available := []tools.Tool{bash}
-	session, err := agent.OpenSession(directory, available)
+	session, err := agent.OpenSessions(directory, available)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, session.Close()) }()
-	runner, err := agent.New(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions}, session, available)
+	runner, err := agent.NewSessionManager(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions}, session, available)
 	if err != nil {
 		return err
 	}

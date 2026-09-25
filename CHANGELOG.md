@@ -18,6 +18,28 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
+### Added
+
+- Chapter 05 multiple sessions: `/new`, `/sessions`, `/resume <id>`, `/clear`, and
+  `/help`. Each private JSONL file carries its session ID in its filename; startup
+  restores the last selection from `active-session.json`.
+- Interactive clearing requires the complete current session ID. It keeps other
+  sessions, configuration, SOUL, and recovery backups; it does not undo commands or
+  promise secure disk erasure.
+- The single conversation left by Chapters 02–04 is selected in place on first
+  start, because it already lives in `~/.mino/sessions/`; nothing is copied.
+
+### Changed
+
+- Serialize session commands and Agent turns with the store-wide `sessions.lock`.
+  Selection damage, or a missing selection with several sessions, enters a
+  command-only recovery state; storage write failures stop chat.
+- Publish selection and clearing atomically after syncing temporary files, then
+  sync their directory before advancing memory. Tool protocol and record versions
+  remain unchanged. Existing SOUL files remain untouched.
+
 ## [0.4.0] - 2026-10-21
 
 ### Added

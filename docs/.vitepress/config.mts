@@ -78,6 +78,9 @@ export default withMermaid({
             { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' },
             { text: '04 Recovering tool turns', link: '/chapters/04-recovering-tool-turns' }
           ] },
+          { text: 'Part III · Manage conversations', items: [
+            { text: '05 Multiple sessions', link: '/chapters/05-jsonl-sessions' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -112,6 +115,9 @@ export default withMermaid({
           { text: '第二部分 · 让 Agent 行动', items: [
             { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' },
             { text: '04 恢复中断的工具调用', link: '/zh/chapters/04-recovering-tool-turns' }
+          ] },
+          { text: '第三部分 · 管理对话', items: [
+            { text: '05 JSONL 多会话', link: '/zh/chapters/05-jsonl-sessions' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

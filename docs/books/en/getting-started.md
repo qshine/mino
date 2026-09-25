@@ -9,13 +9,15 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-04` release (application version `0.4.0`), published on 2026-10-21. It covers the book up to Chapter 04; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-05` release (application version `0.5.0`), published on 2026-10-21. It covers the book up to Chapter 05; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
 Chapter 03 adds [approved Bash execution](#try-chapter-03-from-source). New records use version 2, which `chapter-02` cannot read.
 
 Chapter 04 [recovers interrupted tool turns](#try-chapter-04-from-source) and can ask you to acknowledge an unknown result before chat continues.
+
+Chapter 05 adds [multiple sessions](#try-chapter-05-from-source). Before creating a second session, read [Chapter 05 session storage](#chapter-05-session-storage): earlier releases keep only one conversation.
 
 ## Prepare your Mac
 
@@ -28,10 +30,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-04`. Omit `-- chapter-04` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-05`. Omit `-- chapter-05` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -71,10 +73,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-04
+mino update chapter-05
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.4.0` or `v0.4.0` as aliases for `chapter-04`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.5.0` or `v0.5.0` as aliases for `chapter-05`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -148,14 +150,49 @@ The new default identity adds that an unknown result is not success and must nev
 
 Chapter 04 keeps `v: 2` records and reads Chapter 03 session files as they are. Tool turns that Chapter 03 excluded from context are now replayed, and an `unknown` result left by Chapter 03 triggers the acknowledgement question. After a `recovery_ack` record has been written, `chapter-03` refuses to open the file because it does not know that record kind. Close Mino and keep a private backup of `~/.mino/sessions/` before switching between these releases.
 
+## Try Chapter 05 from source
+
+Chapter 05 is available as the [chapter-05 release](https://github.com/qshine/mino/releases/tag/chapter-05), with application version `0.5.0`. The installed package includes multiple sessions. To run the matching source, use this tag from the repository root:
+
+```bash
+git checkout chapter-05
+go run ./cmd/mino
+```
+
+The banner identifies `Chapter 05: Multiple Sessions`, and source builds still report `dev`. Go and model-service requirements are the same as in [the source setup](#learn-from-the-source) and [Chapter 03's tool notes](#try-chapter-03-from-source). Running this checkout uses your real home-directory settings and the conversation saved by earlier chapters. Close other Mino processes and keep a private backup of `~/.mino/sessions/` before trying it.
+
+Use `/new` to start a separate conversation, `/sessions` to list IDs, `/resume <id>` to select a complete 32-character lowercase hexadecimal ID, and `/help` to list commands. `/clear` requires typing the current session's exact ID in an interactive terminal; `/exit` exits. These commands do not call the model. If startup or `/resume` encounters an unknown tool result, Chapter 04's recovery acknowledgement is required before continuing. See [Chapter 05](./chapters/05-jsonl-sessions.md) for the A → B → A experiment and clear-confirmation behavior.
+
+Changing sessions does not reload `~/.mino/SOUL.md` or change the Bash directory captured at startup. Existing identity files remain untouched. If yours claims that Mino only has one conversation, update that guidance yourself and restart. All sessions use the same loaded model settings: changing the configured service and restarting sends the selected session's replayable history to that service on your next question.
+
+## Chapter 05 session storage
+
+Chapter 05 uses this layout under `~/.mino/`:
+
+```text
+sessions/<session_id>.jsonl
+active-session.json
+sessions.lock
+```
+
+The user and sessions directories use `0700`; session logs, the selection file, and the lock use `0600`. The program rejects symbolic links and unexpected file types when opening them. Session content remains plain text and may contain private questions, commands, and tool output. Keep session files and recovery copies out of Git and shared logs. Each JSONL file retains the 16 MiB per-record and 64 MiB per-file limits; these are not model context budgets. Records still read `v: 1` and `v: 2`, with new records written as `v: 2`.
+
+Mino holds `sessions.lock` for the whole run, so only one Mino process can use this session store, even if you intend to select different sessions. Chapters 02–04 use the same lock, so a running older Mino also blocks startup. Close the other process instead of deleting its lock. The lock file can remain after exit.
+
+On a fresh setup, startup creates a session. With a saved selection, it restores that session. If `active-session.json` is absent and `sessions/` contains exactly one conversation, which is what Chapters 02–04 leave, Mino selects that file in place and saves the selection; the file is not copied or rewritten. A missing selection with several sessions, a damaged selection, or an unavailable selected log instead leaves Mino waiting for a selection. Use `/sessions`, then `/resume` with an existing complete ID, or choose `/new`. The list shows IDs and modification times, not a validation report; loading still checks the log. Recovery of an incomplete tail makes a private `<session_id>-recovery-*.jsonl` backup in `sessions/`. Corruption in the middle or invalid records reject that log rather than silently discarding content; failed recovery writes stop the program.
+
+Chapters 02–04 support only one conversation and ignore `active-session.json`. Once `/new` has created a second session file, they stop at startup with `~/.mino/sessions contains more than one conversation`. To return to an older executable, close Mino, keep a private copy of `~/.mino/sessions/`, and leave only the conversation you want in that directory.
+
+`/clear` keeps the current session ID and other sessions, but replaces the active log with empty history after confirmation. It does not remove recovery copies or manual backups, and it does not undo commands or securely erase disk data. Saving or syncing session changes can fail; Mino stops chat instead of promising success. Preserve the files and inspect the reported error before restarting, when the program checks the saved state again.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-04`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-05`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-04
+git checkout chapter-05
 go run ./cmd/mino
 ```
 
