@@ -36,7 +36,7 @@ func TestRunUsesSoulInsteadOfProjectInstructions(t *testing.T) {
 				if custom && got != instructions {
 					t.Errorf("request did not preserve the user's SOUL.md: %q", got)
 				}
-				if body["input"] != "你好" {
+				if input, ok := body["input"].([]any); !ok || len(input) != 1 || input[0].(map[string]any)["content"] != "你好" {
 					t.Errorf("input = %v", body["input"])
 				}
 				requests++

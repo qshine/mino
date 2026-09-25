@@ -11,7 +11,7 @@ I want to build an agent of my own from scratch. Mino is where that begins.
 
 I hope to keep studying agents through this project and turn what I learn while building into tutorials for beginners. For each new capability, I explain the problem it solves, how it works, and how to verify the result, so readers new to agents can follow along one step at a time.
 
-This tutorial will grow alongside Mino. You can start with terminal conversations today; the [chapter roadmap](./plan-todo-chapters.md) outlines the topics that follow.
+This tutorial will grow alongside Mino. You can start with terminal conversations and conversation history today; the [chapter roadmap](./plan-todo-chapters.md) outlines the topics that follow.
 
 ## Follow and get in touch
 

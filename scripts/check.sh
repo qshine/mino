@@ -8,6 +8,7 @@ if [[ -n $unformatted ]]; then
   exit 1
 fi
 bash -n install.sh
+bash -n book_review.sh
 bash -n scripts/check.sh
 bash -n scripts/package.sh
 go vet ./...

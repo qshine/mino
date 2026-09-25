@@ -12,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/openai/openai-go/v3/responses"
 )
 
 func streamEvent(w http.ResponseWriter, event string) {
@@ -39,7 +41,7 @@ func TestRespondStreamsRefusalWithoutRepeatingDoneText(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	client := New(Options{server.URL, "test-key", "test-model"}, "")
+	client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
 	got, err := collectResponse(client, context.Background(), "Hello")
 	if err != nil || got != "Model refused: 无法帮助完成此请求。" {
 		t.Fatalf("refusal = %q, error = %v", got, err)
@@ -58,7 +60,7 @@ func TestRespondStopsWhileStreamIsOpen(t *testing.T) {
 				<-r.Context().Done()
 			}))
 			defer server.Close()
-			client := New(Options{server.URL, "test-key", "test-model"}, "")
+			client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 			if mode == "timeout" {
@@ -66,7 +68,7 @@ func TestRespondStopsWhileStreamIsOpen(t *testing.T) {
 			}
 			outputError := errors.New("output unavailable")
 			var got string
-			err := client.Handle(ctx, "Hello", func(delta string) error {
+			_, err := client.respond(ctx, responses.ResponseInputParam{userInput("Hello")}, func(delta string) error {
 				got += delta
 				if mode == "cancel" {
 					cancel()
@@ -90,7 +92,7 @@ func TestRespondRejectsNonStreamingEndpoint(t *testing.T) {
 		fmt.Fprint(w, `{"status":"completed","output":[],"private":"test-key"}`)
 	}))
 	defer server.Close()
-	client := New(Options{server.URL, "test-key", "test-model"}, "")
+	client := newResponsesClient(Options{server.URL, "test-key", "test-model"}, "")
 	_, err := collectResponse(client, context.Background(), "Hello")
 	if err == nil || !strings.Contains(err.Error(), "supports streaming") || strings.Contains(err.Error(), "test-key") {
 		t.Fatalf("non-streaming endpoint error = %v", err)

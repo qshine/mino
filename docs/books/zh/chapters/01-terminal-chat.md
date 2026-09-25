@@ -134,4 +134,4 @@ go test ./internal/... -run 'TestRunStreamsBeforeResponseCompletes|TestRespond|T
 
 现在，你可以沿着 HTTP 问题走完整个来回：Mino 发送当前输入和指令，显示回答片段，检查完成状态，再把控制权交还给你。这是构建 Agent 的基础，目前还不能执行工具。
 
-开头的追问也指出了下一步缺什么：前面的问答必须进入请求，模型才能把它作为上下文使用。[第 02 章](../plan-todo-chapters.md)（见 `chapter-02` 版本）把问答保存到 JSON Lines（JSONL）文件，启动时恢复已完成的问答，再随新问题发送。工具执行和 Agent 循环在那之后，由第 03 章引入。
+开头的追问也指出了下一步缺什么：前面的问答必须进入请求，模型才能把它作为上下文使用。[第 02 章](./02-jsonl-history.md)（见 `chapter-02` 版本）把问答保存到 JSON Lines（JSONL）文件，启动时恢复已完成的问答，再随新问题发送。工具执行和 Agent 循环在那之后，由第 03 章引入。

@@ -12,7 +12,7 @@ By [qqling | AI Builder](./about-author.md)
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md). This snapshot covers the book up to Chapter 01, release `chapter-01` (version `0.1.0`); later chapters arrive in their own releases.
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md). This snapshot covers the book up to Chapter 02, release `chapter-02` (version `0.2.0`); later chapters arrive in their own releases.
 
 ## Who this book is for
 
@@ -30,12 +30,12 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-This snapshot is `chapter-01` (application version `0.1.0`), released on **2026-10-21**. Rows after Chapter 01 describe later releases and link to the [chapter roadmap](./plan-todo-chapters.md). Each released lesson identifies the source tag for its experiments.
+This snapshot is `chapter-02` (application version `0.2.0`), released on **2026-10-21**. Rows after Chapter 02 describe later releases and link to the [chapter roadmap](./plan-todo-chapters.md). Each released lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
 | [01 A terminal conversation](./chapters/01-terminal-chat.md) | How does a line of input become an HTTP request and then an answer? |
-| [02 JSONL conversation history](plan-todo-chapters.md) | What survives a restart, and which saved records become model context? |
+| [02 JSONL conversation history](./chapters/02-jsonl-history.md) | What survives a restart, and which saved records become model context? |
 | [03 The Agent loop and Bash](plan-todo-chapters.md) | Who approves and executes a command, and how does its result return to the model? |
 | [04 Recovering tool turns](plan-todo-chapters.md) | When a command may have run but its result was lost, how does the model find out? |
 | [05 Multiple sessions](plan-todo-chapters.md) | How do you select one conversation's context, keep another, and safely clear the current one? |
@@ -47,7 +47,7 @@ This snapshot is `chapter-01` (application version `0.1.0`), released on **2026-
 
 ## Read alongside the code
 
-Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 01, follows [chapter-01](https://github.com/qshine/mino/tree/chapter-01); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
+Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 02, follows [chapter-02](https://github.com/qshine/mino/tree/chapter-02); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-05.1` produces version `0.5.1` and updates the relevant lesson without creating an extra chapter.
 

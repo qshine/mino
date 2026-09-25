@@ -18,6 +18,26 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-21
+
+### Added
+
+- Chapter 02 JSONL history: one conversation in `~/.mino/sessions/<session_id>.jsonl`,
+  named by an ID generated on first start, with ordered turns paired by `turn_id` and
+  recovery of completed turns on restart. Preserve Responses output items, assistant
+  phase, and encrypted reasoning state for stateless replay while continuing to
+  stream answers immediately.
+- Private session directory, files, and `sessions.lock`; a single-writer lock,
+  incomplete-tail backups, record-order validation, and bounded file sizes. Failed
+  or interrupted turns stay recorded but do not enter the next request; storage
+  failures stop chat.
+
+### Changed
+
+- Terminal interaction stays in `internal/gateway/`; model requests, Agent handling,
+  and the history Session live in `internal/agent/`. No tools or multiple-session
+  commands are introduced in this chapter.
+
 ## [0.1.0] - 2026-10-21
 
 ### Added

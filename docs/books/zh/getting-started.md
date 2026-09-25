@@ -9,8 +9,9 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-01`（程序版本 `0.1.0`），覆盖本书到第 01 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-21 发布的 `chapter-02`（程序版本 `0.2.0`），覆盖本书到第 02 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
+第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
 ## 准备一台 Mac
 
@@ -23,10 +24,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-01 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-01`。省略 `-- chapter-01` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-02`。省略 `-- chapter-02` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -66,10 +67,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-01
+mino update chapter-02
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.1.0` 或 `v0.1.0`，两者都指向 `chapter-01`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.2.0` 或 `v0.2.0`，两者都指向 `chapter-02`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -81,22 +82,38 @@ mino update chapter-01
 
 文件必须是普通文件，包含非空的 UTF-8 文本，大小不超过 64 KiB。目录、符号链接或无效文本会在发送模型请求前被拒绝。目录和文件权限分别为 `0700`、`0600`。Mino 忽略工作目录中的 `AGENTS.md` 和 `SOUL.md`：仓库的 `AGENTS.md` 用于开发，根目录的 `SOUL.md` 仅提供构建时嵌入的默认内容。
 
+## 第二章的本地历史 {#第二章的本地历史}
+
+加载配置和身份后，Mino `chapter-02` 会打开 `~/.mino/sessions/` 中唯一保存的对话，恢复已完成的问答。首次启动时，程序创建这个目录和一个空的 `<session_id>.jsonl` 文件，会话 ID 由 32 个小写十六进制字符组成；之后每次启动都打开同一个文件。记录通过 `turn_id` 关联每轮的输入、回答和结束状态；记录中没有 `session_id`，因为文件名已经标明它属于哪段对话。Mino 在查看目录之前，还会先打开固定的 `~/.mino/sessions.lock`，确保这段对话同时只能由一个进程使用。如果启动时提示历史正在使用，请关闭另一个 Mino 进程；退出后锁文件可以继续存在，不应通过删除它绕过仍在运行的进程。
+
+会话文件和锁文件使用 `0600` 权限，`~/.mino/sessions/` 和用户目录使用 `0700`。Mino 拒绝符号链接和非普通的会话或锁文件，也拒绝本身是文件或符号链接的 `sessions`。对话文本以明文保存在本地；程序不会把配置密钥或原始 API 错误复制进历史。你提交的文本会被保存，其中也可能包含你主动输入的敏感数据。不要把历史及恢复副本放进 Git、截图或共享日志。
+
+只有已完成的问答会随后续问题发送。修改配置中的模型或服务不会新建历史：后续请求会把这些已完成的问答发送给新配置的服务。`store: false` 关闭的是服务端响应对象存储，不会关闭本地文件，也不会阻止上下文传输。
+
+如果启动时修复了不完整或 JSON 语法损坏的最后一行，程序会报告会话文件旁边的 `<session_id>-recovery-*.jsonl` 备份；它在修复前保存，权限为 `0600`。尚未结束的一轮会被标记为中断，不会自动重试。中间记录损坏、未知字段或版本，以及错误的记录顺序都会阻止启动，历史内容保持不变；应使用已确认有效的备份恢复，不要随意删除记录。
+
+这个版本只保留一段对话。如果 `~/.mino/sessions/` 中有不止一个以会话 ID 命名的文件，启动会停止并提示 `~/.mino/sessions contains more than one conversation. This release keeps one conversation; use a release that supports multiple sessions.`，不改动任何文件。恢复备份和其他文件名不计入其中。请把多余的文件移到别处，或者使用支持多会话的 `chapter-05` 及之后的版本。
+
+历史限制为每条记录 16 MiB、整个文件 64 MiB。这是文件限制，不是模型的上下文预算。触及限制时，Mino 会报错，不会悄悄丢弃旧记录。如果需要手动重新开始，请先关闭 Mino，保留私有备份，再把会话文件移出 `~/.mino/sessions/` 后重启；下次启动会创建一段新的空对话。`chapter-02` 尚未实现 `/new`、`/clear` 和上下文压缩。
+
+2026-10-21 之前发布的版本把这段对话保存在 `~/.mino/history.jsonl`。当前各版本不会读取或迁移这个文件，请把它作为私有备份保留。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-01`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-02`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-01
+git checkout chapter-02
 go run ./cmd/mino
 ```
 
-应用代码及测试位于 `internal/`。`internal/gateway/` 处理终端交互，`internal/agent/` 负责模型请求。配置和身份加载保留在 `internal/`，无需代码生成步骤。
+应用代码及测试位于 `internal/`。`internal/gateway/` 处理终端交互，`internal/agent/` 负责模型请求和历史保存。配置和身份加载保留在 `internal/`，无需代码生成步骤。
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
-安装包和源码运行共用用户目录中的配置。自动化测试使用临时用户目录和模拟模型服务，不改动你真实的 `~/.mino` 文件，也不需要真实 API Key：
+安装包和源码运行共用用户目录中的配置，以及保存在 `~/.mino/sessions/` 中的对话。自动化测试使用临时用户目录和模拟模型服务，不改动你真实的 `~/.mino` 文件，也不需要真实 API Key：
 
 ```bash
 bash scripts/check.sh

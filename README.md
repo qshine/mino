@@ -14,9 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapter 01, release `chapter-01`
-(application version `0.1.0`).
+**Current progress:** This snapshot contains Chapters 01–02, release
+`chapter-02` (application version `0.2.0`).
 Chapter 01 introduces streaming terminal conversations.
+Chapter 02 adds JSONL conversation history and restart recovery.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -34,11 +35,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-01 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-01` release,
+this snapshot's `chapter-02` release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -85,18 +86,46 @@ from the working directory. `AGENTS.md` is only for developing this repository.
 
 Type a question and press Enter. Use `/exit`, Ctrl+D on an empty line, or Ctrl+C
 to quit.
-Chapter 01 does not keep the conversation between runs; each question is independent.
+Completed conversations are restored when you restart Mino.
 
 Mino displays answer fragments
 as they arrive after `Assistant>`. If a stream fails, the partial answer remains
 visible and an error is shown.
+
+## Conversation history (Chapter 02)
+
+Install `chapter-02` with `mino update chapter-02`, or check out that tag and run
+`go run ./cmd/mino`. Mino saves the conversation in `~/.mino/sessions/` and restores
+completed turns at startup. The first start creates that directory and one file named
+by a new session ID, `~/.mino/sessions/<session_id>.jsonl`; every later start opens
+the same file. `turn_id` associates the records within each turn. Streamed answers
+remain immediate. Failed or interrupted turns are retained but excluded from later
+requests, and requests are never automatically retried. Chapter 04 later returns
+stopped tool turns to the model with their results.
+
+Until Chapter 05, Mino keeps exactly one conversation: if `~/.mino/sessions/` holds
+more than one session file, startup stops instead of guessing which to use.
+A store-wide `~/.mino/sessions.lock` lets only one Mino process use it at a time.
+
+History and recovery backups contain private conversation data. The directory uses
+`0700` and the files `0600` permissions. History write failures stop chat. An
+incomplete tail is backed up beside the session file as `<session_id>-recovery-*.jsonl`
+before repair; invalid records in the middle stop startup. Limits are 16 MiB per
+record and 64 MiB per file. Chapter 05 adds `/new`; Chapter 06 adds context
+compaction while retaining these original records and file limits.
+
+Existing `~/.mino/SOUL.md` files are preserved. If yours still says every question
+is independent, edit that sentence to reflect supplied conversation history; the
+updated bundled [SOUL.md](SOUL.md) provides an example. To start fresh before
+session commands exist, quit Mino and move the session file out of
+`~/.mino/sessions/` to a private backup location. Keep recovery backups private too.
 
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-01   # Install this snapshot's chapter
+mino update chapter-02   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -116,6 +145,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter | Application version | Git tag |
 | --- | --- | --- |
 | Chapter 01 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
+| Chapter 02 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -144,10 +174,11 @@ not call a paid model or modify your real configuration.
 
 - [Read the illustrated book](https://qshine.github.io/mino/) · [简体中文](https://qshine.github.io/mino/zh/)
 - [Chapter 01: a terminal conversation](docs/books/en/chapters/01-terminal-chat.md)
+- [Chapter 02: JSONL conversation history](docs/books/en/chapters/02-jsonl-history.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; application code and tests: `internal/`.
 - Application composition: `internal/app.go`; terminal interaction: `internal/gateway/`;
-  model requests: `internal/agent/`. Configuration and SOUL remain in `internal/`.
+  model requests, Agent handling, and JSONL history: `internal/agent/`. Configuration and SOUL remain in `internal/`.
 - The SDK handles API communication. Mino owns the terminal flow; tool execution and the Agent loop remain future chapters.
 - [Contribution guidelines](AGENTS.md) · [MIT License](LICENSE)
 
@@ -155,9 +186,17 @@ not call a paid model or modify your real configuration.
 
 Book sources live in `docs/books/en/` and `docs/books/zh/`. Chapters focus on
 agent interactions, with setup and release details in supporting pages.
-With Node.js 24, run `npm ci --ignore-scripts` and
-`npm run book:dev`, then open the local address shown. `npm run book:build`
-checks the site's internal links and builds both languages.
+With Node.js 24, run from the repository root:
+
+```bash
+./book_review.sh
+```
+
+The script installs missing book dependencies, builds this checkout, and opens
+Chinese Chapter 01 in your default browser. It uses a free local port; keep the
+terminal open and press Ctrl+C to stop the preview. Run it again after edits to
+rebuild. For live preview while editing, use `npm run book:dev` instead.
+`npm run book:build` checks internal links and builds both languages.
 
 The project `book_writer` subagent maintains the book after Codex code changes.
 GitHub Actions checks and publishes the book to GitHub Pages after relevant
