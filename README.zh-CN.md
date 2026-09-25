@@ -2,20 +2,29 @@
 
 [English](README.md) | 简体中文
 
-用 Go 从零实现终端 Agent 的分章教程。第一章通过 OpenAI Responses API 实现独立的一问一答。
-支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
+**用 Go 从零构建自己的 Agent：从一次交互理解原理，用代码和实验验证能力。**
+
+Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses API。
+每章从一段可以观察的交互开始，看清模型收到什么、程序负责什么，再用小实验检查结果与边界。
+阅读源码需要了解 Go 的变量、函数和基本错误处理；第一次接触模型 API 也可以从第一章开始。
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
+**当前进度：**本快照包含已发布的第 01–02 章，标签为 `chapter-01` 至 `chapter-02`，程序版本对应 `0.1.0` 至 `0.2.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+
+**作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
+你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
+
 ## 安装
 
+支持 **macOS 13 及以上版本**，提供 **Apple Silicon 和 Intel Mac** 安装包。
 仓库和安装包已公开，无需安装 Go、GitHub CLI，也无需登录 GitHub。
 安装程序使用 macOS 自带的 `curl` 下载。
 
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-01 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-02 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 安装程序会识别 Mac 架构，下载本章发布版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
@@ -55,18 +64,32 @@ API Key 同样必填，输入时不会回显。填写完整后保存到 `~/.mino
 Mino 不读取工作目录中的 `AGENTS.md` 或 `SOUL.md`；`AGENTS.md` 仅用于开发本仓库。
 重新发布的 `chapter-01` 已包含这个身份文件。
 
-输入问题后按回车。使用 `/exit`、空行上的 Ctrl+D 或 Ctrl+C 退出。第一章不保留聊天历史。
+输入问题后按回车。使用 `/exit`、空行上的 Ctrl+D 或 Ctrl+C 退出。重启 Mino 后会恢复已完成的问答。
 
-重新发布的 `chapter-01` 流式版本会在 `Assistant>` 后逐步显示收到的回答片段。
-如果中途出错，已显示的内容会保留，同时提示错误。请重新执行上方安装命令获取流式输出，
-即便当前版本已经显示 `0.1.0`；更早的同号版本会等待完整回答后一次性显示。
+Mino 会在 `Assistant>` 后逐步显示收到的回答片段。
+如果中途出错，已显示的内容会保留，同时提示错误。
+
+## 对话历史（第二章）
+
+安装 `chapter-02` 即可使用第二章，也可在当前检出目录运行 `go run ./cmd/mino`。
+Mino 将记录追加到 `~/.mino/history.jsonl`，启动时恢复成功完成的问答。
+一个本地文件保存一段会话，`turn_id` 关联同一轮问答的记录，回答仍实时流式显示。
+失败或中断的回合保留为记录，但不进入后续请求，也不会自动重试。
+
+历史与恢复副本含有私人对话，文件权限为 `0600`，同一时间只允许一个 Mino 进程使用历史。
+写入失败会停止聊天；不完整的尾部先备份再修复，中间记录损坏则停止启动。
+单条记录上限为 16 MiB，整个文件为 64 MiB；上下文压缩和 `/new` 留在后续章节。
+
+已有的 `~/.mino/SOUL.md` 会保留。如果其中仍写着每个问题互相独立，请手动修改这一句，
+可参考更新后的默认 [SOUL.md](SOUL.md)。会话命令实现前，如需重新开始，先退出 Mino，
+再将 `history.jsonl` 移到私有备份位置；恢复副本同样需要妥善保管。
 
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-01   # 安装本快照对应章节
+mino update chapter-02   # 安装本快照对应章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04` 对应 `mino 0.4.0`。
@@ -79,6 +102,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04`
 | 章节 | 程序版本 | Git 标签 |
 | --- | --- | --- |
 | 第 01 章 | `0.1.0` | [`chapter-01`](https://github.com/qshine/mino/releases/tag/chapter-01) |
+| 第 02 章 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。本次标签调整经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -100,10 +124,11 @@ bash scripts/check.sh
 测试使用假密钥、临时用户目录、本机模拟 HTTP 服务和模拟下载，不调用付费模型，也不修改真实配置。
 
 - [第一章：从输入到模型回答](docs/books/zh/chapters/01-terminal-chat.md)
+- [第二章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；应用实现和测试：`internal/`。
 - `internal/app.go` 负责组装，`internal/gateway/` 负责终端交互，
-  `internal/agent/` 负责模型请求；配置和 SOUL 保留在 `internal/`。
+  `internal/agent/` 负责模型请求、Agent 处理和 JSONL 历史；配置和 SOUL 保留在 `internal/`。
 - SDK 负责 API 通信，Mino 负责终端交互；工具执行和 Agent 循环仍属于后续章节。
 - [贡献约定](AGENTS.md) · [MIT 许可证](LICENSE)
 
@@ -113,8 +138,16 @@ bash scripts/check.sh
 
 书籍源码分别位于 `docs/books/en/` 和 `docs/books/zh/`，网站默认英文，可切换简体中文。
 章节聚焦 Agent 交互，安装配置和发布细节放在配套页面中。
-使用 Node.js 24，在仓库中运行 `npm ci --ignore-scripts`、`npm run book:dev`，
-即可打开输出的本地地址预览。`npm run book:build` 检查站内链接并构建两种语言。
+使用 Node.js 24，在仓库根目录运行：
+
+```bash
+./book_review.sh
+```
+
+脚本会自动安装缺少的书籍依赖、构建当前检出的书稿，并用默认浏览器打开中文第一章。
+端口被占用时会选择其他可用端口；保持终端打开，按 Ctrl+C 停止预览。
+修改书稿后重新运行即可构建新版。边写边预览时，也可使用 `npm run book:dev`。
+`npm run book:build` 检查站内链接并构建两种语言。
 
 项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
 GitHub Actions 会在 `main` 上的相关内容更新后检查书籍并发布到 GitHub Pages。

@@ -4,7 +4,7 @@ const repository = 'https://github.com/qshine/mino'
 
 export default withMermaid({
   title: 'Mino',
-  description: 'Build an agent from scratch in Go, one illustrated chapter at a time.',
+  description: 'Build an agent from scratch in Go. Understand each interaction and verify how it works with code and experiments.',
   base: '/mino/',
   srcDir: 'books',
   // Keep English at the site root while both languages have explicit source directories.
@@ -37,16 +37,19 @@ export default withMermaid({
         nav: [
           { text: 'Read the book', link: '/chapters/01-terminal-chat' },
           { text: 'Roadmap', link: '/plan-todo-chapters' },
+          { text: 'Author', link: '/about-author' },
           { text: 'GitHub', link: repository }
         ],
         sidebar: [
           { text: 'Start here', items: [
             { text: 'About this book', link: '/' },
             { text: 'Setup and installation', link: '/getting-started' },
-            { text: 'Chapter roadmap', link: '/plan-todo-chapters' }
+            { text: 'Chapter roadmap', link: '/plan-todo-chapters' },
+            { text: 'About the author', link: '/about-author' }
           ] },
           { text: 'Part I · Connect to a model', items: [
-            { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' }
+            { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' },
+            { text: '02 JSONL conversation history', link: '/chapters/02-jsonl-history' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -59,22 +62,25 @@ export default withMermaid({
     },
     zh: {
       label: '简体中文', lang: 'zh-CN', titleTemplate: ':title · 从零构建 Agent',
-      description: '用 Go 从一个终端问答程序开始，逐章理解并实现 Agent。',
+      description: '用 Go 从零构建 Agent，从一次交互理解原理，用代码和实验验证能力与边界。',
       themeConfig: {
         siteTitle: 'Mino · 从零构建 Agent',
         nav: [
           { text: '阅读教程', link: '/zh/chapters/01-terminal-chat' },
           { text: '章节路线', link: '/zh/plan-todo-chapters' },
+          { text: '作者', link: '/zh/about-author' },
           { text: 'GitHub', link: repository }
         ],
         sidebar: [
           { text: '开始阅读', items: [
             { text: '关于这本书', link: '/zh/' },
             { text: '准备与安装', link: '/zh/getting-started' },
-            { text: '章节路线与进度', link: '/zh/plan-todo-chapters' }
+            { text: '章节路线与进度', link: '/zh/plan-todo-chapters' },
+            { text: '关于作者', link: '/zh/about-author' }
           ] },
           { text: '第一部分 · 搭通对话', items: [
-            { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' }
+            { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' },
+            { text: '02 JSONL 对话历史', link: '/zh/chapters/02-jsonl-history' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

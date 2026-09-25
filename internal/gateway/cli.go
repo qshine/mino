@@ -35,7 +35,7 @@ func Command(ctx context.Context, version string, args []string, output, errorOu
 			_, err := fmt.Fprintln(output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json")
+			_, err := fmt.Fprintln(output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json"+"\nHistory: ~/.mino/history.jsonl")
 			return true, err
 		}
 	}

@@ -24,7 +24,7 @@ func Main(version string) int {
 	return 0
 }
 
-func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) error {
+func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) (err error) {
 	// 配置与聊天共用缓冲区，避免首次配置吞掉已经读入的第一条问题。
 	reader := bufio.NewReader(input)
 	setup := false
@@ -57,8 +57,22 @@ func run(ctx context.Context, input io.Reader, output, errorOutput io.Writer) er
 	if err != nil {
 		return err
 	}
-	client := agent.New(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model}, instructions)
-	return gateway.Run(ctx, reader, output, errorOutput, client.Handle)
+	directory, err := userDirectory()
+	if err != nil {
+		return err
+	}
+	history, err := agent.OpenSession(directory)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, history.Close()) }()
+	if history.Notice() != "" {
+		if _, err := fmt.Fprint(errorOutput, gateway.Text(history.Notice())); err != nil {
+			return err
+		}
+	}
+	chat := agent.New(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model}, instructions, history)
+	return gateway.Run(ctx, reader, output, errorOutput, chat.Handle)
 }
 
 func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {

@@ -2,7 +2,7 @@
 
 This page covers application releases. For the book website, see [writing and updating the book](./maintaining-the-book.md).
 
-Chapters 01–04 were published on **2026-09-26** as `chapter-01` through `chapter-04`, with macOS packages for Apple Silicon and Intel. This checkout contains the implementation through Chapter 01; each lesson links to its own release source.
+Chapters 01–04 were published on **2026-09-26** as `chapter-01` through `chapter-04`, with macOS packages for Apple Silicon and Intel. This checkout contains the implementation through Chapter 02; each lesson links to its own release source.
 
 ## Version policy
 
@@ -23,7 +23,7 @@ Packaging derives `0.<chapter>.<patch>` from the tag and supplies it through Go 
 
 **An updater installed before the chapter-tag migration cannot resolve `chapter-*` tags.** Rerun the [current installation command](./getting-started.md#install-with-one-command) once, even if the displayed numeric version is unchanged. This fetches the new installer and replaces the executable while preserving settings, custom `~/.mino/SOUL.md`, and any history. Updating a tag or the script on `main` does not change an installed binary.
 
-After that installation, `mino update` selects the latest release and `mino update chapter-01` selects this chapter. The installer also accepts `0.1.0` or `v0.1.0` as aliases for `chapter-01`; these are version selectors, not additional Git tags.
+After that installation, `mino update` selects the latest release and `mino update chapter-02` selects this chapter. The installer also accepts `0.2.0` or `v0.2.0` as aliases for `chapter-02`; these are version selectors, not additional Git tags.
 
 ## Publish a version
 
@@ -50,10 +50,10 @@ The workflow uploads to a draft release, then publishes after all uploads succee
 
 ## Local packaging and recovery
 
-From the repository root at `chapter-01`, inspect this chapter's packages:
+From the repository root at `chapter-02`, inspect this chapter's packages:
 
 ```bash
-bash scripts/package.sh chapter-01
+bash scripts/package.sh chapter-02
 ```
 
 Packaging accepts the canonical chapter tag and builds the current working tree; it does not check out the tag. Output goes to the ignored `dist/` directory without creating a Git tag or release. If publishing fails, inspect the logs and any incomplete draft before rerunning the job.

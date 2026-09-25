@@ -6,32 +6,37 @@ next:
 
 # Build an agent from scratch in Go
 
-**An illustrated book that grows alongside Mino, one runnable chapter at a time.**
+**Understand how an agent works through each interaction, then verify it with code and experiments.**
 
-How does a model API become a program you can talk to in a terminal? How does that program acquire memory, call tools, save sessions, and act within clear permissions? This book follows those questions, adding one capability at a time.
+By [qqling | AI Builder](./about-author.md)
 
-Begin with a short interaction, then follow what the user supplies, what the model receives, and what the program does next. Focused diagrams and source links explain how data and control move; small experiments make the boundaries observable.
+Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
+
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md). Tools and multiple sessions are available in later chapter releases; see the [roadmap](./plan-todo-chapters.md).
 
 ## Who this book is for
 
-You know Go variables, functions, and basic error handling, and want to understand how agents work. You can start with Chapter 01 even if model APIs are new to you. HTTP requests, context, and tool calls are introduced when the program needs them.
+This book is for readers new to agents who want to understand them by building. Reading the source requires Go variables, functions, and basic error handling; you can start with Chapter 01 even if model APIs are new to you. HTTP requests, context, and tool calls are introduced when the program needs them.
 
-Mino targets macOS and uses the official OpenAI Go SDK for API communication. The book builds Mino's interaction flow and later Agent loop in Go. Reading the book requires no website tooling, and running a downloaded Mino release requires no Go installation. Go is needed to work with the application source; Node.js is needed only to maintain the book website.
+The exercises target macOS. Running a downloaded Mino release requires no Go installation; building or running Mino from source requires Go. See [setup and installation](./getting-started.md) for the steps.
 
 ## What each chapter gives you
 
-Each lesson follows one concrete interaction through the minimum code needed to understand it, then gives you an experiment to check the result. It makes clear what works and what problem remains. Installation and configuration live in [getting started](./getting-started.md); chapters link there without repeating the setup walkthrough.
+1. **Observe an interaction.** Start with a concrete action, such as entering a question and seeing an answer, to establish the problem the chapter addresses.
+2. **Separate the model's role from the program's.** Use diagrams and versioned source links to trace how input, context, and responses move.
+3. **Verify with an experiment.** Inspect requests or run mock tests to establish where a capability comes from and when it can fail.
+
+For example, Chapter 01 inspects requests to explain why two questions in the same terminal have no shared memory. Chapter 02 then verifies how saved history becomes part of the next request. A model's correct guess cannot replace a check of the program's behavior.
 
 ## What is ready to read
 
-Chapter 01 is complete. This edition follows the **chapter-01 release (version 0.1.0)**. The chapter follows the identity loaded from `~/.mino/SOUL.md` and a question into a streaming Responses request, then explains immediate text display, completion checks, and why the next question has no memory. Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
-
-This checkout stops at Chapter 01. Chapters 02–04 are available as separate releases, while Chapter 05 onward remains planned; see the [chapter roadmap](./plan-todo-chapters.md).
+This edition contains Chapters 01–02, with matching `chapter-NN` release tags and numeric application versions. Use the source tag named in each lesson.
 
 | Stage | The question you will explore |
 | --- | --- |
 | [01 A terminal conversation](./chapters/01-terminal-chat.md) | How does a line of input become an HTTP request and then an answer? |
-| 02–04 Context, tools, and sessions | Who remembers the conversation? Who executes tools? What survives a restart? |
+| [02 JSONL conversation history](./chapters/02-jsonl-history.md) | What survives a restart, and which saved records become model context? |
+| 03–04 Tools and multiple sessions | Who executes tools? How do you start or restore a separate conversation? |
 | 05–06 Context management | How can older interactions be summarized, and when should that happen? |
 | 07–09 Extensions and guardrails | How do knowledge and tools connect, and how are actual permissions enforced? |
 
@@ -41,4 +46,8 @@ Each chapter identifies its applicable version. Important source links point to 
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-04.1` produces version `0.4.1` and updates the relevant lesson without creating an extra chapter.
 
+Users of earlier `0.1.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
+
 Start with [setup and installation](./getting-started.md), or go directly to [Chapter 01](./chapters/01-terminal-chat.md).
+
+To learn why I started Mino or follow future work, visit [about the author](./about-author.md).

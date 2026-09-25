@@ -2,19 +2,19 @@
 
 Applies to **0.1.x** · Source and release tag **[chapter-01](https://github.com/qshine/mino/tree/chapter-01)** · Application version **0.1.0**, released **2026-09-26**
 
-You type a question and want to see the answer begin before the model finishes. Mino must send your input, display incoming text, and decide when to ask for the next question. This chapter follows that exchange and explains why continuing in the same terminal does not give the model conversation memory.
+You ask Mino to explain an HTTP request, then follow up with “What did I just ask you to explain?” The earlier answer is still in the terminal. It looks like one conversation. To find out whether the model received it that way, you need to follow the question into the request and the answer back to the screen. That round trip is this chapter's first building block for an agent.
 
-Complete [setup and installation](../getting-started.md) first. You will observe what you supply, what reaches the model, and how Mino hands control back to you.
+Complete [setup and installation](../getting-started.md) and use the source revision named above. Release `chapter-02` already adds history; the independent questions in `0.1.x` let you see the problem this chapter starts with.
 
-## 1. Observe one exchange
+## 1. Get one answer onto the screen
 
-Start the installed streaming release:
+Start the installed `chapter-01` streaming release of Mino. Begin with a question that needs no earlier messages.
 
 ```bash
 mino
 ```
 
-**Illustrative output**, not a record of a live API call:
+Illustrative output. The wording below explains the interaction; it is not a record of a live API call.
 
 ```text
 Mino - Chapter 01: Terminal Chat
@@ -27,15 +27,17 @@ Assistant> An HTTP request is a message a client sends to a server to retrieve o
 You>
 ```
 
-After you press Enter, Mino prints `Assistant>` and sends the question. Answer fragments then appear as they arrive; the transcript shows the final text, while the service determines the wording, fragment sizes, and timing. When `You>` appears again, you can submit another question. Submitting a blank line simply returns to the prompt without sending a request.
+After you press Enter, Mino prints `Assistant>` and sends the question. It displays the answer in fragments as they arrive, so you can start reading before generation finishes. The transcript above shows the assembled text; the service determines its wording, fragment sizes, and arrival times.
 
-## 2. Send the question and instructions
+When `You>` appears again, Mino is ready for your next question. A blank line simply brings back the prompt without sending a request. You can keep typing into this window, but that alone does not tell you whether the next question carries any information from the first.
 
-The model service cannot read your terminal window. Mino sends the current question as `input` in a Responses API request, together with `instructions` that describe its identity and guide its answers. The configured `model` selects which model receives this information.
+## 2. The model gets what goes into the request
 
-Mino [loads its instructions once when chat starts](https://github.com/qshine/mino/blob/chapter-01/internal/soul.go), from `~/.mino/SOUL.md`. Each question receives the same loaded instructions. Editing that file changes subsequent answers only after you restart Mino; working-directory `AGENTS.md` and `SOUL.md` are not sent as instructions.
+You can read the earlier lines because they are still on your screen. How does the model receive those lines? Mino has to include them in a request; the terminal window is not an input to the model service.
 
-For a compact request example, suppose the loaded instructions are “You are Mino. Answer briefly.” This is illustrative custom text, not the bundled default. The earlier question produces this request body; `your-model` stands for your configured model name:
+For the HTTP question, Mino uses the OpenAI Responses API. It puts the current question in `input` and the instructions guiding the answer in `instructions`. The `model` field selects the model you configured.
+
+Here is a request example. To keep it short, suppose your custom instructions are “You are Mino. Answer briefly.” This is illustrative instruction text, not the bundled default; `your-model` stands for your configured model name.
 
 ```json
 {
@@ -47,11 +49,17 @@ For a compact request example, suppose the loaded instructions are “You are Mi
 }
 ```
 
-`stream: true` asks the service to send events as generation proceeds, so Mino can display text before the answer is complete. `store: false` asks the service not to retain the response object for later retrieval. Neither field supplies earlier questions or answers.
+The two remaining fields affect how the response is handled. `stream: true` requests events during generation. `store: false` asks the service not to retain a response object for later retrieval. Neither field supplies earlier messages.
 
-## 3. From answer fragments to the next prompt
+Mino [reads the instructions once when chat starts](https://github.com/qshine/mino/blob/chapter-01/internal/soul.go), from `~/.mino/SOUL.md`, and sends that loaded copy with every question. If you edit the file during a chat, restart Mino to use the new instructions. Working-directory `AGENTS.md` and `SOUL.md` do not supply runtime instructions.
 
-A response contains structured events; the answer is the text Mino chooses to display from those events. Some events carry new text, while others report whether generation completed. This distinction lets Mino show useful text immediately without treating an unfinished answer as a success.
+For this first question, the request contains everything the example needs. A follow-up will be a different test: its meaning depends on words outside the current input.
+
+## 3. Text is arriving, but completion still matters
+
+The first words arrive, and you can already start reading the explanation. Then the connection drops halfway through a sentence. The program has displayed something, but has it received a complete answer?
+
+The service delivers a structured *response* through a stream of events. The *answer* is the text Mino extracts and displays. Events carrying new text let Mino show progress; a completion event tells it when to check the final result. The diagram follows a successful exchange.
 
 ```mermaid
 sequenceDiagram
@@ -73,51 +81,57 @@ sequenceDiagram
     Mino-->>User: You>
 ```
 
-Figure 01-1. Text reaches you during generation; the next prompt waits for the completion check.
+Figure 01-1. On the successful path, text appears before the completion check returns control to you.
 
-The diagram can be scrolled horizontally on a narrow screen.
+On narrow screens, scroll the diagram horizontally.
 
-### 3.1 Display text, then confirm completion
+### 3.1 Show the words as they arrive
 
-Mino [displays each new text fragment and checks the final status](https://github.com/qshine/mino/blob/chapter-01/internal/agent/responses.go). A text fragment arrives in a `response.output_text.delta` event; *delta* means the newly added text. If the model refuses, Mino displays the refusal fragments with `Model refused: ` before the first one. It does not print the assembled answer again when completion arrives.
+The event `response.output_text.delta` carries a *delta*: a newly arrived text fragment. Mino [displays these fragments and checks the final state](https://github.com/qshine/mino/blob/chapter-01/internal/agent/responses.go). It also streams refusal text, adding the fixed prefix `Model refused: ` before the first refusal fragment.
 
-**Visible text does not prove that generation finished.** Mino requires a `response.completed` event reporting `status: completed` without a response error, and at least one non-whitespace text or refusal fragment. When these conditions are met, it confirms successful completion and returns to `You>`. A connection that simply closes does not establish success.
+Mino accepts the generation as successful only after receiving `response.completed` with `status` equal to `completed` and no response error. At least one non-whitespace text or refusal fragment must also have arrived. Closing the connection without that completion event is not enough.
 
-### 3.2 Handle an error or stop the exchange
+After the check passes, `You>` appears again. Mino does not print the assembled answer a second time: you have already read it through the fragments.
 
-If a request fails or the stream ends before successful completion, Mino prints `Error: ...` and returns to `You>`. Any fragments already displayed remain visible, so you can see where the answer stopped. Mino does not automatically retry; you decide whether to submit another question.
+### 3.2 If it stops halfway, you decide what happens next
 
-Pressing Ctrl+C while waiting for input or a response cancels and exits Mino. Any displayed answer fragments remain in the terminal. At an input prompt, `/exit` or Ctrl+D on an empty line also ends the chat.
+If the request fails or the stream ends without successful completion, Mino prints `Error: ...` and returns to the input prompt. The displayed fragments remain visible, but the error tells you the generation did not finish successfully. Mino does not retry automatically; you decide whether to submit the question again.
 
-## 4. Check the interaction
+While waiting for input or a response, Ctrl+C cancels and exits. At the input prompt, `/exit` or Ctrl+D on an empty line also ends the chat. Exiting does not erase fragments already displayed in the terminal.
 
-### 4.1 Verify display before completion
+## 4. Check the puzzle we started with
 
-From the repository root, run:
+### 4.1 Is the text really displayed before completion
+
+A finished transcript looks the same whether Mino displayed each fragment immediately or held the whole answer until the end. To distinguish those behaviors, the check needs to control when generation can finish. Run this command from the repository root at the source revision named at the top of this chapter.
 
 ```bash
 go test ./internal/... -run 'TestRunStreamsBeforeResponseCompletes|TestRespond|TestTerminal'
 ```
 
-These tests use local mock HTTP services and simulated input, without your real configuration or a paid model. A successful run prints `ok` for the `internal`, `internal/agent`, and `internal/gateway` packages; the process needs permission to bind a local port.
+These tests use a local mock HTTP service and simulated input. They do not read your real configuration or call a paid model. A passing run shows `ok` for the `internal`, `internal/agent`, and `internal/gateway` packages. The test process must be able to bind a local port.
 
-The [streaming check](https://github.com/qshine/mino/blob/chapter-01/internal/streaming_test.go) sends the first fragment, then waits until it has reached the terminal output before sending the rest. Passing therefore establishes that text is displayed before completion. The same command also checks that completion does not duplicate the answer, a failed stream preserves displayed fragments, and cancellation stops the exchange.
+In the [streaming check](https://github.com/qshine/mino/blob/chapter-01/internal/streaming_test.go), the mock service sends one fragment and waits. It sends the rest only after the test confirms that the first fragment has reached terminal output. Buffering everything until completion would prevent this test from passing. The same command checks that answers are not printed twice, interrupted streams leave their displayed fragments, and cancellation stops the interaction. These checks establish the program's event ordering, not how fast a live service will answer.
 
-### 4.2 Check what the next question receives
+### 4.2 Why an open window still needs the earlier messages
 
-In one run, submit these two questions, waiting for the first answer before asking the second:
+Return to the opening follow-up. In one run of the `chapter-01` streaming release, submit these questions in order, waiting for the first answer before asking the second.
 
 ```text
 Explain an HTTP request in one sentence.
 What did I just ask you to explain?
 ```
 
-The model's *context* is the information supplied for the current generation. The second request contains only the second question and the loaded instructions. Mino does not include the first question or its answer as conversation history, and it does not associate the requests through `previous_response_id` or `conversation`. Text visible above the prompt is not automatically part of the next request.
+The second question refers to the first, so it is natural to expect Mino to connect them. In this version, however, the second request contains only “What did I just ask you to explain?” and the loaded instructions. The first question and answer are absent. Mino also supplies no `previous_response_id` or `conversation` to link the requests.
 
-The model might guess the topic. **A correct guess does not demonstrate memory; the request contents do.** The [independent-request check](https://github.com/qshine/mino/blob/chapter-01/internal/agent/responses_test.go), included in the preceding command, inspects successive request bodies and verifies that each carries only its current question. Streaming changes when you see the answer, while the information supplied for the next question stays independent.
+*Context* is the information supplied for the current generation. The terminal preserves the exchange for you to read; the program must supply the earlier messages for the model to use them. Keeping the window open does not do that work.
+
+How should you verify this? Trying the follow-up shows you the experience a reader gets, but the model might guess HTTP correctly. A plausible answer cannot distinguish correct history handling from a guess. **To establish which earlier messages Mino supplied, inspect the request.**
+
+The test command above includes an [independent-request check](https://github.com/qshine/mino/blob/chapter-01/internal/agent/responses_test.go). A mock service captures consecutive request bodies and verifies that each `input` contains only its current question, with no field linking it to the previous response or a conversation. Checking this boundary gives a repeatable answer about Mino's behavior without depending on model wording. The tradeoff is narrower evidence: it verifies the information sent, not answer quality or compatibility with every live service.
 
 ## 5. Chapter outcome and next step
 
-Mino can now carry one question through a streaming response, display its text, and return control to you after completion or an error. This is a foundation for an Agent; it cannot yet continue a task using conversation history or execute model-requested tools.
+You can now follow the HTTP question there and back: Mino sends the current input and instructions, displays answer fragments, checks completion, and returns control to you. That is a foundation for an agent, though it does not yet execute tools.
 
-Chapter 02 (`chapter-02`) addresses the missing history: save exchanges in a JSON Lines (JSONL) file, with one JSON record per line, restore them at startup, and include them with the next question. Tool execution and the Agent loop follow in Chapter 03. See the [roadmap](../plan-todo-chapters.md) for the remaining work.
+The opening follow-up reveals the next missing piece. The earlier exchange must enter the request before the model can use it as context. [Chapter 02](./02-jsonl-history.md), implemented in `chapter-02`, saves exchanges to a JSON Lines (JSONL) file, restores completed turns at startup, and supplies them with the next question. Tool execution and the Agent loop arrive in the separate `chapter-03` release; see the [chapter roadmap](../plan-todo-chapters.md).
