@@ -16,6 +16,9 @@ unchanged and fixes receive new patch versions.
 
 ### Changed
 
+- Adapt the book writer's narrative style from `khazix-writer` while keeping
+  factual evidence, engineering tradeoffs, and bilingual tutorial conventions
+  explicit; document the writing process in both maintenance guides.
 - Put the tutorial's audience, interaction-based learning approach, and completed
   chapters before installation details in the READMEs; make the same information
   prominent on both book homepages.
