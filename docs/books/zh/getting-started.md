@@ -9,7 +9,9 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-09-26 发布的 `chapter-04`（程序版本 `0.4.0`）。本章包含终端问答、历史保存、获批的 Bash 执行和独立会话。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-09-26 发布的 `chapter-05`（程序版本 `0.5.0`），包含终端问答、历史保存、获批的 Bash 执行、独立会话，以及手动与自动上下文压缩。运行各章实验时，请使用该章注明的标签。
+
+第五章默认使用 **128,000 tokens** 的上下文窗口，支持[配置覆盖](#配置上下文窗口)。升级已有会话前，请阅读[历史兼容性说明](#第五章的历史兼容性)：新记录采用版本 3。
 
 ## 准备一台 Mac
 
@@ -22,10 +24,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-04 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-04`。省略 `-- chapter-04` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-05`。省略 `-- chapter-05` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -59,16 +61,16 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ## 查看版本和更新
 
-如果 Mino 安装于章节标签迁移之前，请先把上面的安装命令**重新运行一次**，即使 `mino version` 已显示 `0.4.0`。旧的内嵌更新器无法解析 `chapter-*` 标签。重新安装会保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。
+如果 Mino 安装于章节标签迁移之前，请先把上面的安装命令**重新运行一次**，即使显示的数字版本没有变化。旧的内嵌更新器无法解析 `chapter-*` 标签。重新安装会保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。
 
 安装章节标签对应的发布版后，可以检查数字版本，再次选择本章：
 
 ```bash
 mino version
-mino update chapter-04
+mino update chapter-05
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.4.0` 或 `v0.4.0`，两者都指向 `chapter-04`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.5.0` 或 `v0.5.0`，两者都指向 `chapter-05`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -163,14 +165,53 @@ Mino 在整次运行期间持有 `sessions.lock`，因此同一个会话库只�
 
 `/clear` 保留当前会话 ID 和其他会话，确认后将活动日志替换为空历史。它不删除旧的 `history.jsonl` 留档、恢复副本或手工备份，也不会撤销命令或安全擦除磁盘数据。保存或同步会话变更可能失败，Mino 此时停止聊天，不会承诺成功。请保留文件并检查错误提示，再重启让程序重新核对保存状态。
 
+## 从源码体验第五章
+
+第五章已随 [chapter-05](https://github.com/qshine/mino/releases/tag/chapter-05) 发布，程序版本为 `0.5.0`。若要运行对应源码，请在仓库根目录选择该标签：
+
+```bash
+git checkout chapter-05
+go run ./cmd/mino
+```
+
+启动横幅标明 `Chapter 05: Context Compaction`，源码版本仍显示为 `dev`。已有的 [Go 准备说明](#从源码学习)和 [Responses 工具要求](#从源码体验第三章)继续适用。本版还要求服务接受 `max_output_tokens`、`truncation: "disabled"`，以及带 `tool_choice: "none"` 的无工具摘要请求。本机模拟测试验证这些字段，但不证明服务商已经兼容。
+
+在下一个 `You>` 提示后输入 `/compact`，程序会整理选中会话的较早轮次，完整保留最近两轮可重放问答。自动预算检查在请求前使用相同流程，也包含工具返回后的请求。与会话选择命令不同，`/compact` 可能调用模型并产生费用；没有较早轮次时不发送请求。交互过程、限制和测试见[第五章](./chapters/05-context-compaction.md)。
+
+已有 SOUL 文件保持不变。如果其中仍称 Mino 总是提供完整历史，或不具备摘要能力，请更新这些能力描述，同时保留自定义指引，编辑后重启。摘要是有损上下文，不是新的指令或工具授权。
+
+### 配置上下文窗口
+
+第五章在 `~/.mino/config.json` 中增加可选字段 `context_window`，单位为 token，必须是非负整数。省略或填写 `0` 时使用 **128K（128,000 tokens）**，正整数覆盖默认值。负数、小数、字符串和 `null` 会被拒绝。首次设置不会询问这个可选字段。
+
+例如，如果部署实际支持 64,000-token 窗口，可以把下面的字段加入现有 JSON 对象，然后重启。这是字段示意，不是完整配置；请保留已有的 `base_url`、`api_key` 和 `model`。
+
+```json
+{
+  "context_window": 64000
+}
+```
+
+启动时会显示 `Context window: 64000 tokens (config).`；字段省略或为零时显示 `Context window: 128000 tokens (default).`。这些是本地设置，启动不会请求模型元数据，配置值也不能扩大服务的真实容量。请按模型和部署实际支持的窗口填写。
+
+Mino 会预留输出空间，并按字节估算输入，因此这个值既不是文件大小限制，也不是已消耗 token 的精确计数。值设得过小，可能连正常问题也被拒绝；设得过大，仍可能遇到服务端错误。[预算说明](./chapters/05-context-compaction.md#_3-每次请求前检查预算)解释了触发阈值，以及请求过大或压缩失败时的处理。
+
+### 第五章的历史兼容性
+
+在已有对话上运行本章版本之前，请关闭其他 Mino 进程，并私下备份升级前的会话日志与 `active-session.json`。第五章读取记录版本 1–3，新记录统一写为 `v: 3`，包括普通问答。一旦追加新记录，旧发布版就无法加载受影响的日志，即使你还没有使用 `/compact`。不要把版本 3 记录直接改标为版本 2。
+
+如需回退到旧程序，请先关闭 Mino，另行保留新版文件，再恢复配套的升级前文件。摘要保存在选中会话既有的 JSONL 文件中，没有需要单独复制的摘要文件。旧历史迁移和会话恢复仍按[上文规则](#第四章的存储与迁移)执行。
+
+压缩只追加摘要，不删除原始消息，因此不会减少磁盘占用或擦除敏感内容。提交给摘要请求的较早材料，以及生成的摘要，都可能包含私人信息。请妥善保管会话文件和恢复副本。修改配置的服务，也会改变后续摘要和聊天请求的接收方。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-04`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-05`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-04
+git checkout chapter-05
 go run ./cmd/mino
 ```
 
@@ -178,10 +219,10 @@ go run ./cmd/mino
 
 模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
-安装包和源码运行共用用户目录中的配置，第二章和第三章源码运行会使用用户目录中的历史，第四章源码运行则按上文使用和迁移它。自动化测试使用临时目录和模拟模型服务，不改动真实历史，也不需要真实 API Key：
+安装包和源码运行共用用户目录中的配置，第二章和第三章源码运行会使用用户目录中的历史，第四章及之后的源码运行则按上文使用和迁移它。自动化测试使用临时目录和模拟模型服务，不改动真实历史，也不需要真实 API Key：
 
 ```bash
 bash scripts/check.sh
 ```
 
-接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)、[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)，或[第四章：多会话](./chapters/04-jsonl-sessions.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。
+接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)、[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)、[第四章：多会话](./chapters/04-jsonl-sessions.md)，或[第五章：上下文压缩](./chapters/05-context-compaction.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。

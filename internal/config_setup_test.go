@@ -38,7 +38,7 @@ func TestFirstRunSavesChosenModelAndSkipsPromptsOnRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if calls != 3 || cfg != (config{"https://api.openai.com/v1", "fake-key", "chosen-model"}) {
+	if calls != 3 || cfg != (config{"https://api.openai.com/v1", "fake-key", "chosen-model", 0}) {
 		t.Fatal("configuration was not collected correctly")
 	}
 	data, err := os.ReadFile(path)
@@ -187,7 +187,7 @@ func TestConfigRejectsSymlinks(t *testing.T) {
 	if _, err := loadConfig(nil); err == nil {
 		t.Fatal("config symlink was accepted")
 	}
-	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model"}); err == nil {
+	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0}); err == nil {
 		t.Fatal("save replaced a symlink")
 	}
 }
@@ -197,7 +197,7 @@ func TestSaveFailureLeavesNoTemporarySecretFiles(t *testing.T) {
 	if err := os.MkdirAll(path, 0700); err != nil {
 		t.Fatal(err)
 	}
-	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model"}); err == nil {
+	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0}); err == nil {
 		t.Fatal("saving over a directory succeeded")
 	}
 	entries, err := os.ReadDir(filepath.Dir(path))

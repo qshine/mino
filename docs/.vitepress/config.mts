@@ -78,7 +78,8 @@ export default withMermaid({
             { text: '03 Tools and the Agent loop', link: '/chapters/03-tools-and-bash' }
           ] },
           { text: 'Part III · Manage conversations', items: [
-            { text: '04 Multiple sessions', link: '/chapters/04-jsonl-sessions' }
+            { text: '04 Multiple sessions', link: '/chapters/04-jsonl-sessions' },
+            { text: '05 Context compaction', link: '/chapters/05-context-compaction' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -115,7 +116,8 @@ export default withMermaid({
             { text: '03 工具调用与 Agent 循环', link: '/zh/chapters/03-tools-and-bash' }
           ] },
           { text: '第三部分 · 管理对话', items: [
-            { text: '04 JSONL 多会话', link: '/zh/chapters/04-jsonl-sessions' }
+            { text: '04 JSONL 多会话', link: '/zh/chapters/04-jsonl-sessions' },
+            { text: '05 上下文压缩', link: '/zh/chapters/05-context-compaction' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

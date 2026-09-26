@@ -59,7 +59,7 @@ func (c *CLI) Command(ctx context.Context, version string, args []string) (bool,
 			_, err := fmt.Fprintln(c.output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /help, /exit")
+			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
 			return true, err
 		}
 	}
@@ -82,8 +82,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 04: Multiple Sessions")
-	fmt.Fprintln(c.output, "The last session is restored on startup. Use /help for session commands. Bash commands require approval. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 05: Context Compaction")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Context compacts automatically near its budget; use /compact to compact manually or /help for commands. Bash commands require approval. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
 		select {

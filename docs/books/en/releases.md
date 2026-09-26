@@ -2,7 +2,9 @@
 
 This page covers application releases. For the book website, see [writing and updating the book](./maintaining-the-book.md).
 
-Chapters 01–04 were published on **2026-09-26** as `chapter-01` through `chapter-04`, with macOS packages for Apple Silicon and Intel. This checkout contains the implementation through Chapter 04; each lesson links to its own release source.
+Chapters 01–05 were published on **2026-09-26** as `chapter-01` through `chapter-05`, with macOS packages for Apple Silicon and Intel. The latest chapter release is [chapter-05](https://github.com/qshine/mino/releases/tag/chapter-05), application version **0.5.0**; each lesson uses its matching source tag.
+
+Chapter 05 writes version 3 session records and reads versions 1–3. Before trying it or rolling back, follow the [history compatibility notes](./getting-started.md#chapter-05-history-compatibility). Building the working tree does not create a release or change published tags.
 
 ## Version policy
 
@@ -14,6 +16,7 @@ Release tags identify chapters; executables and archive filenames retain numeric
 | `chapter-02` | `0.2.0` |
 | `chapter-03` | `0.3.0` |
 | `chapter-04` | `0.4.0` |
+| `chapter-05` | `0.5.0` |
 
 An initial chapter release uses `chapter-NN`. A later fix uses `chapter-NN.PATCH`: for example, `chapter-04.1` produces version `0.4.1`. Future fixes receive new tags; do not move published tags or replace their assets. Prefer one complete commit per chapter, including code, tests, and both book languages.
 
@@ -23,17 +26,17 @@ Packaging derives `0.<chapter>.<patch>` from the tag and supplies it through Go 
 
 **An updater installed before the chapter-tag migration cannot resolve `chapter-*` tags.** Rerun the [current installation command](./getting-started.md#install-with-one-command) once, even if the displayed numeric version is unchanged. This fetches the new installer and replaces the executable while preserving settings, custom `~/.mino/SOUL.md`, and any history. Updating a tag or the script on `main` does not change an installed binary.
 
-After that installation, `mino update` selects the latest release and `mino update chapter-04` selects this chapter. The installer also accepts `0.4.0` or `v0.4.0` as aliases for `chapter-04`; these are version selectors, not additional Git tags.
+After that installation, `mino update` selects the latest release and `mino update chapter-05` selects this chapter. The installer also accepts `0.5.0` or `v0.5.0` as aliases for `chapter-05`; these are version selectors, not additional Git tags.
 
 ## Publish a version
 
 1. Finish the change, add the numeric version entry to `CHANGELOG.md`, and commit it.
 2. Run `bash scripts/check.sh`, review the code and bilingual book, then push the reviewed change to `main`.
-3. Create and push a new chapter or patch tag. For a future Chapter 02 patch:
+3. Create and push a new chapter or patch tag. For a future Chapter 05 patch:
 
    ```bash
-   git tag -a chapter-02.1 -m 'Mino chapter-02.1'
-   git push origin chapter-02.1
+   git tag -a chapter-05.1 -m 'Mino chapter-05.1'
+   git push origin chapter-05.1
    ```
 
 The [Release workflow](https://github.com/qshine/mino/blob/main/.github/workflows/release.yml) runs for `chapter-*` tags. It reruns checks and builds `darwin/arm64` and `darwin/amd64` with CGO disabled. On macOS, packaging also runs the host-architecture executable to verify its numeric version.
@@ -41,8 +44,8 @@ The [Release workflow](https://github.com/qshine/mino/blob/main/.github/workflow
 Each archive contains `mino`, `LICENSE`, and `THIRD_PARTY_NOTICES.txt`. The example patch would provide:
 
 ```text
-mino_0.2.1_darwin_arm64.tar.gz
-mino_0.2.1_darwin_amd64.tar.gz
+mino_0.5.1_darwin_arm64.tar.gz
+mino_0.5.1_darwin_amd64.tar.gz
 checksums.txt
 ```
 
@@ -50,10 +53,10 @@ The workflow uploads to a draft release, then publishes after all uploads succee
 
 ## Local packaging and recovery
 
-From the repository root at `chapter-04`, inspect this chapter's packages:
+From the repository root at `chapter-05`, inspect this chapter's packages:
 
 ```bash
-bash scripts/package.sh chapter-04
+bash scripts/package.sh chapter-05
 ```
 
 Packaging accepts the canonical chapter tag and builds the current working tree; it does not check out the tag. Output goes to the ignored `dist/` directory without creating a Git tag or release. If publishing fails, inspect the logs and any incomplete draft before rerunning the job.

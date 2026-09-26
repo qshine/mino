@@ -23,7 +23,7 @@ func TestValidateConfig(t *testing.T) {
 		{"remote HTTP", "http://example.com/v1", "test-key", "test-model", "", "HTTPS"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := config{tc.baseURL, tc.key, tc.model}
+			cfg := config{tc.baseURL, tc.key, tc.model, 0}
 			err := cfg.validate()
 			if tc.wantError != "" {
 				if err == nil || !strings.Contains(err.Error(), tc.wantError) {

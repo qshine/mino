@@ -14,10 +14,11 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains released Chapters 01–04, tagged
-`chapter-01` through `chapter-04` with application versions `0.1.0` through `0.4.0`.
+**Current progress:** This snapshot contains released Chapters 01–05, tagged
+`chapter-01` through `chapter-05` with application versions `0.1.0` through `0.5.0`.
 Chapter 01 introduces streaming terminal conversations; Chapter 02 adds JSONL
 history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop. Chapter 04 adds isolated sessions, selection, and confirmed clearing.
+Chapter 05 adds context compaction: manual `/compact`, automatic budget checks, and durable summaries.
 Gateway and Agent directories are consistent from Chapter 01 onward. See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
@@ -64,9 +65,9 @@ and must be entered. The API key is required and hidden while you type.
 Complete settings are saved in `~/.mino/config.json`; subsequent launches go
 straight to chat. Only missing fields are requested.
 
-Settings contain `base_url`, `api_key`, and `model`. The key is stored locally
+Settings contain `base_url`, `api_key`, and `model`; Chapter 05 also accepts optional `context_window`. The key is stored locally
 in plain text, with directory permissions `0700` and file permissions `0600`.
-Edit the file to change settings, or clear a field to be asked for it again.
+Edit the file to change settings, or clear a required field to be asked for it again.
 Project-local configuration, `.env`, and `OPENAI_*` variables are not read.
 Older project-local `miniagent.json` files can be moved to the new location if
 no user configuration exists yet.
@@ -105,7 +106,7 @@ History and recovery backups contain private conversation data. Files use `0600`
 permissions, and only one Mino process can use the history at a time. History
 write failures stop chat. An incomplete tail is backed up before repair; invalid
 records in the middle stop startup. Limits are 16 MiB per record and 64 MiB per
-file. Chapter 04 adds `/new`; context compaction remains planned.
+file. Chapter 04 adds `/new`; Chapter 05 adds context compaction while retaining these original records and file limits.
 
 Existing `~/.mino/SOUL.md` files are preserved. If yours still says every question
 is independent, edit that sentence to reflect supplied conversation history; the
@@ -129,7 +130,7 @@ permissions. It can access files and networks; approval and process limits do
 not provide an OS sandbox. See [Chapter 03](docs/books/en/chapters/03-tools-and-bash.md)
 for the interaction, recovery behavior, and verification.
 
-History now writes format `v: 2` while retaining support for Chapter 02's `v: 1`
+Chapters 03 and 04 write format `v: 2` while retaining support for Chapter 02's `v: 1`
 records. Older releases cannot read a history containing new records; keep a
 private backup before upgrading to `chapter-03` if you need to return to `chapter-02`.
 An interrupted command with no saved result is marked `unknown`. Mino requires
@@ -154,7 +155,7 @@ the last active session and displays its ID. Each session has its own private
 | `/clear` | Clear the current session after typing its complete ID in an interactive terminal. |
 | `/help` | Show the available commands. |
 
-Commands do not call the model. Clearing keeps the session ID and other sessions;
+The commands above do not call the model. Clearing keeps the session ID and other sessions;
 it does not undo tool effects or delete archives and backups. One Mino process
 holds the session store at a time. Switching keeps this launch's SOUL and Bash
 working directory. If the saved selection is damaged, Mino asks you to choose a
@@ -166,12 +167,43 @@ files are not overwritten. Old releases keep using the archive and do not see
 new session activity. See [Chapter 04](docs/books/en/chapters/04-jsonl-sessions.md)
 for isolation, recovery, and the request-level experiment.
 
+## Context compaction (Chapter 05)
+
+Install `chapter-05` with `mino update chapter-05`. `/compact` summarizes older complete
+turns, retaining the latest two turns and any active tool steps in full. Future
+requests use the summary plus retained turns; restart and `/resume` restore the
+same context. `/clear` also clears the summary. Original JSONL records remain.
+
+The context window defaults to **128K (128,000 tokens)**. To override it, add
+`"context_window": 64000` to your existing `~/.mino/config.json` and restart.
+Omission or `0` uses the default; negative, fractional, null, or non-integer
+values are rejected. Startup displays the value and source, without querying
+model metadata. Set it to match your service's actual capacity.
+
+Mino estimates context conservatively from serialized UTF-8 bytes, including
+instructions and tool definitions. This is not an exact token count. It reserves
+one eighth of the window, capped at 8,192 tokens, for output and automatically
+compacts above 80% of the remaining input budget, including after tool results.
+Each turn allows one automatic summary request, counted within its eight model
+requests. Summaries have no tools and cannot grant approval or resolve unknown
+command outcomes.
+
+Failed, empty, oversized, or non-shrinking summaries preserve the previous
+context. Input or retained turns that still exceed the budget produce an error;
+Mino does not silently truncate history or repeat a command. Summary generation
+adds a model request and may lose details. It cannot compact history too large
+to fit in one summary request.
+
+Chapter 05 writes `v: 3` records and reads versions 1–3. Earlier releases cannot
+read these new session records; keep a private backup before upgrading if you
+need to return to Chapter 04. See the [Chapter 05 lesson](docs/books/en/chapters/05-context-compaction.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-04   # Install this snapshot's chapter
+mino update chapter-05   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-04` reports
@@ -189,6 +221,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 02 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | Chapter 03 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 | Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
+| Chapter 05 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. This tag migration is
@@ -219,6 +252,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 02: JSONL conversation history](docs/books/en/chapters/02-jsonl-history.md)
 - [Chapter 03: tools and the Agent loop](docs/books/en/chapters/03-tools-and-bash.md)
 - [Chapter 04: multiple sessions](docs/books/en/chapters/04-jsonl-sessions.md)
+- [Chapter 05: context compaction](docs/books/en/chapters/05-context-compaction.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

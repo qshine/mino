@@ -32,7 +32,7 @@ func TestConfigRejectsInvalidHomeDirectory(t *testing.T) {
 			if _, err := loadConfig(nil); err == nil {
 				t.Fatal("invalid home directory was accepted")
 			}
-			if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model"}); err == nil {
+			if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0}); err == nil {
 				t.Fatal("saved with invalid home directory")
 			}
 			entries, err := os.ReadDir(".")
@@ -64,7 +64,7 @@ func TestConfigRejectsUnsafeDirectory(t *testing.T) {
 			if _, err := loadConfig(nil); err == nil {
 				t.Fatal("invalid config directory was accepted")
 			}
-			if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model"}); err == nil {
+			if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0}); err == nil {
 				t.Fatal("saved into an invalid config directory")
 			}
 			entries, err := os.ReadDir(target)

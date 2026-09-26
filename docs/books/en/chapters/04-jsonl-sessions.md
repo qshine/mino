@@ -123,4 +123,4 @@ These checks establish the tested request contents and control flow. They do not
 
 You can now leave the word task, start a separate conversation, and return with its earlier history intact. Mino persists the selection, restores paired tool results without rerunning commands, and lets you clear one session after explicit confirmation.
 
-Each selected conversation still supplies all of its replayable history. A long session can outgrow the model's context limit even when other sessions are isolated. Planned [Chapter 05](../plan-todo-chapters.md) introduces manual `/compact` to summarize older exchanges while retaining recent detail.
+Each selected conversation still supplies all of its replayable history. A long session can outgrow the model's context limit even when other sessions are isolated. [Chapter 05](./05-context-compaction.md), released as `chapter-05` (version `0.5.0`), combines manual `/compact` with automatic budget checks. It summarizes older exchanges while retaining recent detail, using a configurable context window with a default of 128,000 tokens.

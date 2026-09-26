@@ -11,7 +11,7 @@ import (
 	"github.com/qshine/mino/internal/tools"
 )
 
-const sessionHelp = "Commands: /new, /sessions, /resume <id>, /clear, /help, /exit.\n"
+const sessionHelp = "Commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit.\n"
 
 // SessionManager serializes selection commands and whole turns. Agent remains
 // responsible for model/tool execution and recovery acknowledgement.
@@ -31,6 +31,9 @@ func NewSessionManager(options Options, store *Sessions, available []tools.Tool)
 	if _, err := toolRegistry(available); err != nil {
 		return nil, err
 	}
+	if options.ContextWindow < 0 {
+		return nil, errors.New("context_window must be a non-negative integer")
+	}
 	m := &SessionManager{store: store, options: options, available: available}
 	if store.current != nil {
 		var err error
@@ -48,6 +51,13 @@ func (m *SessionManager) Start(ctx context.Context, i Interaction) error {
 	}
 	defer m.busy.Unlock()
 	if err := ctx.Err(); err != nil {
+		return err
+	}
+	window, source := m.options.ContextWindow, "config"
+	if window == 0 {
+		window, source = DefaultContextWindow, "default"
+	}
+	if err := i.Emit(Event{Kind: "info", Text: fmt.Sprintf("Context window: %d tokens (%s).\n", window, source)}); err != nil {
 		return err
 	}
 	if m.store.notice != "" {
@@ -96,6 +106,14 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		return m.runner.Handle(ctx, message, i)
 	}
 	switch fields[0] {
+	case "/compact":
+		if len(fields) != 1 {
+			break
+		}
+		if m.runner == nil {
+			return errors.New("Select a session before compacting it")
+		}
+		return m.runner.Compact(ctx, i)
 	case "/help":
 		if len(fields) != 1 {
 			break

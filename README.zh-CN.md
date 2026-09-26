@@ -10,7 +10,9 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含已发布的第 01–04 章，标签为 `chapter-01` 至 `chapter-04`，程序版本对应 `0.1.0` 至 `0.4.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+**当前进度：**本快照包含已发布的第 01–05 章，标签为 `chapter-01` 至 `chapter-05`，程序版本对应 `0.1.0` 至 `0.5.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+
+第五章加入上下文压缩：手动 `/compact`、自动预算检查和摘要持久化。
 
 **作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
 你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
@@ -51,8 +53,8 @@ API 地址可以直接回车使用 OpenAI 官方默认值。**模型名称没有
 API Key 同样必填，输入时不会回显。填写完整后保存到 `~/.mino/config.json`，
 之后启动直接进入聊天；只缺少部分字段时，仅询问缺失项。
 
-配置包含 `base_url`、`api_key`、`model`。密钥以明文保存在本地，目录权限为 `0700`，
-文件权限为 `0600`。修改配置可编辑该文件；将某字段清空，重启时会重新询问。
+配置包含 `base_url`、`api_key`、`model`，第五章还支持可选的 `context_window`。密钥以明文保存在本地，目录权限为 `0700`，
+文件权限为 `0600`。修改配置可编辑该文件；将某个必填字段清空，重启时会重新询问。
 程序不读取项目内的配置、`.env` 或 `OPENAI_*` 环境变量。
 如果用过旧版项目内的 `miniagent.json`，可在新配置尚不存在时将它迁移到新位置。
 
@@ -79,7 +81,7 @@ Mino 会在 `Assistant>` 后逐步显示收到的回答片段。
 
 历史与恢复副本含有私人对话，文件权限为 `0600`，同一时间只允许一个 Mino 进程使用历史。
 写入失败会停止聊天；不完整的尾部先备份再修复，中间记录损坏则停止启动。
-单条记录上限为 16 MiB，整个文件为 64 MiB。第四章加入 `/new`，上下文压缩仍在规划中。
+单条记录上限为 16 MiB，整个文件为 64 MiB。第四章加入 `/new`，第五章加入上下文压缩，同时保留原始记录和这些文件限制。
 
 已有的 `~/.mino/SOUL.md` 会保留。如果其中仍写着每个问题互相独立，请手动修改这一句，
 可参考更新后的默认 [SOUL.md](SOUL.md)。会话命令实现前，如需重新开始，先退出 Mino，
@@ -96,7 +98,7 @@ Mino 会在 `Assistant>` 后逐步显示收到的回答片段。
 每轮问答最多 8 次模型请求、16 次工具调用。Bash 使用你的账户权限，可以访问文件和网络；批准与执行限额不构成操作系统沙箱。
 完整交互、恢复行为与验证方法见[第三章](docs/books/zh/chapters/03-tools-and-bash.md)。
 
-历史文件开始写入 `v: 2` 格式，同时兼容第二章的 `v: 1` 记录。旧版程序无法读取包含新记录的历史；
+第三、四章的历史文件写入 `v: 2` 格式，同时兼容第二章的 `v: 1` 记录。旧版程序无法读取包含新记录的历史；
 如果需要退回 `chapter-02`，请在升级到 `chapter-03` 前保存私有备份。
 命令开始后没有保存结果便中断，会标记为 `unknown`。继续聊天前，你需要确认理解“操作可能已经发生”；
 Mino 不会在恢复时重新执行它。
@@ -125,12 +127,34 @@ Mino 不会在恢复时重新执行它。
 迁移中断后复用原目标，遇到内容冲突不会覆盖。旧版本仍使用旧留档，看不到新会话中的后续内容。
 会话隔离、恢复和请求级验证见[第四章](docs/books/zh/chapters/04-jsonl-sessions.md)。
 
+## 上下文压缩（第五章）
+
+执行 `mino update chapter-05` 安装第五章。输入 `/compact` 可将较早的完整轮次整理为摘要，
+保留最近两轮和进行中的工具步骤。后续请求使用摘要与保留的交互；重启或 `/resume` 后恢复相同上下文。
+`/clear` 也会清空摘要。压缩保留原始 JSONL 记录。
+
+上下文窗口默认 **128K（128,000 tokens）**。如需覆盖，在已有 `~/.mino/config.json`
+中加入 `"context_window": 64000` 并重启。省略或为 `0` 时使用默认值；负数、小数、
+`null` 或非整数类型会报错。启动显示采用的数值及来源，不查询模型元数据。请按服务的实际容量配置。
+
+Mino 根据序列化后的 UTF-8 字节数保守估算上下文，计入指令和工具定义；这不是精确的 token 计数。
+窗口的八分之一预留给输出，最多 8,192 tokens；超过剩余输入预算的 80% 时自动压缩，
+工具结果返回后的请求也会检查。每轮最多一次自动摘要请求，计入原有的 8 次模型请求上限。
+摘要请求没有工具，不能代替授权或确认未知命令结果。
+
+摘要失败、为空、过大或没有缩短上下文时，保留原上下文。输入或保留的轮次仍超出预算时明确报错，
+不会静默截断历史或重跑命令。生成摘要会增加一次模型请求，也可能丢失细节；
+超出单次摘要请求预算的旧历史无法通过本章的压缩流程处理。
+
+第五章写入 `v: 3` 记录，同时读取版本 1–3。旧版无法读取新记录；如需退回第四章，
+升级前请保留私有备份。详见[第五章教程](docs/books/zh/chapters/05-context-compaction.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-04   # 安装本快照对应章节
+mino update chapter-05   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04` 对应 `mino 0.4.0`。
@@ -146,6 +170,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04`
 | 第 02 章 | `0.2.0` | [`chapter-02`](https://github.com/qshine/mino/releases/tag/chapter-02) |
 | 第 03 章 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 | 第 04 章 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
+| 第 05 章 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。本次标签调整经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -170,6 +195,7 @@ bash scripts/check.sh
 - [第二章：JSONL 对话历史](docs/books/zh/chapters/02-jsonl-history.md)
 - [第三章：工具调用与 Agent 循环](docs/books/zh/chapters/03-tools-and-bash.md)
 - [第四章：JSONL 多会话](docs/books/zh/chapters/04-jsonl-sessions.md)
+- [第五章：上下文压缩](docs/books/zh/chapters/05-context-compaction.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。
