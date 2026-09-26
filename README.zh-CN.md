@@ -10,12 +10,13 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–05 章，对应发布版本 `chapter-05`（程序版本 `0.5.0`）。
+**当前进度：**本快照包含第 01–06 章，对应发布版本 `chapter-06`（程序版本 `0.6.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
 第 04 章如实恢复中断的工具调用：结果交回模型，结果未知的操作需要你确认。
 第 05 章加入独立会话、新建、恢复和确认清空。
+第 06 章加入上下文压缩：手动 `/compact`、自动预算检查和摘要持久化。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -31,10 +32,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-05` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载本快照对应的 `chapter-06` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -58,7 +59,7 @@ API 地址可以直接回车使用 OpenAI 官方默认值。**模型名称没有
 API Key 同样必填，输入时不会回显。填写完整后保存到 `~/.mino/config.json`，
 之后启动直接进入聊天；只缺少部分字段时，仅询问缺失项。
 
-配置包含 `base_url`、`api_key`、`model`。密钥以明文保存在本地，目录权限为 `0700`，
+配置包含 `base_url`、`api_key`、`model`，第 06 章还支持可选的 `context_window`。密钥以明文保存在本地，目录权限为 `0700`，
 文件权限为 `0600`。修改配置可编辑该文件；将某个必填字段清空，重启时会重新询问。
 程序不读取项目内的配置、`.env` 或 `OPENAI_*` 环境变量。
 如果用过旧版项目内的 `miniagent.json`，可在新配置尚不存在时将它迁移到新位置。
@@ -150,12 +151,34 @@ Mino 保存一条 `recovery_ack` 记录，之后不再询问。其他回答会�
 Mino 原地选中该文件并保存选择，不复制也不改写文件。有多个会话却没有已保存的选择时，Mino 只接受命令，直到你选定一个。
 会话隔离、恢复和请求级验证见[第 05 章](docs/books/zh/chapters/05-jsonl-sessions.md)。
 
+## 上下文压缩（第 06 章）
+
+执行 `mino update chapter-06` 安装第 06 章。输入 `/compact` 可将较早的完整轮次整理为摘要，
+保留最近两轮和进行中的工具步骤。后续请求使用摘要与保留的交互；重启或 `/resume` 后恢复相同上下文。
+`/clear` 也会清空摘要。压缩保留原始 JSONL 记录。
+
+上下文窗口默认 **128K（128,000 tokens）**。如需覆盖，在已有 `~/.mino/config.json`
+中加入 `"context_window": 64000` 并重启。省略或为 `0` 时使用默认值；负数、小数、
+`null` 或非整数类型会报错。启动显示采用的数值及来源，不查询模型元数据。请按服务的实际容量配置。
+
+Mino 根据序列化后的 UTF-8 字节数保守估算上下文，计入指令和工具定义；这不是精确的 token 计数。
+窗口的八分之一预留给输出，最多 8,192 tokens；超过剩余输入预算的 80% 时自动压缩，
+工具结果返回后的请求也会检查。每轮最多一次自动摘要请求，计入原有的 8 次模型请求上限。
+摘要请求没有工具，不能代替授权或确认未知命令结果。
+
+摘要失败、为空、过大或没有缩短上下文时，保留原上下文。输入或保留的轮次仍超出预算时明确报错，
+不会静默截断历史或重跑命令。生成摘要会增加一次模型请求，也可能丢失细节；
+超出单次摘要请求预算的旧历史无法通过本章的压缩流程处理。
+
+第 06 章写入 `v: 3` 记录，同时读取版本 1–3。旧版无法读取新记录；如需退回第 05 章，
+升级前请保留私有备份。详见[第 06 章教程](docs/books/zh/chapters/06-context-compaction.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-05   # 安装本快照对应的章节
+mino update chapter-06   # 安装本快照对应的章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -175,6 +198,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 03 章 | `0.3.0` | [`chapter-03`](https://github.com/qshine/mino/releases/tag/chapter-03) |
 | 第 04 章 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 | 第 05 章 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
+| 第 06 章 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -200,6 +224,7 @@ bash scripts/check.sh
 - [第 03 章：工具调用与 Agent 循环](docs/books/zh/chapters/03-tools-and-bash.md)
 - [第 04 章：恢复中断的工具调用](docs/books/zh/chapters/04-recovering-tool-turns.md)
 - [第 05 章：JSONL 多会话](docs/books/zh/chapters/05-jsonl-sessions.md)
+- [第 06 章：上下文压缩](docs/books/zh/chapters/06-context-compaction.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。

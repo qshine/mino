@@ -26,18 +26,19 @@ type Session struct {
 }
 
 type historyRecord struct {
-	Version   int               `json:"v"`
-	Seq       int               `json:"seq"`
-	TurnID    string            `json:"turn_id"`
-	Kind      string            `json:"kind"`
-	Text      string            `json:"text,omitempty"`
-	Output    []json.RawMessage `json:"output,omitempty"`
-	Status    string            `json:"status,omitempty"`
-	CallID    string            `json:"call_id,omitempty"`
-	Name      string            `json:"name,omitempty"`
-	Arguments json.RawMessage   `json:"arguments,omitempty"`
-	CWD       string            `json:"cwd,omitempty"`
-	Result    *tools.Result     `json:"result,omitempty"`
+	Version    int               `json:"v"`
+	Seq        int               `json:"seq"`
+	TurnID     string            `json:"turn_id"`
+	Kind       string            `json:"kind"`
+	Text       string            `json:"text,omitempty"`
+	Output     []json.RawMessage `json:"output,omitempty"`
+	Status     string            `json:"status,omitempty"`
+	CallID     string            `json:"call_id,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	Arguments  json.RawMessage   `json:"arguments,omitempty"`
+	CWD        string            `json:"cwd,omitempty"`
+	Result     *tools.Result     `json:"result,omitempty"`
+	CoveredSeq int               `json:"covered_seq,omitempty"`
 }
 
 type pendingTurn struct {
@@ -50,13 +51,21 @@ type pendingTurn struct {
 }
 
 type historyState struct {
-	tools     map[string]tools.Tool
-	seq       int
-	pending   pendingTurn
-	turns     map[string]bool
-	input     responses.ResponseInputParam
-	uncertain map[string]bool
+	tools       map[string]tools.Tool
+	seq         int
+	pending     pendingTurn
+	turns       map[string]bool
+	input       responses.ResponseInputParam
+	uncertain   map[string]bool
+	summary     string
+	coveredSeq  int
+	replayTurns []replayTurn
 }
+
+// End is the exclusive item offset; seq is the durable turn_end boundary.
+type replayTurn struct{ seq, end int }
+
+const maxSummaryBytes = 8 << 10
 
 func (h *Session) append(records ...historyRecord) error {
 	if h.broken {
@@ -66,7 +75,7 @@ func (h *Session) append(records ...historyRecord) error {
 	next := h.state.clone()
 	for i := range records {
 		r := &records[i]
-		r.Version, r.Seq = 2, h.state.seq+i+1
+		r.Version, r.Seq = 3, h.state.seq+i+1
 		if err := next.apply(*r); err != nil {
 			return fmt.Errorf("Invalid history transition: %w", err)
 		}
@@ -108,6 +117,7 @@ func (s historyState) clone() historyState {
 	s.turns = maps.Clone(s.turns)
 	s.uncertain = maps.Clone(s.uncertain)
 	s.input = slices.Clone(s.input)
+	s.replayTurns = slices.Clone(s.replayTurns)
 	s.pending.items = slices.Clone(s.pending.items)
 	s.pending.calls = slices.Clone(s.pending.calls)
 	return s
@@ -124,11 +134,14 @@ func (p *pendingTurn) unresolved() *pendingCall {
 
 func (s *historyState) apply(r historyRecord) error {
 	invalid := errors.New("invalid history fields or turn order")
-	if (r.Version != 1 && r.Version != 2) || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
+	if (r.Version != 1 && r.Version != 2 && r.Version != 3) || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
 		return invalid
 	}
 	toolFields := r.CallID != "" || r.Name != "" || r.Arguments != nil || r.CWD != "" || r.Result != nil
-	if toolFields && (r.Version != 2 || (r.Kind != "tool_start" && r.Kind != "tool_result")) {
+	if toolFields && (r.Version < 2 || (r.Kind != "tool_start" && r.Kind != "tool_result")) {
+		return invalid
+	}
+	if r.CoveredSeq != 0 && r.Kind != "context_compaction" {
 		return invalid
 	}
 	if r.Version == 1 && r.Kind != "user_message" && r.Kind != "assistant_message" && r.Kind != "turn_end" {
@@ -234,6 +247,7 @@ func (s *historyState) apply(r historyRecord) error {
 			if r.Status != "completed" {
 				s.input = append(s.input, responses.ResponseInputItemParamOfMessage("Mino runtime notice: the previous turn ended with status "+r.Status+". Tool results above are retained; no command was automatically retried.", responses.EasyInputMessageRoleAssistant))
 			}
+			s.replayTurns = append(s.replayTurns, replayTurn{seq: r.Seq, end: len(s.input)})
 		}
 		*p = pendingTurn{}
 	case "recovery_ack":
@@ -241,6 +255,22 @@ func (s *historyState) apply(r historyRecord) error {
 			return invalid
 		}
 		delete(s.uncertain, r.TurnID)
+	case "context_compaction":
+		if r.Version != 3 || s.turns[r.TurnID] || !validHistoryText(r.Text) || len(r.Text) > maxSummaryBytes || r.Status != "" || len(r.Output) != 0 || p.unresolved() != nil || len(s.uncertain) > 0 || r.CoveredSeq <= s.coveredSeq {
+			return invalid
+		}
+		index := slices.IndexFunc(s.replayTurns, func(turn replayTurn) bool { return turn.seq == r.CoveredSeq })
+		if index < 0 {
+			return invalid
+		}
+		cut := s.replayTurns[index].end
+		s.input = slices.Clone(s.input[cut:])
+		s.replayTurns = slices.Clone(s.replayTurns[index+1:])
+		for i := range s.replayTurns {
+			s.replayTurns[i].end -= cut
+		}
+		s.summary, s.coveredSeq = r.Text, r.CoveredSeq
+		s.turns[r.TurnID] = true
 	default:
 		return errors.New("unknown record kind")
 	}

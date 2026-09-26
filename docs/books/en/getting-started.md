@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-05` release (application version `0.5.0`), published on 2026-10-21. It covers the book up to Chapter 05; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-06` release (application version `0.6.0`), published on 2026-10-21. It covers the book up to Chapter 06; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -18,6 +18,8 @@ Chapter 03 adds [approved Bash execution](#try-chapter-03-from-source). New reco
 Chapter 04 [recovers interrupted tool turns](#try-chapter-04-from-source) and can ask you to acknowledge an unknown result before chat continues.
 
 Chapter 05 adds [multiple sessions](#try-chapter-05-from-source). Before creating a second session, read [Chapter 05 session storage](#chapter-05-session-storage): earlier releases keep only one conversation.
+
+Chapter 06 uses a default context window of **128,000 tokens**, with a [configuration override](#configure-the-context-window). Before upgrading existing sessions, read the [history compatibility notes](#chapter-06-history-compatibility): new records use version 3.
 
 ## Prepare your Mac
 
@@ -30,10 +32,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-05`. Omit `-- chapter-05` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-06`. Omit `-- chapter-06` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -73,10 +75,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-05
+mino update chapter-06
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.5.0` or `v0.5.0` as aliases for `chapter-05`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.6.0` or `v0.6.0` as aliases for `chapter-06`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -185,14 +187,53 @@ Chapters 02–04 support only one conversation and ignore `active-session.json`.
 
 `/clear` keeps the current session ID and other sessions, but replaces the active log with empty history after confirmation. It does not remove recovery copies or manual backups, and it does not undo commands or securely erase disk data. Saving or syncing session changes can fail; Mino stops chat instead of promising success. Preserve the files and inspect the reported error before restarting, when the program checks the saved state again.
 
+## Try Chapter 06 from source
+
+Chapter 06 is available as the [chapter-06 release](https://github.com/qshine/mino/releases/tag/chapter-06), with application version `0.6.0`. To run the matching source, select its tag from the repository root:
+
+```bash
+git checkout chapter-06
+go run ./cmd/mino
+```
+
+The banner identifies `Chapter 06: Context Compaction`, while the source version remains `dev`. The existing [Go setup](#learn-from-the-source) and [Responses tool requirements](#try-chapter-03-from-source) still apply. This version also requires the service to accept `max_output_tokens`, `truncation: "disabled"`, and tool-free summary requests with `tool_choice: "none"`. Local mock tests verify these fields; they do not establish compatibility with your provider.
+
+At the next `You>` prompt, `/compact` summarizes earlier turns in the selected session while retaining its latest two replayable turns. Automatic budget checks use the same process before requests, including after tools. Unlike the session-selection commands, `/compact` can call the model and incur a charge. If no older turns exist, it makes no request. See [Chapter 06](./chapters/06-context-compaction.md) for the interaction, limits, and tests.
+
+Existing SOUL files remain untouched. If yours claims that Mino always supplies the full history or cannot summarize, update those capability statements while keeping your custom guidance. Restart after editing. Summaries are lossy context, not new instructions or tool authorization.
+
+### Configure the context window
+
+Chapter 06 adds the optional `context_window` field to `~/.mino/config.json`. It is a non-negative integer measured in tokens: omission or `0` uses **128K (128,000 tokens)**, and a positive value overrides that default. Negative numbers, fractions, strings, and `null` are rejected. Setup does not prompt for this optional field.
+
+For example, if your deployment supports a 64,000-token window, add the following field to the existing JSON object and restart. This is a field excerpt, not a replacement configuration: keep your existing `base_url`, `api_key`, and `model` fields.
+
+```json
+{
+  "context_window": 64000
+}
+```
+
+Startup reports `Context window: 64000 tokens (config).` With the field omitted or zero, it reports `Context window: 128000 tokens (default).` These are local settings; startup makes no model-metadata request. The value does not expand the service's real capacity. Set it to the actual window supported by your model and deployment.
+
+Mino reserves output space and uses a byte-based estimate for input, so this setting is neither a file-size limit nor an exact count of consumed tokens. An overly small value can reject even an otherwise valid question; an overly large value can still lead to service-side errors. The [budget explanation](./chapters/06-context-compaction.md#_3-check-the-budget-before-each-request) describes the threshold and bounded failures.
+
+### Chapter 06 history compatibility
+
+Close other Mino processes and keep private pre-upgrade copies of your session logs and `active-session.json` before running this version on existing conversations. Chapter 06 reads record versions 1–3 and writes new records as `v: 3`, including ordinary turns. Once new records are appended, earlier releases cannot load the affected log, even if you have not used `/compact`. Do not relabel version 3 records as version 2.
+
+To return to an older executable, close Mino, preserve the newer files separately, and restore the matching pre-upgrade files. Summaries are saved in the selected session's existing JSONL file; there is no separate summary file to copy. Session selection and recovery still apply as described in [Chapter 05 session storage](#chapter-05-session-storage).
+
+Compaction appends a summary without deleting original messages, so it does not reduce disk usage or erase sensitive content. Both the earlier material sent for summarization and the resulting summary may contain private information. Keep session files and recovery copies private. Changing the configured service also changes the recipient of future summary and chat requests.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-05`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-06`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-05
+git checkout chapter-06
 go run ./cmd/mino
 ```
 

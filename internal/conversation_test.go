@@ -38,7 +38,7 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","output":[{"type":"reasoning","id":"rs_1","summary":[],"encrypted_content":"opaque-state"},{"type":"message","id":"msg_1","role":"assistant","status":"completed","phase":"final_answer","content":[{"type":"output_text","text":"Blue.","annotations":[]}]}]}}`)
 	}))
 	defer server.Close()
-	if err := saveConfig(config{server.URL, "test-key", "test-model"}); err != nil {
+	if err := saveConfig(config{server.URL, "test-key", "test-model", 0}); err != nil {
 		t.Fatal(err)
 	}
 	for _, input := range []string{"My favorite color is blue.\n/exit\n", "What color?\n/exit\n"} {
@@ -127,7 +127,7 @@ func TestRunFailedTurnDoesNotEnterContext(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	if err := saveConfig(config{server.URL, "test-key", "test-model"}); err != nil {
+	if err := saveConfig(config{server.URL, "test-key", "test-model", 0}); err != nil {
 		t.Fatal(err)
 	}
 	var stderr bytes.Buffer

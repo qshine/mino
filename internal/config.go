@@ -14,9 +14,10 @@ import (
 const configLocation = "~/.mino/config.json"
 
 type config struct {
-	BaseURL string `json:"base_url"`
-	APIKey  string `json:"api_key"`
-	Model   string `json:"model"`
+	BaseURL       string `json:"base_url"`
+	APIKey        string `json:"api_key"`
+	Model         string `json:"model"`
+	ContextWindow int    `json:"context_window,omitempty"`
 }
 
 func loadConfig(prompt func(label, fallback string, secret bool) (string, error)) (config, error) {
@@ -32,6 +33,11 @@ func loadConfig(prompt func(label, fallback string, secret bool) (string, error)
 	if err == nil {
 		if err := json.Unmarshal(data, &cfg); err != nil {
 			return config{}, fmt.Errorf("Invalid JSON in %s. Fix the file and restart.", configLocation)
+		}
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(data, &fields)
+		if string(fields["context_window"]) == "null" || cfg.ContextWindow < 0 {
+			return config{}, fmt.Errorf("context_window in %s must be a non-negative integer", configLocation)
 		}
 		if err := os.Chmod(path, 0600); err != nil {
 			return config{}, fmt.Errorf("Failed to secure config file permissions: %w", err)
@@ -91,6 +97,9 @@ func (c *config) normalize() {
 
 func (c *config) validate() error {
 	c.normalize()
+	if c.ContextWindow < 0 {
+		return fmt.Errorf("context_window in %s must be a non-negative integer", configLocation)
+	}
 	if c.APIKey == "" {
 		return fmt.Errorf("api_key must not be empty in %s", configLocation)
 	}

@@ -51,7 +51,12 @@ type Confirmation struct {
 	Warning   string
 }
 
-type Options struct{ BaseURL, APIKey, Model, Instructions string }
+const DefaultContextWindow = 128000
+
+type Options struct {
+	BaseURL, APIKey, Model, Instructions string
+	ContextWindow                        int
+}
 
 type Agent struct {
 	session     *Session
@@ -65,6 +70,12 @@ type Agent struct {
 func New(options Options, session *Session, available []tools.Tool) (*Agent, error) {
 	if session == nil {
 		return nil, errors.New("Agent requires a session")
+	}
+	if options.ContextWindow < 0 {
+		return nil, errors.New("context_window must be a non-negative integer")
+	}
+	if options.ContextWindow == 0 {
+		options.ContextWindow = DefaultContextWindow
 	}
 	registry, err := toolRegistry(available)
 	if err != nil {
@@ -155,22 +166,31 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 func (a *Agent) runLoop(ctx context.Context, interaction Interaction) error {
 	s := a.session
 	id := s.state.pending.id
-	for request := 1; request <= maxModelRequests; request++ {
+	requests, compacted := 0, false
+	for requests < maxModelRequests {
 		if err := ctx.Err(); err != nil {
+			return a.stopTurn(err)
+		}
+		if err := a.ensureContext(ctx, interaction, &requests, &compacted); err != nil {
+			var storage *StorageError
+			if errors.As(err, &storage) {
+				return err
+			}
 			return a.stopTurn(err)
 		}
 		if err := interaction.Emit(Event{Kind: "response_started"}); err != nil {
 			return a.stopTurn(err)
 		}
-		input := append(append(responses.ResponseInputParam{}, s.state.input...), userInput(s.state.pending.prompt))
-		input = append(input, s.state.pending.items...)
+		input := s.state.contextInput()
 
 		var response *http.Response
+		requests++
 		stream := a.api.NewStreaming(ctx, responses.ResponseNewParams{
 			Model: a.options.Model, Instructions: openai.String(a.options.Instructions),
 			Input: responses.ResponseNewParamsInputUnion{OfInputItemList: input},
 			Store: openai.Bool(false), Include: []responses.ResponseIncludable{responses.ResponseIncludableReasoningEncryptedContent},
 			Tools: a.definitions, ParallelToolCalls: openai.Bool(false),
+			MaxOutputTokens: openai.Int(int64(a.outputBudget())), Truncation: responses.ResponseNewParamsTruncationDisabled,
 		}, option.WithResponseInto(&response))
 		var reply modelReply
 		var text strings.Builder
@@ -237,7 +257,7 @@ func (a *Agent) runLoop(ctx context.Context, interaction Interaction) error {
 			}
 			return nil
 		}
-		if request == maxModelRequests || len(s.state.pending.calls) > maxToolCalls {
+		if requests == maxModelRequests || len(s.state.pending.calls) > maxToolCalls {
 			return a.stopTurn(errors.New("Tool limit reached."))
 		}
 		for _, call := range calls {

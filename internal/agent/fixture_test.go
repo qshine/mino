@@ -33,7 +33,7 @@ func newModelFixture(t *testing.T, config testConfig, instructions string) *mode
 	return &modelFixture{t, config, instructions, &http.Client{Timeout: 2 * time.Minute}}
 }
 func (m *modelFixture) agent(session *Session, available []tools.Tool) *Agent {
-	a, err := New(Options{m.config.BaseURL, m.config.APIKey, m.config.Model, m.instructions}, session, available)
+	a, err := New(Options{BaseURL: m.config.BaseURL, APIKey: m.config.APIKey, Model: m.config.Model, Instructions: m.instructions}, session, available)
 	if err != nil {
 		m.t.Fatal(err)
 	}

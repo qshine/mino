@@ -18,6 +18,34 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
+### Added
+
+- Chapter 06 combines manual `/compact` and automatic context compaction. Keep
+  the latest two replayable turns and all active tool steps; summarize earlier
+  complete turns with the previous summary and preserve original JSONL records.
+- Optional `context_window` in `~/.mino/config.json`: default 128,000 tokens,
+  overridden by a positive integer. Startup reports the value/source without
+  querying model metadata. Omitted or zero uses the default; invalid values fail.
+- Conservative serialized-byte context estimates, output reservation (one eighth
+  of the window, capped at 8,192 tokens), and an automatic trigger above 80% of
+  the remaining input budget. Check every request, including after tool results;
+  one automatic summary per turn counts toward the existing eight-request limit.
+- Persist summaries and covered whole-turn boundaries before using them; restore
+  them on restart/resume and remove them with confirmed `/clear`. Tool-free
+  summary requests retain source/uncertainty instructions and cannot authorize
+  tools. Failed or non-shrinking summaries retain the old context; oversized
+  requests fail without silent truncation or command retries.
+
+### Changed
+
+- Write history record version 3 while reading versions 1–3. Older releases cannot
+  read new records; retain private backups before upgrading if rollback is needed.
+- Set an explicit output-token limit and disable server truncation on Responses
+  requests. The local estimate is deliberately conservative, not exact tokenization.
+- Update the default SOUL and terminal help. Existing SOUL files stay untouched.
+
 ## [0.5.0] - 2026-10-21
 
 ### Added

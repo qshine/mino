@@ -52,7 +52,7 @@ func TestRunStreamsBeforeResponseCompletes(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	if err := saveConfig(config{server.URL, "test-key", "test-model"}); err != nil {
+	if err := saveConfig(config{server.URL, "test-key", "test-model", 0}); err != nil {
 		t.Fatal(err)
 	}
 	output := &observingWriter{onWrite: func(text string) {
