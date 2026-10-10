@@ -14,8 +14,8 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–06, release
-`chapter-06` (application version `0.6.0`).
+**Current progress:** This snapshot contains Chapters 01–07, release
+`chapter-07` (application version `0.7.0`).
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -23,6 +23,7 @@ Chapter 04 recovers interrupted tool turns honestly: their results return to the
 model, and unknown outcomes need your acknowledgement.
 Chapter 05 adds isolated sessions, selection, and confirmed clearing.
 Chapter 06 adds context compaction: manual `/compact`, automatic budget checks, and durable summaries.
+Chapter 07 adds project Skills: a fixed per-session catalog and on-demand `skill_view` reads.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -40,11 +41,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-07 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-06` release,
+this snapshot's `chapter-07` release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -234,12 +235,46 @@ Chapter 06 writes `v: 3` records and reads versions 1–3. Earlier releases cann
 read these new session records; keep a private backup before upgrading if you
 need to return to Chapter 05. See the [Chapter 06 lesson](docs/books/en/chapters/06-context-compaction.md).
 
+## Project Skills (Chapter 07)
+
+Install `chapter-07` with `mino update chapter-07`, then start Mino from your project directory. Mino scans
+only `.agents/skills/<name>/SKILL.md`, directly below that directory. Each file starts
+with YAML `name` and `description` fields; the name must match its directory:
+
+```markdown
+---
+name: review
+description: Review Go code for correctness and missing failure tests.
+---
+Read the relevant code and tests. Explain each finding with its consequence.
+Ask for approval before any Bash command.
+```
+
+All names and descriptions enter the Responses `instructions` field alongside
+SOUL. Mino saves this sorted catalog once per session, including an empty catalog.
+Restart, `/resume`, `/clear`, and compaction keep it fixed; `/new` scans again from
+the captured startup directory. Older sessions get a catalog on first use in this
+chapter. This keeps the skill portion of the request prefix stable; cache hits
+depend on the model service. SOUL itself is still read once per process startup.
+
+When the model chooses a skill, it calls `skill_view` with `{"name":"review"}`.
+The read needs no confirmation and returns the current complete file as a saved
+tool result. Editing a file's body can therefore affect later reads, while its
+catalog description remains fixed. Bash still requires separate approval.
+No user-home skills are scanned. A missing directory means no skills; invalid
+metadata fails discovery. See [Chapter 07](docs/books/en/chapters/07-skills.md) for
+file limits, the observable interaction, and mock-service checks.
+
+Chapter 07 writes `v: 4` session records and reads versions 1–4.
+Older releases cannot read the new records. Keep a private backup of `~/.mino/`
+before upgrading if you need to return to an earlier chapter.
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-06   # Install this snapshot's chapter
+mino update chapter-07   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -264,6 +299,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 | Chapter 05 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 | Chapter 06 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
+| Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -297,6 +333,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 04: recovering interrupted tool turns](docs/books/en/chapters/04-recovering-tool-turns.md)
 - [Chapter 05: multiple sessions](docs/books/en/chapters/05-jsonl-sessions.md)
 - [Chapter 06: context compaction](docs/books/en/chapters/06-context-compaction.md)
+- [Chapter 07: project Skills](docs/books/en/chapters/07-skills.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

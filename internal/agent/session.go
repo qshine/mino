@@ -14,6 +14,7 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -39,6 +40,7 @@ type historyRecord struct {
 	CWD        string            `json:"cwd,omitempty"`
 	Result     *tools.Result     `json:"result,omitempty"`
 	CoveredSeq int               `json:"covered_seq,omitempty"`
+	Skills     *skills.Catalog   `json:"skills,omitempty"`
 }
 
 type pendingTurn struct {
@@ -51,15 +53,16 @@ type pendingTurn struct {
 }
 
 type historyState struct {
-	tools       map[string]tools.Tool
-	seq         int
-	pending     pendingTurn
-	turns       map[string]bool
-	input       responses.ResponseInputParam
-	uncertain   map[string]bool
-	summary     string
-	coveredSeq  int
-	replayTurns []replayTurn
+	tools        map[string]tools.Tool
+	seq          int
+	pending      pendingTurn
+	turns        map[string]bool
+	input        responses.ResponseInputParam
+	uncertain    map[string]bool
+	summary      string
+	coveredSeq   int
+	replayTurns  []replayTurn
+	skillCatalog *skills.Catalog
 }
 
 // End is the exclusive item offset; seq is the durable turn_end boundary.
@@ -75,7 +78,7 @@ func (h *Session) append(records ...historyRecord) error {
 	next := h.state.clone()
 	for i := range records {
 		r := &records[i]
-		r.Version, r.Seq = 3, h.state.seq+i+1
+		r.Version, r.Seq = 4, h.state.seq+i+1
 		if err := next.apply(*r); err != nil {
 			return fmt.Errorf("Invalid history transition: %w", err)
 		}
@@ -134,7 +137,7 @@ func (p *pendingTurn) unresolved() *pendingCall {
 
 func (s *historyState) apply(r historyRecord) error {
 	invalid := errors.New("invalid history fields or turn order")
-	if (r.Version != 1 && r.Version != 2 && r.Version != 3) || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
+	if r.Version < 1 || r.Version > 4 || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
 		return invalid
 	}
 	toolFields := r.CallID != "" || r.Name != "" || r.Arguments != nil || r.CWD != "" || r.Result != nil
@@ -144,11 +147,25 @@ func (s *historyState) apply(r historyRecord) error {
 	if r.CoveredSeq != 0 && r.Kind != "context_compaction" {
 		return invalid
 	}
+	if r.Skills != nil && r.Kind != "session_skills" {
+		return invalid
+	}
 	if r.Version == 1 && r.Kind != "user_message" && r.Kind != "assistant_message" && r.Kind != "turn_end" {
 		return invalid
 	}
 	p := &s.pending
 	switch r.Kind {
+	case "session_skills":
+		if r.Version != 4 || s.skillCatalog != nil || p.id != "" || s.turns[r.TurnID] || r.Text != "" || r.Status != "" || len(r.Output) != 0 || r.Skills == nil {
+			return invalid
+		}
+		if err := r.Skills.Validate(); err != nil {
+			return err
+		}
+		catalog := *r.Skills
+		catalog.Entries = slices.Clone(catalog.Entries)
+		s.skillCatalog = &catalog
+		s.turns[r.TurnID] = true
 	case "user_message":
 		if p.id != "" || s.turns[r.TurnID] || !validHistoryText(r.Text) || r.Status != "" || len(r.Output) != 0 {
 			return invalid
@@ -256,7 +273,7 @@ func (s *historyState) apply(r historyRecord) error {
 		}
 		delete(s.uncertain, r.TurnID)
 	case "context_compaction":
-		if r.Version != 3 || s.turns[r.TurnID] || !validHistoryText(r.Text) || len(r.Text) > maxSummaryBytes || r.Status != "" || len(r.Output) != 0 || p.unresolved() != nil || len(s.uncertain) > 0 || r.CoveredSeq <= s.coveredSeq {
+		if r.Version < 3 || s.turns[r.TurnID] || !validHistoryText(r.Text) || len(r.Text) > maxSummaryBytes || r.Status != "" || len(r.Output) != 0 || p.unresolved() != nil || len(s.uncertain) > 0 || r.CoveredSeq <= s.coveredSeq {
 			return invalid
 		}
 		index := slices.IndexFunc(s.replayTurns, func(turn replayTurn) bool { return turn.seq == r.CoveredSeq })

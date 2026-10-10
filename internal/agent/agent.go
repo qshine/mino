@@ -16,6 +16,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -55,6 +56,7 @@ const DefaultContextWindow = 128000
 
 type Options struct {
 	BaseURL, APIKey, Model, Instructions string
+	ProjectDirectory                     string
 	ContextWindow                        int
 }
 
@@ -80,6 +82,32 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	registry, err := toolRegistry(available)
 	if err != nil {
 		return nil, err
+	}
+	if options.ProjectDirectory != "" || session.state.skillCatalog != nil {
+		// Bind the injected reader to this session's durable metadata, never to
+		// a fresh scan while restoring or continuing an existing session.
+		available = append([]tools.Tool(nil), available...)
+		viewIndex := -1
+		for index, tool := range available {
+			if _, ok := tool.(*tools.SkillView); ok {
+				viewIndex = index
+			}
+		}
+		if viewIndex < 0 {
+			return nil, errors.New("Project skills require the skill_view tool")
+		}
+		if session.state.skillCatalog == nil {
+			catalog, err := skills.Scan(options.ProjectDirectory)
+			if err != nil {
+				return nil, err
+			}
+			if err := session.append(historyRecord{TurnID: newHistoryID(), Kind: "session_skills", Skills: catalog}); err != nil {
+				return nil, &StorageError{err}
+			}
+		}
+		available[viewIndex] = tools.NewSkillView(session.state.skillCatalog)
+		registry["skill_view"] = available[viewIndex]
+		options.Instructions += session.state.skillCatalog.Prompt()
 	}
 	a := &Agent{session: session, options: options, tools: registry, httpClient: &http.Client{
 		Timeout:       2 * time.Minute,
@@ -295,13 +323,15 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	if err != nil {
 		return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 	}
-	// Give the gateway a copy of display data, never the executable arguments.
-	approved, err := interaction.Confirm(ctx, Confirmation{Kind: "tool", ToolName: call.Name, Fields: append([]tools.Field(nil), prepared.Fields...), Warning: prepared.Warning})
-	if err != nil {
-		return tools.Result{}, err
-	}
-	if !approved {
-		return tools.Result{Status: "denied", Output: "The user did not approve this command. Do not retry without a new user request."}, nil
+	if !prepared.ReadOnly {
+		// Give the gateway a copy of display data, never executable arguments.
+		approved, err := interaction.Confirm(ctx, Confirmation{Kind: "tool", ToolName: call.Name, Fields: append([]tools.Field(nil), prepared.Fields...), Warning: prepared.Warning})
+		if err != nil {
+			return tools.Result{}, err
+		}
+		if !approved {
+			return tools.Result{Status: "denied", Output: "The user did not approve this command. Do not retry without a new user request."}, nil
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return tools.Result{}, err

@@ -112,4 +112,4 @@ If you try the opening checklist interaction with your own service, compare a ne
 
 You can continue the checklist with an explicitly shorter context, triggered manually or by a budget check. Recent interactions remain complete, older work is represented by a durable summary, and the original history remains available locally. Summarization still costs a request and can lose detail; it cannot fit an arbitrarily large active turn into a finite window.
 
-The next problem is supplying task knowledge that was never in the conversation. [Chapter 07: Skills](../plan-todo-chapters.md), available in the `chapter-07` release, fixes a discovery catalog for each session and reads selected skill files on demand.
+The next problem is supplying task knowledge that was never in the conversation. [Chapter 07: Skills](./07-skills.md), available in the `chapter-07` release, fixes a discovery catalog for each session and reads selected skill files on demand.

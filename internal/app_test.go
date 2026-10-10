@@ -33,7 +33,7 @@ func TestRunUsesSoulInsteadOfProjectInstructions(t *testing.T) {
 				if !strings.Contains(got, "You are Mino") || strings.Contains(got, "private development") {
 					t.Errorf("request did not use Mino identity: %q", got)
 				}
-				if custom && got != instructions {
+				if custom && !strings.HasPrefix(got, instructions+"\n\nAvailable project skills") {
 					t.Errorf("request did not preserve the user's SOUL.md: %q", got)
 				}
 				if input, ok := body["input"].([]any); !ok || len(input) != 1 || input[0].(map[string]any)["content"] != "你好" {

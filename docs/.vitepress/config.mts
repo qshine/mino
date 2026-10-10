@@ -82,6 +82,9 @@ export default withMermaid({
             { text: '05 Multiple sessions', link: '/chapters/05-jsonl-sessions' },
             { text: '06 Context compaction', link: '/chapters/06-context-compaction' }
           ] },
+          { text: 'Part IV · Extend the agent', items: [
+            { text: '07 Project Skills', link: '/chapters/07-skills' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -120,6 +123,9 @@ export default withMermaid({
           { text: '第三部分 · 管理对话', items: [
             { text: '05 JSONL 多会话', link: '/zh/chapters/05-jsonl-sessions' },
             { text: '06 上下文压缩', link: '/zh/chapters/06-context-compaction' }
+          ] },
+          { text: '第四部分 · 扩展 Agent 能力', items: [
+            { text: '07 项目 Skills', link: '/zh/chapters/07-skills' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

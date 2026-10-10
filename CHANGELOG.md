@@ -18,6 +18,32 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-21
+
+### Added
+
+- Chapter 07 project Skills: discover only direct `.agents/skills/<name>/SKILL.md`
+  files in the captured startup project. Parse YAML name/description with a pinned
+  YAML parser; do not scan home-directory skills or preload bodies into instructions.
+- Persist a sorted catalog once per session, including empty catalogs. Restore it
+  on restart and `/resume`, retain it through `/clear` and compaction, and scan anew
+  for `/new`. Sessions created by earlier releases initialize their catalog on first
+  use. The skill instruction prefix stays stable; service-side cache hits are not
+  guaranteed.
+- Add `skill_view` with a strict name argument. Read the current complete file only
+  for registered skills, without confirmation; save paired calls/results through the
+  existing Agent loop. Bash remains separately approved with the existing limits.
+- Confine skill reads to the captured project, reject unsafe/special files, and bound
+  file, metadata, and catalog sizes. Missing directories are empty; malformed skills
+  fail discovery. Skill text is task guidance and grants no tool authorization.
+
+### Changed
+
+- Write history version 4 and read versions 1–4. The new `session_skills` record is
+  synced before use. Earlier releases cannot read new records; preserve private
+  backups before upgrading if rollback is needed.
+- Extend the default SOUL with Skills guidance, preserving existing user SOUL files.
+
 ## [0.6.0] - 2026-10-21
 
 ### Added
