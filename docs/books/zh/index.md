@@ -12,7 +12,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md) · [第四章：多会话](./chapters/04-jsonl-sessions.md) · [第五章：上下文压缩](./chapters/05-context-compaction.md)。第 01–05 章均已发布，第五章对应 `chapter-05`（版本 `0.5.0`）。后续能力仍在[规划中](./plan-todo-chapters.md)。
+**当前可读：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md) · [第四章：多会话](./chapters/04-jsonl-sessions.md) · [第五章：上下文压缩](./chapters/05-context-compaction.md) · [第六章：Skills](./chapters/06-skills.md)。第 01–06 章均已发布，第六章对应 `chapter-06`（版本 `0.6.0`）。文件工具、MCP 与安全防护仍在[规划中](./plan-todo-chapters.md)。
 
 ## 适合谁读
 
@@ -30,7 +30,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，程序版本为 `0.1.0` 至 `0.5.0`。第 05 章加入手动与自动上下文压缩。各章注明了实验所需的源码标签。
+第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，程序版本为 `0.1.0` 至 `0.5.0`。第 05 章加入手动与自动上下文压缩。各已发布章节注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
@@ -39,11 +39,13 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [03 工具调用与 Bash](./chapters/03-tools-and-bash.md) | 命令由谁批准和执行？结果丢失后怎么办？ |
 | [04 多会话](./chapters/04-jsonl-sessions.md) | 怎样选择一段对话的上下文、保留另一段，并确认清空当前会话？ |
 | [05 上下文压缩](./chapters/05-context-compaction.md) | 手动与自动压缩如何共用预算，并保留有用的上下文？ |
-| 06–08 扩展与安全防护 | 如何接入知识和工具，如何约束程序的实际权限？ |
+| [06 Skills](./chapters/06-skills.md) | 固定目录怎样引导模型用 `skill_view` 请求任务知识？ |
+| 07 文件工具（规划中） | 程序怎样限定模型对项目文件的读写范围？ |
+| 08–09 MCP 与安全防护（规划中） | 如何接入外部工具，如何约束程序的实际权限？ |
 
 ## 如何配合代码阅读
 
-章节开头会注明适用版本，并使用对应的 `chapter-NN` 源码标签。第五章对应 [chapter-05](https://github.com/qshine/mino/tree/chapter-05)，[源码准备说明](./getting-started.md#从源码体验第五章)介绍了怎样在本地运行同一份快照。
+已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。最新的第六章对应 [chapter-06](https://github.com/qshine/mino/tree/chapter-06)，[源码准备说明](./getting-started.md#从源码体验第六章)介绍了怎样在本地运行同一份快照。
 
 发布标签使用 `chapter-NN`，程序版本采用 `0.章节.修订号`。例如，补丁标签 `chapter-04.1` 生成版本 `0.4.1`，并更新对应章节的说明，无需新增一章。
 

@@ -1,4 +1,4 @@
-# 第 02 章：让对话连续起来——JSONL 对话历史
+# 第 02 章：用 JSONL 对话历史延续对话
 
 适用版本：**0.2.x** · 源码与发布标签：**[chapter-02](https://github.com/qshine/mino/tree/chapter-02)** · 程序版本：**0.2.0**（2026-09-26 发布）
 

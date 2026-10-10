@@ -9,7 +9,8 @@ import (
 const OutputLimit = 64 << 10
 
 // Tool prepares an operation without executing it. The caller must obtain approval
-// and durably record the start before Execute, and save its result before continuing.
+// unless Prepare marks a confined read as ReadOnly, durably record the start before
+// Execute, and save its result before continuing.
 type Tool interface {
 	Definition() Definition
 	Prepare(arguments string) (Call, error)
@@ -26,6 +27,7 @@ type Definition struct {
 type Field struct{ Label, Value string }
 type Call struct {
 	Arguments json.RawMessage
+	ReadOnly  bool // Set by trusted tool code, never decoded from model arguments.
 	Directory string
 	Fields    []Field
 	Warning   string

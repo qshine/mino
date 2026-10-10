@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -159,11 +160,30 @@ func (s *Sessions) open(id string) (*Session, error) {
 }
 
 func (s *Sessions) create() error {
+	return s.createWithSkills(nil)
+}
+
+func (s *Sessions) createWithSkills(catalog *skills.Catalog) error {
+	data, err := initialSkills(catalog)
+	if err != nil {
+		return err
+	}
 	id := newHistoryID()
-	if err := s.writeFile(s.path(id), nil, false); err != nil {
+	if err := s.writeFile(s.path(id), data, false); err != nil {
 		return &StorageError{err}
 	}
 	return s.resume(id)
+}
+
+func initialSkills(catalog *skills.Catalog) ([]byte, error) {
+	if catalog == nil {
+		return nil, nil
+	}
+	if err := catalog.Validate(); err != nil {
+		return nil, err
+	}
+	data, err := json.Marshal(historyRecord{Version: 4, Seq: 1, TurnID: newHistoryID(), Kind: "session_skills", Skills: catalog})
+	return append(data, '\n'), err
 }
 
 func (s *Sessions) resume(id string) error {

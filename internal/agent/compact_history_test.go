@@ -33,7 +33,7 @@ func TestCompactionRecoversInterruptedTurnAfterLegacyRecords(t *testing.T) {
 	s.Close()
 	path := filepath.Join(dir, "history.jsonl")
 	data, _ := os.ReadFile(path)
-	data = bytes.ReplaceAll(data, []byte(`"v":3`), []byte(`"v":2`))
+	data = bytes.ReplaceAll(data, []byte(`"v":4`), []byte(`"v":2`))
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestCompactionHistoryRestoresSummaryAndRetainsOriginalRecords(t *testing.T)
 	}
 	want, _ := json.Marshal(s.state.input)
 	data, _ := os.ReadFile(s.file.Name())
-	if !bytes.HasPrefix(data, original) || !bytes.Contains(data[len(original):], []byte(`"v":3`)) {
+	if !bytes.HasPrefix(data, original) || !bytes.Contains(data[len(original):], []byte(`"v":4`)) {
 		t.Fatal("original records changed or summary version missing")
 	}
 	s.Close()

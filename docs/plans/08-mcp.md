@@ -1,6 +1,6 @@
 # 第 08 章：MCP 外部工具
 
-状态：**待二次讨论，尚未实现**。目标版本：`chapter-08`。前置：[工具循环](./03-tools-and-bash.md)、[预算](./06-context-budget.md)以及第 07 章形成的工具路由。公共约定见[计划索引](./README.md)。
+状态：**待二次讨论，尚未实现**。目标版本：`chapter-08`。前置：[工具循环](./03-tools-and-bash.md)、[预算](./05-context-budget.md)，以及第 06–07 章形成的工具路由（`skill_view`、文件工具）。公共约定见[计划索引](./README.md)。
 
 ## 1. 本章交付
 
@@ -27,7 +27,7 @@ Validate configuration → Approve launch → Start child → Initialize
 
 建立不可变路由表，每项保存本地暴露名、服务别名、原工具名、schema 摘要、实际服务连接和来源信息。模型只看到经过注册的名称；执行时必须用路由表定位，不从字符串临时拼接目标。
 
-建议暴露名为 `mcp_<server>_<tool>`，使用确定的转义/摘要后缀处理不合法字符、长度和归一化碰撞。不要仅把所有标点替换成下划线后假定不会重名。与本地 `bash`、`read_skill` 一起检查全局唯一性。
+建议暴露名为 `mcp_<server>_<tool>`，使用确定的转义/摘要后缀处理不合法字符、长度和归一化碰撞。不要仅把所有标点替换成下划线后假定不会重名。与本地 `bash`、`skill_view`、`read_file`、`write_file` 一起检查全局唯一性。
 
 - 保留工具参数语义，发现阶段检查 schema 是否能表达为当前 Responses 工具。遇到不支持的引用或结构时拒绝注册该工具并说明原因，不悄悄放宽为任意对象。
 - 是否使用 Responses 严格 schema 模式按实际支持确定；MCP schema 不符合严格模式时，不能靠随意添加 `required` 等字段改变服务语义。

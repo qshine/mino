@@ -1,4 +1,4 @@
-# 第 03 章：第一个 Agent 循环：工具调用与 Bash
+# 第 03 章：用工具调用与 Bash 构建第一个 Agent 循环
 
 适用版本：**0.3.x** · 源码与发布标签：**[chapter-03](https://github.com/qshine/mino/tree/chapter-03)** · 程序版本：**0.3.0**（2026-09-26 发布）
 

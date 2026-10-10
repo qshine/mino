@@ -2,7 +2,10 @@ module github.com/qshine/mino
 
 go 1.27.1
 
-require github.com/openai/openai-go/v3 v3.66.0
+require (
+	github.com/openai/openai-go/v3 v3.66.0
+	gopkg.in/yaml.v3 v3.0.1
+)
 
 require (
 	github.com/coder/websocket v1.8.15 // indirect

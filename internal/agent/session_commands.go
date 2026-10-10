@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -144,7 +145,14 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if len(fields) != 1 {
 			break
 		}
-		if err := m.store.create(); err != nil {
+		var catalog *skills.Catalog
+		if m.options.ProjectDirectory != "" {
+			catalog, err = skills.Scan(m.options.ProjectDirectory)
+			if err != nil {
+				return err
+			}
+		}
+		if err := m.store.createWithSkills(catalog); err != nil {
 			return err
 		}
 		m.runner, err = New(m.options, m.store.current, m.available)
@@ -207,7 +215,12 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 }
 
 func (s *Sessions) clear() error {
-	if err := s.writeFile(s.path(s.id), nil, true); err != nil {
+	// Clearing conversation history preserves the session's discovery snapshot.
+	data, err := initialSkills(s.current.state.skillCatalog)
+	if err != nil {
+		return err
+	}
+	if err := s.writeFile(s.path(s.id), data, true); err != nil {
 		s.current.broken = true
 		return &StorageError{err}
 	}

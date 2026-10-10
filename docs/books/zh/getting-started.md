@@ -9,9 +9,11 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-09-26 发布的 `chapter-05`（程序版本 `0.5.0`），包含终端问答、历史保存、获批的 Bash 执行、独立会话，以及手动与自动上下文压缩。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-11 发布的 `chapter-06`（程序版本 `0.6.0`），包含终端问答、历史保存、获批的 Bash 执行、独立会话、手动与自动上下文压缩，以及项目 Skills。运行各章实验时，请使用该章注明的标签。
 
 第五章默认使用 **128,000 tokens** 的上下文窗口，支持[配置覆盖](#配置上下文窗口)。升级已有会话前，请阅读[历史兼容性说明](#第五章的历史兼容性)：新记录采用版本 3。
+
+第六章加入[项目 Skills](#从源码体验第六章)。升级已有会话前，也请阅读[第六章的历史兼容性](#第六章的历史兼容性)：新记录使用版本 4。
 
 ## 准备一台 Mac
 
@@ -24,10 +26,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-05`。省略 `-- chapter-05` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-06`。省略 `-- chapter-06` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -67,10 +69,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-05
+mino update chapter-06
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.5.0` 或 `v0.5.0`，两者都指向 `chapter-05`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.6.0` 或 `v0.6.0`，两者都指向 `chapter-06`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -204,14 +206,59 @@ Mino 会预留输出空间，并按字节估算输入，因此这个值既不是
 
 压缩只追加摘要，不删除原始消息，因此不会减少磁盘占用或擦除敏感内容。提交给摘要请求的较早材料，以及生成的摘要，都可能包含私人信息。请妥善保管会话文件和恢复副本。修改配置的服务，也会改变后续摘要和聊天请求的接收方。
 
+## 从源码体验第六章
+
+第六章已随 [chapter-06](https://github.com/qshine/mino/releases/tag/chapter-06) 发布，程序版本为 `0.6.0`。若要运行对应源码，请在仓库根目录选择该标签：
+
+```bash
+git checkout chapter-06
+go run ./cmd/mino
+```
+
+横幅标明 `Chapter 06: Project Skills`，源码版本为 `dev`。既有的 Go、Responses 工具与压缩要求继续适用。这次运行会使用用户目录中的配置与会话；使用已有对话前，请阅读[第六章的历史兼容性](#第六章的历史兼容性)。不产生模型费用的模拟检查见[本章实验](./chapters/06-skills.md#_4-检查请求-而不只听回答怎么说)。
+
+技能发现只扫描启动 Mino 时所在目录下的 `.agents/skills/`，不搜索父目录或用户的 `~/.agents/skills/`。新会话需要的文件应在启动前准备好；如果 Mino 恢复了已初始化的会话，用 `/new` 发现这些文件。空目录也会保存为快照，因此后来添加文件不会更新该会话。
+
+### 编写项目技能
+
+在项目目录下创建 `.agents/skills/review/SKILL.md`，写入以下示例内容：
+
+```text
+---
+name: review
+description: 结合测试和具体证据审查代码改动。
+---
+# 审查改动
+
+阅读提供的改动及其测试。每项发现都要指出具体的失败情形，
+区分已确认的问题与不确定之处。需要更多证据时，请求补充；
+没有测试结果时，不要声称测试已经通过。
+```
+
+在 `You>` 输入“用 review 技能审查这处改动”，并提供一处小改动。模型可以用 `{"name":"review"}` 请求 `skill_view`。读取无需确认，之后的 Bash 命令仍要单独批准。Mino 把完整文件显示为工具结果，再由模型继续处理。
+
+只使用直接子目录，发现不会递归。YAML 头部以 `---` 开始和结束，结束分隔符须位于前 16 KiB 内。`name` 必须与目录名一致，由小写 ASCII 字母或数字组成，可用单个连字符分隔，最多 64 个字符。`description` 必须是非空 YAML 字符串，最大 1,024 个 UTF-8 字节，支持引号字符串和块字符串。其他元数据不进入目录。
+
+每个 `SKILL.md` 必须是最大 64 KiB 的普通文件；读取时要求内容是非空 UTF-8 文本且不含 NUL。包含项目路径的序列化目录最大 32 KiB。技能目录不存在时得到空目录；没有 `SKILL.md` 的直接子目录，以及符号链接子目录会被忽略。候选文件格式错误、文件为符号链接或特殊文件，以及 `.agents/skills` 路径中的目录为符号链接时，都会被拒绝。发现错误会阻止初始化；`/new` 失败时保留原先选中的会话。
+
+名称和简介在会话内保持固定，包括 `/resume`、重启与确认 `/clear` 之后；只有 `/new` 发现新目录。`skill_view` 从已保存的项目位置读取当前正文，只接受目录中的名称，不接受任意路径，不自动读取引用文件或执行脚本。已有 `~/.mino/SOUL.md` 保持原样，每次进程启动读取一次；其中的过时能力说明需要你自行更新，再重启生效。
+
+### 第六章的历史兼容性
+
+在已有对话上运行第六章前，关闭 Mino，私下备份会话日志与 `active-session.json`。本版读取记录版本 1–4，所有新记录统一写为 `v: 4`。尚无目录的会话在本版首次初始化时，就会持久化 `session_skills` 快照，不必等到下一次提问。空快照也使用版本 4，因此仅启动聊天就可能让旧发布版无法再读取选中的日志。
+
+回退时，先停止 Mino，另行保留新版文件，再恢复对应的升级前备份。不要直接修改版本 4 记录的版本号。`/clear` 删除选中会话的对话和摘要，同时保留技能快照，不能用来降低格式版本。
+
+目录会把启动时确定的项目路径、技能名称与简介发送给配置的模型服务。请求读取的完整文件会作为工具结果，进入会话日志与模型上下文。技能中不要放入秘密信息，会话日志也应保持私有；这些内容还可能进入后续摘要请求。固定元数据、读取当前文件，以及缓存相关验证的边界，见[第六章](./chapters/06-skills.md)。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-05`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-06`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-05
+git checkout chapter-06
 go run ./cmd/mino
 ```
 
@@ -225,4 +272,4 @@ go run ./cmd/mino
 bash scripts/check.sh
 ```
 
-接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)、[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)、[第四章：多会话](./chapters/04-jsonl-sessions.md)，或[第五章：上下文压缩](./chapters/05-context-compaction.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。
+接下来可以阅读[第一章：与模型对话](./chapters/01-terminal-chat.md)、[第二章：JSONL 对话历史](./chapters/02-jsonl-history.md)、[第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md)、[第四章：多会话](./chapters/04-jsonl-sessions.md)、[第五章：上下文压缩](./chapters/05-context-compaction.md)，或[第六章：Skills](./chapters/06-skills.md)。请使用每章注明的源码版本运行实验，各版本的请求和历史格式有所不同。

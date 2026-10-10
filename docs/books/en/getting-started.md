@@ -9,9 +9,11 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-05` release (application version `0.5.0`), published on 2026-09-26. It includes terminal conversation, saved history, approved Bash execution, separate sessions, and manual and automatic context compaction. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-06` release (application version `0.6.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, and project Skills. Use the tag named in each lesson when running its experiments.
 
 Chapter 05 uses a default context window of **128,000 tokens**, with a [configuration override](#configure-the-context-window). Before upgrading existing sessions, read the [history compatibility notes](#chapter-05-history-compatibility): new records use version 3.
+
+Chapter 06 adds [project Skills](#try-chapter-06-from-source). Before upgrading existing sessions, also read the [Chapter 06 history compatibility notes](#chapter-06-history-compatibility): new records use version 4.
 
 ## Prepare your Mac
 
@@ -24,10 +26,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-05 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-05`. Omit `-- chapter-05` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-06`. Omit `-- chapter-06` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -67,10 +69,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-05
+mino update chapter-06
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.5.0` or `v0.5.0` as aliases for `chapter-05`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.6.0` or `v0.6.0` as aliases for `chapter-06`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
 
 ## Mino identity
 
@@ -204,14 +206,59 @@ To return to an older executable, close Mino, preserve the newer files separatel
 
 Compaction appends a summary without deleting original messages, so it does not reduce disk usage or erase sensitive content. Both the earlier material sent for summarization and the resulting summary may contain private information. Keep session files and recovery copies private. Changing the configured service also changes the recipient of future summary and chat requests.
 
+## Try Chapter 06 from source
+
+Chapter 06 is available as the [chapter-06 release](https://github.com/qshine/mino/releases/tag/chapter-06), with application version `0.6.0`. To run the matching source, select its tag from the repository root:
+
+```bash
+git checkout chapter-06
+go run ./cmd/mino
+```
+
+The banner identifies `Chapter 06: Project Skills`; the source version is `dev`. Existing Go, Responses tool, and compaction requirements still apply. This run uses your home-directory settings and sessions; read [Chapter 06 history compatibility](#chapter-06-history-compatibility) before using existing conversations. The no-cost mock checks are in [the lesson](./chapters/06-skills.md#_4-check-the-request-not-the-answer-s-claim).
+
+Skills are discovered only under `.agents/skills/` in the directory where you start Mino. The program does not search parent directories or the user's `~/.agents/skills/`. For a fresh session, prepare the files before starting; if Mino restores an initialized session, use `/new` to discover them. An empty catalog is also saved, so adding a file does not update that session.
+
+### Write a project skill
+
+Create `.agents/skills/review/SKILL.md` under the project directory with this example content:
+
+```text
+---
+name: review
+description: Review code changes using tests and concrete evidence.
+---
+# Review a change
+
+Read the supplied change and its tests. Identify a concrete failure scenario
+for each finding. Separate confirmed issues from uncertainty. If you need
+more evidence, request it; do not claim a test passed without its result.
+```
+
+At `You>`, ask “Use the review skill to review this change” and supply a small change. The model can request `skill_view` with `{"name":"review"}`. The read requires no confirmation; any subsequent Bash command still requires separate approval. Mino displays the full file as a tool result before the model continues.
+
+Use direct child directories only; discovery is not recursive. The YAML header must start and end with `---`, with its closing delimiter within 16 KiB. `name` must match the directory, use lowercase ASCII letters or digits separated by single hyphens, and contain at most 64 characters. `description` must be a non-empty YAML string of at most 1,024 UTF-8 bytes; quoted and block strings are accepted. Other metadata is not included in the catalog.
+
+Each `SKILL.md` must be a regular file of at most 64 KiB. A read requires non-empty UTF-8 text without NUL. The serialized catalog, including its project path, is limited to 32 KiB. An absent skills directory gives an empty catalog; direct directories without `SKILL.md` and symbolic-link child directories are ignored. Malformed candidates, symbolic-link files, special files, and symbolic links in the `.agents/skills` directory path are rejected. A discovery error prevents initialization; a failed `/new` leaves the selected session unchanged.
+
+Names and descriptions stay fixed for the session, including after `/resume`, restart, and confirmed `/clear`; only `/new` discovers a fresh catalog. `skill_view` reads the current body from the saved project location. It accepts only catalog names, not arbitrary paths, and does not automatically read referenced files or execute scripts. Existing `~/.mino/SOUL.md` content remains untouched and is loaded once per process startup; update obsolete capability statements yourself and restart if needed.
+
+### Chapter 06 history compatibility
+
+Before running Chapter 06 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. It reads record versions 1–4 and writes all new records as `v: 4`. A session without a catalog gets a durable `session_skills` snapshot when first initialized by this version, even before its next question. An empty snapshot also uses version 4, so merely starting chat can make the selected log unreadable by earlier releases.
+
+To roll back, stop Mino, preserve the newer files separately, and restore the matching pre-upgrade copies. Do not relabel version 4 records. `/clear` removes the selected conversation and summary while retaining its skill snapshot; it is not a format downgrade.
+
+The catalog sends the captured project path, skill names, and descriptions to the configured model service. Requested full files enter both the session log and model context as tool results. Keep secrets out of skills and keep session logs private; this data can also enter later summary requests. See [Chapter 06](./chapters/06-skills.md) for fixed metadata, current file reads, and the limits of cache-related verification.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-05`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-06`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-05
+git checkout chapter-06
 go run ./cmd/mino
 ```
 
@@ -225,4 +272,4 @@ Downloaded and source builds share your home-directory settings. Chapter 02 and 
 bash scripts/check.sh
 ```
 
-Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md), [Chapter 04: multiple sessions](./chapters/04-jsonl-sessions.md), or [Chapter 05: context compaction](./chapters/05-context-compaction.md). Run each chapter's experiments at its stated source version; the request and history formats differ.
+Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md), [Chapter 04: multiple sessions](./chapters/04-jsonl-sessions.md), [Chapter 05: context compaction](./chapters/05-context-compaction.md), or [Chapter 06: Skills](./chapters/06-skills.md). Run each chapter's experiments at its stated source version; the request and history formats differ.

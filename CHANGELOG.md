@@ -11,6 +11,37 @@ were reissued, and Chapters 03 and 04 published, on 2026-09-26. All four install
 understand chapter tags and numeric version aliases. This authorized replacement
 is an exception; future fixes receive new patch tags.
 
+## [Unreleased]
+
+## [0.6.0] - 2026-10-11
+
+### Added
+
+- Chapter 06 project Skills: discover only direct `.agents/skills/<name>/SKILL.md`
+  files in the captured startup project. Parse YAML name/description with a pinned
+  YAML parser; do not scan home-directory skills or preload bodies into instructions.
+- Persist a sorted catalog once per session, including empty catalogs. Restore it
+  on restart and `/resume`, retain it through `/clear` and compaction, and scan anew
+  for `/new`. Legacy sessions initialize their catalog on first use in this version.
+  The skill instruction prefix stays stable; service-side cache hits are not guaranteed.
+- Add `skill_view` with a strict name argument. Read the current complete file only
+  for registered skills, without confirmation; save paired calls/results through the
+  existing Agent loop. Bash remains separately approved with the existing limits.
+- Confine skill reads to the captured project, reject unsafe/special files, and bound
+  file, metadata, and catalog sizes. Missing directories are empty; malformed skills
+  fail discovery. Skill text is task guidance and grants no tool authorization.
+- Bilingual Chapter 06 and tests for discovery, lazy reads, invalid arguments, path
+  boundaries, stable prompts, session isolation/recovery, durability, and compaction.
+
+### Changed
+
+- Write history version 4 and read versions 1–4. The new `session_skills` record is
+  synced before use. Earlier releases cannot read new records; preserve private
+  backups before upgrading if rollback is needed. Released as `chapter-06`.
+- Extend the default SOUL with Skills guidance, preserving existing user SOUL files.
+- Roadmap: add planned Chapter 07 structured project file tools; MCP and guardrails
+  move to Chapters 08–09. Unify Chinese chapter title wording.
+
 ## [0.5.0] - 2026-09-26
 
 ### Added
