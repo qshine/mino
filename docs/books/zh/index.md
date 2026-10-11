@@ -12,7 +12,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md)。这一版覆盖到第 08 章，对应 `chapter-08`（版本 `0.8.0`）；之后的章节在各自的发布版中提供。
+**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md)。这一版覆盖到第 09 章，对应 `chapter-09`（版本 `0.9.0`）；之后的章节在各自的发布版中提供。
 
 ## 适合谁读
 
@@ -30,7 +30,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-这一版对应 `chapter-08`（程序版本 `0.8.0`），于 **2026-10-21** 发布。第 08 章之后的各行介绍后续发布版，链接指向[章节规划](./plan-todo-chapters.md)。各已发布章节注明了实验所需的源码标签。
+这一版对应 `chapter-09`（程序版本 `0.9.0`），于 **2026-10-21** 发布。第 09 章之后的各行介绍后续发布版，链接指向[章节规划](./plan-todo-chapters.md)。各已发布章节注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
@@ -42,12 +42,12 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [06 上下文压缩](./chapters/06-context-compaction.md) | 手动与自动压缩如何共用预算，并保留有用的上下文？ |
 | [07 Skills](./chapters/07-skills.md) | 固定目录怎样引导模型用 `skill_view` 请求任务知识？ |
 | [08 文件工具](./chapters/08-file-tools.md) | 程序怎样限定模型读取项目文件的范围，并把每次获批的写入绑定到你看到的文件？ |
-| [09 MCP 工具](plan-todo-chapters.md) | 远端服务或本地进程提供的工具怎样加入 Agent 循环？每次批准决定的是什么？ |
+| [09 MCP 工具](./chapters/09-mcp.md) | 远端服务或本地进程提供的工具怎样加入 Agent 循环？每次批准决定的是什么？ |
 | [10 安全防护](plan-todo-chapters.md) | 怎样把实际权限统一成一套由代码执行的策略？ |
 
 ## 如何配合代码阅读
 
-已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。这一版书中最新的第 08 章对应 [chapter-08](https://github.com/qshine/mino/tree/chapter-08)，[源码准备说明](./getting-started.md#从源码学习)介绍了怎样在本地运行同一份快照。
+已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。这一版书中最新的第 09 章对应 [chapter-09](https://github.com/qshine/mino/tree/chapter-09)，[源码准备说明](./getting-started.md#从源码学习)介绍了怎样在本地运行同一份快照。
 
 发布标签使用 `chapter-NN`，程序版本采用 `0.章节.修订号`。例如，补丁标签 `chapter-05.1` 生成版本 `0.5.1`，并更新对应章节的说明，无需新增一章。
 

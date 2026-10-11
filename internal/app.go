@@ -7,9 +7,11 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/qshine/mino/internal/agent"
 	"github.com/qshine/mino/internal/gateway"
+	"github.com/qshine/mino/internal/mcp"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -27,6 +29,9 @@ func Main(version string) int {
 
 func runCLI(ctx context.Context, version string, args []string, input io.Reader, output, errorOutput io.Writer) error {
 	cli := gateway.NewCLI(input, output, errorOutput)
+	if len(args) > 0 && args[0] == "mcp" {
+		return runMCP(ctx, cli, args[1:], output)
+	}
 	if handled, err := cli.Command(ctx, version, args); handled {
 		return err
 	}
@@ -85,6 +90,22 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		return err
 	}
 	available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit()}
+	servers, err := mcp.Load(filepath.Join(directory, "mcp.json"))
+	if err != nil {
+		return fmt.Errorf("%w. Fix it, or manage servers with mino mcp", err)
+	}
+	// Adding a server with mino mcp is the user's consent to connect at startup;
+	// each tool call still requires its own approval.
+	manager, statuses := mcp.Connect(ctx, servers, home)
+	defer manager.Close()
+	for _, status := range statuses {
+		if status.Err != nil {
+			fmt.Fprintf(output, "MCP server %s unavailable: %s\n", status.Name, gateway.Text(status.Err.Error()))
+		} else {
+			fmt.Fprintf(output, "MCP server %s: %d tools from %s\n", status.Name, status.Tools, gateway.Text(status.Destination))
+		}
+	}
+	available = append(available, manager.Tools()...)
 	session, err := agent.OpenSessions(directory, available)
 	if err != nil {
 		return err

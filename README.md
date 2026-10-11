@@ -14,8 +14,8 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–08, release
-`chapter-08` (application version `0.8.0`).
+**Current progress:** This snapshot contains Chapters 01–09, release
+`chapter-09` (application version `0.9.0`).
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -26,6 +26,8 @@ Chapter 06 adds context compaction: manual `/compact`, automatic budget checks, 
 Chapter 07 adds project Skills: a fixed per-session catalog and on-demand `skill_view` reads.
 Chapter 08 adds project file tools: `read_file`, `write_file`, and `edit_file`, confined to
 the project directory.
+Chapter 09 adds MCP tools: remote and local MCP servers such as Context7, managed with
+`mino mcp`.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -43,11 +45,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-08` release,
+this snapshot's `chapter-09` release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -290,12 +292,31 @@ when Mino starts in your home directory. Records remain `v: 4`, but `chapter-07`
 cannot load a session that started a file tool. See
 [Chapter 08](docs/books/en/chapters/08-file-tools.md).
 
+## MCP tools (Chapter 09)
+
+Install `chapter-09` with `mino update chapter-09`, then add servers. Remote servers use Streamable HTTP; a
+static header such as an API key is optional and entered without echo:
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp --bearer
+mino mcp add local --env API_TOKEN -- /path/to/mcp-server
+mino mcp list
+```
+
+Servers are saved in `~/.mino/mcp.json` (mode 0600) and connect when chat starts; a
+failed server is reported and skipped. Tools appear as `mcp_<server>_<tool>`, and
+every call shows the server, destination, and arguments before asking for approval.
+Arguments leave your machine for remote servers. HTTPS is required (plain HTTP only on
+localhost), redirects are not followed, and OAuth, legacy SSE, and MCP resources and
+prompts are not supported. `chapter-08` cannot load a session that started an MCP call.
+See [Chapter 09](docs/books/en/chapters/09-mcp.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-08   # Install this snapshot's chapter
+mino update chapter-09   # Install this snapshot's chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -322,6 +343,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 06 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 | Chapter 08 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
+| Chapter 09 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -357,6 +379,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 06: context compaction](docs/books/en/chapters/06-context-compaction.md)
 - [Chapter 07: project Skills](docs/books/en/chapters/07-skills.md)
 - [Chapter 08: project file tools](docs/books/en/chapters/08-file-tools.md)
+- [Chapter 09: MCP tools](docs/books/en/chapters/09-mcp.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

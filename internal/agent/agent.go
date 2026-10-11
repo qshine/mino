@@ -152,20 +152,28 @@ func (a *Agent) Start(ctx context.Context, interaction Interaction) error {
 			return err
 		}
 	}
-	if len(a.session.state.uncertain) == 0 {
-		return nil
-	}
-	approved, err := interaction.Confirm(ctx, Confirmation{Kind: "recovery", Warning: "A previous command started, but its result is unknown. It may have changed files or external systems. Mino has not rerun it. Review those effects before continuing."})
-	if err != nil {
-		return err
-	}
-	if !approved {
+	approved, err := a.acknowledge(ctx, interaction)
+	if err == nil && !approved {
 		return io.EOF
 	}
-	if err := a.session.acknowledgeRecovery(); err != nil {
-		return &StorageError{err}
+	return err
+}
+
+// acknowledge asks the user to accept unknown tool results before more context
+// is built on them. Results become unknown after a crash or, live, when an MCP
+// call is interrupted after it may have reached its server.
+func (a *Agent) acknowledge(ctx context.Context, interaction Interaction) (bool, error) {
+	if len(a.session.state.uncertain) == 0 {
+		return true, nil
 	}
-	return nil
+	approved, err := interaction.Confirm(ctx, Confirmation{Kind: "recovery", Warning: "A previous tool call started, but its result is unknown. It may have changed files or external systems. Mino has not rerun it. Review those effects before continuing."})
+	if err != nil || !approved {
+		return false, err
+	}
+	if err := a.session.acknowledgeRecovery(); err != nil {
+		return false, &StorageError{err}
+	}
+	return true, nil
 }
 
 // Handle makes the user message durable before entering runLoop. Session serializes
@@ -181,8 +189,10 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	if !validHistoryText(message) {
 		return errors.New("Input must be non-empty UTF-8 text")
 	}
-	if len(a.session.state.uncertain) > 0 {
-		return errors.New("Acknowledge unknown tool results before continuing")
+	if approved, err := a.acknowledge(ctx, interaction); err != nil {
+		return err
+	} else if !approved {
+		return errors.New("Message not sent. Acknowledge the unknown tool result to continue.")
 	}
 	if err := a.session.append(historyRecord{TurnID: newHistoryID(), Kind: "user_message", Text: message}); err != nil {
 		return &StorageError{err}

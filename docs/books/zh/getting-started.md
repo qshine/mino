@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-08`（程序版本 `0.8.0`），覆盖本书到第 08 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-21 发布的 `chapter-09`（程序版本 `0.9.0`），覆盖本书到第 09 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -25,6 +25,8 @@ next:
 
 第八章加入[项目文件工具](#从源码体验第八章)。在已有会话上使用前，请阅读[第八章的历史兼容性](#第八章的历史兼容性)。
 
+第九章加入 [MCP 工具](#从源码体验第九章)。在已有会话上使用前，请阅读[第九章的历史兼容性](#第九章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -36,10 +38,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-08`。省略 `-- chapter-08` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-09`。省略 `-- chapter-09` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -79,10 +81,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-08
+mino update chapter-09
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.8.0` 或 `v0.8.0`，两者都指向 `chapter-08`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.9.0` 或 `v0.9.0`，两者都指向 `chapter-09`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -296,20 +298,78 @@ cd /path/to/your/project
 
 第八章沿用记录版本 4，没有新增记录类型，因此无需迁移即可打开第七章的会话。反过来则不行：会话中一旦运行过任何文件工具（包括免批准的读取），`chapter-07` 就无法加载它，会报告存在一个针对不可用工具的已开始调用。在已有对话上体验第八章前，关闭 Mino，私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复对应的备份。
 
+## 从源码体验第九章
+
+第九章已随 [chapter-09](https://github.com/qshine/mino/releases/tag/chapter-09) 发布，程序版本为 `0.9.0`。已安装的 `mino` 已包含 `mino mcp` 和 MCP 工具。若要运行对应源码，请在仓库根目录选择该标签并构建，再在项目目录中启动：
+
+```bash
+git checkout chapter-09
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换成你自己的目录。横幅显示 `Mino - Chapter 09: MCP Tools`，源码版本为 `dev`，启动提示以 `Bash commands, file writes, and MCP tool calls require approval; project file reads do not.` 结尾。既有的 Go、Responses 工具、压缩、技能与文件工具要求继续适用。不产生模型费用的模拟检查见[本章实验](./chapters/09-mcp.md#_5-用模拟测试检查路由)。
+
+### 添加、查看和删除 MCP 服务
+
+在聊天之外用 `mino mcp`（在检出目录中为 `bin/mino mcp`）管理服务。按名称和 URL 添加一个远端 Streamable HTTP 服务：
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp
+```
+
+```text
+Added MCP server context7 (https://mcp.context7.com/mcp). It connects the next time chat starts; each tool call asks for approval.
+```
+
+如果服务需要 API 密钥，加上 `--bearer` 保存一个 `Authorization: Bearer` 请求头，或用 `--header NAME`（可重复）保存其他请求头。本地 stdio 服务把命令写在 `--` 之后，可选 `--env NAME`（可重复）和 `--cwd DIR`：
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp --bearer
+mino mcp add local --env API_TOKEN -- /path/to/mcp-server
+mino mcp list
+mino mcp remove local
+```
+
+把 `/path/to/mcp-server` 换成你信任的服务程序；每次启动聊天，Mino 都会启动它。添加时，命令会被解析为绝对路径；运行时连同参数直接执行，不经过 shell。工作目录默认为你的用户主目录。服务名称使用小写字母、数字和单个连字符，最多 32 个字符；最多可配置 16 个服务。完整用法见 `mino mcp help`。
+
+请求头和环境变量的值在关闭回显的情况下输入，因此添加它们需要交互式终端。这些值之后不会再显示：`mino mcp list` 只显示名称。例如，用 bearer 令牌添加 Context7 后，它会输出类似下面的一行（交互示意）：
+
+```text
+context7  http  https://mcp.context7.com/mcp  headers=Authorization (values hidden)
+```
+
+添加服务不会连接它。下次启动聊天时，Mino 会并行连接所有已配置的服务，不再询问，并为每个服务打印一行：`MCP server NAME: N tools from DESTINATION` 或 `MCP server NAME unavailable: REASON`。失败的服务绝不会让聊天停下。之后每次工具调用都会请求批准，详见[本章](./chapters/09-mcp.md)。
+
+### MCP 配置与隐私
+
+配置文件是 `~/.mino/mcp.json`，一个严格的 JSON 文件，权限为 `0600`。如果它是符号链接、其他用户可访问、格式错误或含有未知字段，Mino 会拒绝启动聊天；`mino mcp` 命令同样拒绝读取它，因此需要手动修正。你可以手动编辑这个文件，但其中以明文保存着你的凭证：不要把它放进 Git、分享出去的备份或截图。Mino 从不读取项目目录或环境变量中的 MCP 配置。
+
+凭证只发给对应的服务，从不发给模型服务，也不进入会话日志、确认界面或错误信息。工具参数和结果则是另一回事。你批准的参数会离开本机、发往该服务；结果会和其他工具输出一样保存到会话日志并发送给模型服务。如果参数里有你不希望该服务收到的秘密或私人数据，就不要批准这次调用。
+
+远端 URL 必须使用 HTTPS，只有 `localhost` 和回环地址允许明文 HTTP。不跟随重定向。本章不支持 OAuth 或浏览器登录、旧版 HTTP+SSE 传输，以及 MCP 的 resources、prompts 和 sampling。拒绝静态凭证的服务会被报告为不可用，并说明不支持 OAuth。服务的工具列表只在启动时读取；有变化时请重启 Mino。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 会介绍 `mcp_` 工具，说明它们的描述和结果不可信，并要求模型不要在参数中放入秘密信息、不要重试结果未知的调用。如果需要，请在自己的 SOUL 中补充类似说明，再重启。
+
+### 第九章的历史兼容性
+
+第九章沿用记录版本 4，没有新增记录类型，因此无需迁移即可打开第八章的会话。已记录的 MCP 调用只按参数形状校验，所以服务离线或已被删除时，会话仍能打开，也不会重新调用任何东西。反过来则不行：会话一旦开始过 MCP 调用，`chapter-08` 就无法加载它，会报告存在一个针对不可用工具的已开始调用。在已有对话上体验第九章前，关闭 Mino，私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复对应的备份。`chapter-08` 的可执行文件会忽略 `~/.mino/mcp.json`。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-08`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-09`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-08
+git checkout chapter-09
 go run ./cmd/mino
 ```
 
 应用代码及测试位于 `internal/`。`internal/gateway/` 处理终端交互，`internal/agent/` 负责模型请求和历史保存。第三章在 `internal/tools/` 中加入工具。配置和身份加载保留在 `internal/`，无需代码生成步骤。
 
-模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
+模块文件仍在仓库根目录。`go.mod` 将官方 `github.com/openai/openai-go/v3` SDK 固定为 v3.66.0，并将官方 `github.com/modelcontextprotocol/go-sdk` 固定为 v1.8.0，`go.sum` 记录依赖校验值。首次构建时，Go 会下载依赖，无需单独安装 SDK。
 
 安装包和源码运行共用用户目录中的配置，以及保存在 `~/.mino/sessions/` 中的对话。自动化测试使用临时用户目录和模拟模型服务，不改动你真实的 `~/.mino` 文件，也不需要真实 API Key：
 

@@ -18,6 +18,38 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-21
+
+### Added
+
+- Chapter 09 MCP tools: connect remote Streamable HTTP servers such as Context7 and
+  local stdio servers at chat startup, discover their tools with page, count, and size
+  limits, and expose them as `mcp_<server>_<tool>` Responses functions. One failed
+  server is reported and skipped.
+- `mino mcp add`, `list`, and `remove` manage a private `~/.mino/mcp.json` (mode 0600).
+  Header and environment values, including `--bearer` tokens, are entered without
+  echo and never shown, logged, or sent to the model. OAuth and legacy SSE are not
+  supported. Project-local MCP configuration is never read.
+- Each MCP tool call requires separate default-deny approval showing the server,
+  destination, tool, and arguments; annotations never grant approval. Remote URLs
+  require HTTPS (plain HTTP only on localhost), redirects are not followed, and
+  messages are limited to 1 MiB. stdio servers run without a shell in their own
+  process group with a minimal environment and are reaped on exit.
+- Results keep text in order, mark omitted non-text content, fall back to structured
+  content, and are truncated at 64 KiB. Server-reported tool errors fail; timeouts,
+  cancellations, and lost connections after sending become `unknown` and are never
+  retried.
+
+### Changed
+
+- History records remain version 4. Recorded MCP calls validate by argument shape even
+  when their server is offline or removed, so sessions stay readable; `chapter-08`
+  cannot load sessions that started MCP calls.
+- A tool result that becomes `unknown` during a live session is acknowledged before the
+  next message is sent, instead of requiring a restart; declining keeps the message unsent.
+- Add the official Go MCP SDK (v1.8.0) and complete third-party notices.
+- Extend the default SOUL with MCP guidance, preserving existing user SOUL files.
+
 ## [0.8.0] - 2026-10-21
 
 ### Added

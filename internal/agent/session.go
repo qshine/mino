@@ -14,6 +14,7 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/mcp"
 	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
@@ -210,6 +211,11 @@ func (s *historyState) apply(r historyRecord) error {
 			return invalid
 		}
 		tool := s.tools[r.Name]
+		if tool == nil && mcp.IsToolName(r.Name) {
+			// MCP servers can be offline or removed; their recorded calls still
+			// validate by argument shape and are never executed from history.
+			tool = mcp.Unavailable(r.Name)
+		}
 		if tool == nil {
 			return errors.New("History contains a started call for an unavailable tool")
 		}
