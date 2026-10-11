@@ -2,13 +2,15 @@
 
 本页说明应用发布。书籍网站见[写作与更新流程](./maintaining-the-book.md)。
 
-第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，第六章和第七章于 **2026-10-11** 以 `chapter-06`、`chapter-07` 发布，均提供 Apple Silicon 和 Intel 的 macOS 安装包。最新章节发布版为 [chapter-07](https://github.com/qshine/mino/releases/tag/chapter-07)，程序版本 **0.7.0**；各章使用对应的源码标签。
+第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，第 06–08 章于 **2026-10-11** 以 `chapter-06` 至 `chapter-08` 发布，均提供 Apple Silicon 和 Intel 的 macOS 安装包。最新章节发布版为 [chapter-08](https://github.com/qshine/mino/releases/tag/chapter-08)，程序版本 **0.8.0**；各章使用对应的源码标签。
 
 第五章写入版本 3 的会话记录，读取版本 1–3。体验或回退前，请查看[历史兼容性说明](./getting-started.md#第五章的历史兼容性)。构建当前工作区不会创建发布版，也不会改变已发布标签。
 
 第六章写入版本 4 记录，读取版本 1–4；使用已有会话或回退前，请查看[第六章兼容性说明](./getting-started.md#第六章的历史兼容性)。
 
 第七章沿用记录版本 4，但 `chapter-06` 无法加载启动过文件工具调用的会话；回退前请查看[第七章兼容性说明](./getting-started.md#第七章的历史兼容性)。
+
+第八章同样沿用记录版本 4，但 `chapter-07` 无法加载开始过 MCP 调用的会话；回退前请查看[第八章兼容性说明](./getting-started.md#第八章的历史兼容性)。
 
 ## 版本规则
 
@@ -23,6 +25,7 @@
 | `chapter-05` | `0.5.0` |
 | `chapter-06` | `0.6.0` |
 | `chapter-07` | `0.7.0` |
+| `chapter-08` | `0.8.0` |
 
 章节初版使用 `chapter-NN`，后续修复使用 `chapter-NN.PATCH`。例如，`chapter-04.1` 生成版本 `0.4.1`。后续修复创建新标签，不移动已发布标签或替换附件。每章尽量保留一次完整提交，包含代码、测试和双语书稿。
 
@@ -32,17 +35,17 @@
 
 **章节标签迁移前安装的更新器无法解析 `chapter-*` 标签。** 请先把[当前安装命令](./getting-started.md#一行安装)重新运行一次，即使程序显示的数字版本没有变化。这会获取新版安装器并替换程序，保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。修改标签或 `main` 上的脚本不会改变已安装的程序。
 
-完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-07` 选择本章。安装器也接受 `0.7.0` 或 `v0.7.0`，两者都指向 `chapter-07`；这些是版本选择别名，不是额外的 Git 标签。
+完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-08` 选择本章。安装器也接受 `0.8.0` 或 `v0.8.0`，两者都指向 `chapter-08`；这些是版本选择别名，不是额外的 Git 标签。
 
 ## 发布一个版本
 
 1. 完成改动，在 `CHANGELOG.md` 添加数字版本条目，并提交。
 2. 运行 `bash scripts/check.sh`，审核代码和双语书稿，再把已审核的改动推送到 `main`。
-3. 创建并推送新的章节或补丁标签。以下为第 07 章的未来补丁示例：
+3. 创建并推送新的章节或补丁标签。以下为第 08 章的未来补丁示例：
 
    ```bash
-   git tag -a chapter-07.1 -m 'Mino chapter-07.1'
-   git push origin chapter-07.1
+   git tag -a chapter-08.1 -m 'Mino chapter-08.1'
+   git push origin chapter-08.1
    ```
 
 [Release 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/release.yml) 由 `chapter-*` 标签触发，重新运行检查，并在关闭 CGO 的情况下构建 `darwin/arm64` 和 `darwin/amd64`。在 macOS 上打包时，还会运行当前主机架构对应的程序，验证数字版本。
@@ -50,8 +53,8 @@
 每个压缩包包含 `mino`、`LICENSE` 和 `THIRD_PARTY_NOTICES.txt`。上面的补丁示例会提供：
 
 ```text
-mino_0.7.1_darwin_arm64.tar.gz
-mino_0.7.1_darwin_amd64.tar.gz
+mino_0.8.1_darwin_arm64.tar.gz
+mino_0.8.1_darwin_amd64.tar.gz
 checksums.txt
 ```
 
@@ -59,10 +62,10 @@ checksums.txt
 
 ## 本地打包与恢复
 
-在 `chapter-07` 的仓库根目录检查本章安装包：
+在 `chapter-08` 的仓库根目录检查本章安装包：
 
 ```bash
-bash scripts/package.sh chapter-07
+bash scripts/package.sh chapter-08
 ```
 
 打包接受规范的章节标签，使用当前工作区源码，不会检出标签。结果写入被 Git 忽略的 `dist/`，不创建 Git 标签或 Release。发布失败时，检查日志及可能残留的未完成草稿，再重新运行任务。

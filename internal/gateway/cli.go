@@ -59,12 +59,15 @@ func (c *CLI) Command(ctx context.Context, version string, args []string) (bool,
 			_, err := fmt.Fprintln(c.output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
+			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | mcp | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nMCP servers: ~/.mino/mcp.json (mino mcp help)\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
 			return true, err
 		}
 	}
 	return true, errors.New("Unknown command or unexpected arguments. Run mino help for usage.")
 }
+
+// Interactive reports whether input is a terminal that can hide secret entry.
+func (c *CLI) Interactive() bool { return c.interactive }
 
 // Run shares one input stream between chat and confirmations. Agent sees neither
 // the terminal nor the stream, so another gateway can implement Interaction itself.
@@ -82,8 +85,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 07: Project File Tools")
-	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands and file writes require approval; project file reads do not. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 08: MCP Tools")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval; project file reads do not. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
 		select {
@@ -176,7 +179,7 @@ func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, er
 		if !c.interactive {
 			return false, errors.New("Unknown tool results require acknowledgement in an interactive terminal")
 		}
-		prompt = "Do you understand that these commands may already have run? [y/N] "
+		prompt = "Do you understand that these tool calls may already have run? [y/N] "
 	} else {
 		if _, err := fmt.Fprintf(c.output, "\n[Tool: %s]\n", Text(request.ToolName)); err != nil {
 			return false, errTerminalOutput

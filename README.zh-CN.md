@@ -10,11 +10,12 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含已发布的第 01–07 章，标签为 `chapter-01` 至 `chapter-07`，程序版本对应 `0.1.0` 至 `0.7.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+**当前进度：**本快照包含已发布的第 01–08 章，标签为 `chapter-01` 至 `chapter-08`，程序版本对应 `0.1.0` 至 `0.8.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
 第五章加入上下文压缩：手动 `/compact`、自动预算检查和摘要持久化。
 第六章加入项目 Skills：会话内固定的技能目录，以及按需读取正文的 `skill_view`。
 第七章加入项目文件工具：限定在项目目录内的 `read_file`、`write_file` 和 `edit_file`。
+第八章加入 MCP 工具：用 `mino mcp` 管理 Context7 等远端和本地 MCP 服务。
 
 **作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
 你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
@@ -194,12 +195,28 @@ Bash 仍单独请求批准。
 项目目录包含 `~/.mino` 时（例如在用户主目录启动），文件工具拒绝执行。记录仍为 `v: 4`，
 但 `chapter-06` 无法加载启动过文件工具的会话。详见[第七章](docs/books/zh/chapters/07-file-tools.md)。
 
+## MCP 工具（第八章）
+
+执行 `mino update chapter-08` 安装第八章，然后添加服务。远端服务使用 Streamable HTTP；API 密钥等静态请求头可选，输入时不回显：
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp --bearer
+mino mcp add local --env API_TOKEN -- /path/to/mcp-server
+mino mcp list
+```
+
+服务保存在 `~/.mino/mcp.json`（权限 0600），聊天启动时连接；连接失败的服务会被报告并跳过。
+工具以 `mcp_<服务>_<工具>` 出现，每次调用前都会显示服务、目标地址和参数，并请求批准。
+使用远端服务时，参数会离开你的电脑。远端地址必须使用 HTTPS（仅 localhost 可用 HTTP），
+不跟随跳转；不支持 OAuth、旧版 SSE 以及 MCP resources、prompts。`chapter-07`
+无法加载启动过 MCP 调用的会话。详见[第八章](docs/books/zh/chapters/08-mcp.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-07   # 安装最新已发布章节
+mino update chapter-08   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04` 对应 `mino 0.4.0`。
@@ -218,6 +235,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04`
 | 第 05 章 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 | 第 06 章 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | 第 07 章 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
+| 第 08 章 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。本次标签调整经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -245,6 +263,7 @@ bash scripts/check.sh
 - [第五章：上下文压缩](docs/books/zh/chapters/05-context-compaction.md)
 - [第六章：项目 Skills](docs/books/zh/chapters/06-skills.md)
 - [第七章：项目文件工具](docs/books/zh/chapters/07-file-tools.md)
+- [第八章：MCP 工具](docs/books/zh/chapters/08-mcp.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。

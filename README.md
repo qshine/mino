@@ -14,14 +14,16 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains released Chapters 01–07, tagged
-`chapter-01` through `chapter-07` with application versions `0.1.0` through `0.7.0`.
+**Current progress:** This snapshot contains released Chapters 01–08, tagged
+`chapter-01` through `chapter-08` with application versions `0.1.0` through `0.8.0`.
 Chapter 01 introduces streaming terminal conversations; Chapter 02 adds JSONL
 history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop. Chapter 04 adds isolated sessions, selection, and confirmed clearing.
 Chapter 05 adds context compaction: manual `/compact`, automatic budget checks, and durable summaries.
 Chapter 06 adds project Skills: a fixed per-session catalog and on-demand `skill_view` reads.
 Chapter 07 adds project file tools: `read_file`, `write_file`, and `edit_file`, confined to
 the project directory.
+Chapter 08 adds MCP tools: remote and local MCP servers such as Context7, managed with
+`mino mcp`.
 Gateway and Agent directories are consistent from Chapter 01 onward. See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
@@ -254,12 +256,31 @@ when Mino starts in your home directory. Records remain `v: 4`, but `chapter-06`
 cannot load a session that started a file tool. See
 [Chapter 07](docs/books/en/chapters/07-file-tools.md).
 
+## MCP tools (Chapter 08)
+
+Install `chapter-08` with `mino update chapter-08`, then add servers. Remote servers use Streamable HTTP; a
+static header such as an API key is optional and entered without echo:
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp --bearer
+mino mcp add local --env API_TOKEN -- /path/to/mcp-server
+mino mcp list
+```
+
+Servers are saved in `~/.mino/mcp.json` (mode 0600) and connect when chat starts; a
+failed server is reported and skipped. Tools appear as `mcp_<server>_<tool>`, and
+every call shows the server, destination, and arguments before asking for approval.
+Arguments leave your machine for remote servers. HTTPS is required (plain HTTP only on
+localhost), redirects are not followed, and OAuth, legacy SSE, and MCP resources and
+prompts are not supported. `chapter-07` cannot load a session that started an MCP call.
+See [Chapter 08](docs/books/en/chapters/08-mcp.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-07   # Install the latest published chapter
+mino update chapter-08   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-04` reports
@@ -280,6 +301,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 05 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 | Chapter 06 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
+| Chapter 08 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. This tag migration is
@@ -313,6 +335,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 05: context compaction](docs/books/en/chapters/05-context-compaction.md)
 - [Chapter 06: project Skills](docs/books/en/chapters/06-skills.md)
 - [Chapter 07: project file tools](docs/books/en/chapters/07-file-tools.md)
+- [Chapter 08: MCP tools](docs/books/en/chapters/08-mcp.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

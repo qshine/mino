@@ -9,13 +9,15 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-07` release (application version `0.7.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, project Skills, and project file tools. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-08` release (application version `0.8.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, project Skills, project file tools, and MCP tools. Use the tag named in each lesson when running its experiments.
 
 Chapter 05 uses a default context window of **128,000 tokens**, with a [configuration override](#configure-the-context-window). Before upgrading existing sessions, read the [history compatibility notes](#chapter-05-history-compatibility): new records use version 3.
 
 Chapter 06 adds [project Skills](#try-chapter-06-from-source). Before upgrading existing sessions, also read the [Chapter 06 history compatibility notes](#chapter-06-history-compatibility): new records use version 4.
 
 Chapter 07 adds [project file tools](#try-chapter-07-from-source). Before using it on existing sessions, read the [Chapter 07 history compatibility notes](#chapter-07-history-compatibility).
+
+Chapter 08 adds [MCP tools](#try-chapter-08-from-source). Before using it on existing sessions, read the [Chapter 08 history compatibility notes](#chapter-08-history-compatibility).
 
 ## Prepare your Mac
 
@@ -28,10 +30,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-07 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-07`. Omit `-- chapter-07` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-08`. Omit `-- chapter-08` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -71,10 +73,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-07
+mino update chapter-08
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.7.0` or `v0.7.0` as aliases for `chapter-07`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.8.0` or `v0.8.0` as aliases for `chapter-08`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
 
 ## Mino identity
 
@@ -274,14 +276,72 @@ Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new inst
 
 Chapter 07 keeps record version 4 and adds no record kinds, so it opens Chapter 06 sessions without migration. The reverse is not true. Once any file tool has run in a session, including an unapproved read, `chapter-06` cannot load that session: it reports a started call for an unavailable tool. Before trying Chapter 07 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the matching copies.
 
+## Try Chapter 08 from source
+
+Chapter 08 is available as the [chapter-08 release](https://github.com/qshine/mino/releases/tag/chapter-08), with application version `0.8.0`. An installed `mino` already includes `mino mcp` and the MCP tools. To run the matching source, select its tag from the repository root, build, then start it in a project directory:
+
+```bash
+git checkout chapter-08
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 08: MCP Tools`, the source version is `dev`, and the startup hint ends with `Bash commands, file writes, and MCP tool calls require approval; project file reads do not.` Existing Go, Responses tool, compaction, skill, and file-tool requirements still apply. The no-cost mock checks are in [the lesson](./chapters/08-mcp.md#_5-check-the-routing-with-mock-tests).
+
+### Add, list, and remove MCP servers
+
+Servers are managed outside chat with `mino mcp` (or `bin/mino mcp` from the checkout). Add a remote Streamable HTTP server by name and URL:
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp
+```
+
+```text
+Added MCP server context7 (https://mcp.context7.com/mcp). It connects the next time chat starts; each tool call asks for approval.
+```
+
+If a service requires an API key, add `--bearer` to store an `Authorization: Bearer` header, or `--header NAME` (repeatable) for another header. A local stdio server takes its command after `--`, plus optional `--env NAME` (repeatable) and `--cwd DIR`:
+
+```bash
+mino mcp add context7 https://mcp.context7.com/mcp --bearer
+mino mcp add local --env API_TOKEN -- /path/to/mcp-server
+mino mcp list
+mino mcp remove local
+```
+
+Replace `/path/to/mcp-server` with a server program you trust; Mino will start it every time chat starts. The command is resolved to an absolute path when you add it and run directly, without a shell, with its arguments. The working directory defaults to your home directory. Server names use lowercase letters, digits, and single hyphens, at most 32 characters; at most 16 servers can be configured. Run `mino mcp help` for the full usage.
+
+Header and environment values are typed with echo off, so adding them requires an interactive terminal. They are never printed again: `mino mcp list` shows only their names. For example, after adding Context7 with a bearer token, it prints a line like this (illustrative output):
+
+```text
+context7  http  https://mcp.context7.com/mcp  headers=Authorization (values hidden)
+```
+
+Adding a server does not connect to it. The next chat startup connects to every configured server in parallel, without asking, and prints one line per server, either `MCP server NAME: N tools from DESTINATION` or `MCP server NAME unavailable: REASON`. A failed server never stops chat. Each tool call then asks for approval, as described in [the lesson](./chapters/08-mcp.md).
+
+### MCP configuration and privacy
+
+The configuration is `~/.mino/mcp.json`, a strict JSON file with mode `0600`. Mino refuses to start chat if it is a symbolic link, accessible to other users, malformed, or contains unknown fields; the `mino mcp` commands refuse it too, so fix such a file by hand. You may edit it by hand, but it contains your credentials in plain text: keep it out of Git, backups you share, and screenshots. Mino never reads MCP configuration from a project directory or from environment variables.
+
+Credentials are sent only to their server, never to the model service, the session log, or a confirmation. Tool arguments and results are a different matter. Arguments you approve leave your machine for that server, and results are saved in the session log and sent to the model service like any other tool output. Avoid approving calls whose arguments contain secrets or private data you do not want that service to receive.
+
+Remote URLs must use HTTPS; plain HTTP is accepted only for `localhost` and loopback addresses. Redirects are not followed. This chapter does not support OAuth or browser login, the legacy HTTP+SSE transport, or MCP resources, prompts, and sampling. A service that rejects static credentials is reported as unavailable with a note that OAuth is not supported. A server's tool list is read only at startup; restart Mino to see changes.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes `mcp_` tools, says that their descriptions and results are untrusted, and asks the model not to put secrets in arguments or retry unknown calls. Add similar guidance to your own SOUL if you want it, and restart.
+
+### Chapter 08 history compatibility
+
+Chapter 08 keeps record version 4 and adds no record kinds, so it opens Chapter 07 sessions without migration. Recorded MCP calls are validated only by their argument shape, so a session still opens when its server is offline or removed; nothing is called again. The reverse does not hold: once a session has started an MCP call, `chapter-07` cannot load it and reports a started call for an unavailable tool. Before trying Chapter 08 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the matching copies. A `chapter-07` executable ignores `~/.mino/mcp.json`.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-07`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-08`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-07
+git checkout chapter-08
 go run ./cmd/mino
 ```
 
@@ -295,4 +355,4 @@ Downloaded and source builds share your home-directory settings. Chapter 02 and 
 bash scripts/check.sh
 ```
 
-Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md), [Chapter 04: multiple sessions](./chapters/04-jsonl-sessions.md), [Chapter 05: context compaction](./chapters/05-context-compaction.md), or [Chapter 06: Skills](./chapters/06-skills.md). Run each chapter's experiments at its stated source version; the request and history formats differ.
+Continue to [Chapter 01: a terminal conversation](./chapters/01-terminal-chat.md), [Chapter 02: JSONL history](./chapters/02-jsonl-history.md), [Chapter 03: tools and Bash](./chapters/03-tools-and-bash.md), [Chapter 04: multiple sessions](./chapters/04-jsonl-sessions.md), [Chapter 05: context compaction](./chapters/05-context-compaction.md), [Chapter 06: Skills](./chapters/06-skills.md), [Chapter 07: file tools](./chapters/07-file-tools.md), or [Chapter 08: MCP tools](./chapters/08-mcp.md). Run each chapter's experiments at its stated source version; the request and history formats differ.
