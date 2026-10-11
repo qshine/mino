@@ -142,4 +142,4 @@ These tests establish program behavior: what needs approval, what the confirmati
 
 The greeting change now takes one confined read and one approved edit, and the confirmation describes the exact change to the file as it currently is. Mino refuses paths outside the project, rechecks the file after approval, and writes atomically. Reads still send any project file to the model service, and Bash remains a general escape hatch guarded only by approval.
 
-Every tool so far is built into Mino. Planned [Chapter 08: Connect external tools with MCP](../plan-todo-chapters.md) brings tools hosted by another process into the same Agent loop, with approval for each server launch and each call.
+Every tool so far is built into Mino. Planned [Chapter 08: Connect external tools with MCP](../plan-todo-chapters.md) brings tools hosted by remote services or local processes into the same Agent loop, with approval for each call.
