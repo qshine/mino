@@ -9,11 +9,13 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-06` release (application version `0.6.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, and project Skills. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-07` release (application version `0.7.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, project Skills, and project file tools. Use the tag named in each lesson when running its experiments.
 
 Chapter 05 uses a default context window of **128,000 tokens**, with a [configuration override](#configure-the-context-window). Before upgrading existing sessions, read the [history compatibility notes](#chapter-05-history-compatibility): new records use version 3.
 
 Chapter 06 adds [project Skills](#try-chapter-06-from-source). Before upgrading existing sessions, also read the [Chapter 06 history compatibility notes](#chapter-06-history-compatibility): new records use version 4.
+
+Chapter 07 adds [project file tools](#try-chapter-07-from-source). Before using it on existing sessions, read the [Chapter 07 history compatibility notes](#chapter-07-history-compatibility).
 
 ## Prepare your Mac
 
@@ -26,10 +28,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-06 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-07 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-06`. Omit `-- chapter-06` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-07`. Omit `-- chapter-07` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -69,10 +71,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-06
+mino update chapter-07
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.6.0` or `v0.6.0` as aliases for `chapter-06`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.7.0` or `v0.7.0` as aliases for `chapter-07`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
 
 ## Mino identity
 
@@ -251,14 +253,35 @@ To roll back, stop Mino, preserve the newer files separately, and restore the ma
 
 The catalog sends the captured project path, skill names, and descriptions to the configured model service. Requested full files enter both the session log and model context as tool results. Keep secrets out of skills and keep session logs private; this data can also enter later summary requests. See [Chapter 06](./chapters/06-skills.md) for fixed metadata, current file reads, and the limits of cache-related verification.
 
+## Try Chapter 07 from source
+
+Chapter 07 is available as the [chapter-07 release](https://github.com/qshine/mino/releases/tag/chapter-07), with application version `0.7.0`. An installed `mino` started in your project directory already includes the file tools. To run the matching source, select its tag from the repository root, build, then start it in the project you want it to work on:
+
+```bash
+git checkout chapter-07
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 07: Project File Tools`, the source version is `dev`, and the startup hint ends with `Bash commands and file writes require approval; project file reads do not.` Existing Go, Responses tool, compaction, and skill requirements still apply. The no-cost mock checks are in [the lesson](./chapters/07-file-tools.md#_4-check-the-approval-flow-with-mock-tests).
+
+The file tools work only inside the directory where Mino starts, the same directory Bash uses; `/new` and `/resume` do not change it. `read_file` runs without approval, so anything it reads, including a `.env` file in the project, is sent to the configured model service and saved in the session log. Start Mino in a project directory, not your home directory: if the starting directory contains `~/.mino`, every file tool returns an error result instead of reading or writing.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations tells the model to prefer the file tools over Bash for project files and to read a file before editing it. If your SOUL describes Bash as the only tool, add similar guidance yourself and restart.
+
+### Chapter 07 history compatibility
+
+Chapter 07 keeps record version 4 and adds no record kinds, so it opens Chapter 06 sessions without migration. The reverse is not true. Once any file tool has run in a session, including an unapproved read, `chapter-06` cannot load that session: it reports a started call for an unavailable tool. Before trying Chapter 07 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the matching copies.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-06`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-07`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-06
+git checkout chapter-07
 go run ./cmd/mino
 ```
 

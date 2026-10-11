@@ -92,4 +92,4 @@ Further cases check snapshot sync failure, a rejected `/new`, invalid snapshot r
 
 The review request can now obtain a project's method through a named tool call. Its discovery catalog stays fixed for the session, while each requested read supplies the current file as traceable conversation context. Skills provide guidance; they do not add execution permissions or guarantee review quality.
 
-`skill_view` shows that a read can be confined in code, but only to skill files. Other project files still pass through general Bash, which path rules cannot confine. Planned [Chapter 07: File tools](../plan-todo-chapters.md) will add structured reads and approved writes limited to the project directory.
+`skill_view` shows that a read can be confined in code, but only to skill files. Other project files still pass through general Bash, which path rules cannot confine. [Chapter 07: File tools](./07-file-tools.md) adds structured reads and approved writes limited to the project directory.

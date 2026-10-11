@@ -323,6 +323,13 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	if err != nil {
 		return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 	}
+	// Inspection reads current local state for the confirmation and binds approval
+	// to it. It runs only here, never while history is being validated.
+	if inspector, ok := tool.(tools.Inspector); ok {
+		if prepared, err = inspector.Inspect(prepared); err != nil {
+			return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
+		}
+	}
 	if !prepared.ReadOnly {
 		// Give the gateway a copy of display data, never executable arguments.
 		approved, err := interaction.Confirm(ctx, Confirmation{Kind: "tool", ToolName: call.Name, Fields: append([]tools.Field(nil), prepared.Fields...), Warning: prepared.Warning})

@@ -81,8 +81,9 @@ export default withMermaid({
             { text: '04 Multiple sessions', link: '/chapters/04-jsonl-sessions' },
             { text: '05 Context compaction', link: '/chapters/05-context-compaction' }
           ] },
-          { text: 'Part IV · Add task knowledge', items: [
-            { text: '06 Project Skills', link: '/chapters/06-skills' }
+          { text: 'Part IV · Extend the agent', items: [
+            { text: '06 Project Skills', link: '/chapters/06-skills' },
+            { text: '07 Project file tools', link: '/chapters/07-file-tools' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -122,8 +123,9 @@ export default withMermaid({
             { text: '04 JSONL 多会话', link: '/zh/chapters/04-jsonl-sessions' },
             { text: '05 上下文压缩', link: '/zh/chapters/05-context-compaction' }
           ] },
-          { text: '第四部分 · 加入任务知识', items: [
-            { text: '06 项目 Skills', link: '/zh/chapters/06-skills' }
+          { text: '第四部分 · 扩展 Agent 能力', items: [
+            { text: '06 项目 Skills', link: '/zh/chapters/06-skills' },
+            { text: '07 项目文件工具', link: '/zh/chapters/07-file-tools' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

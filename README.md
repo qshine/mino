@@ -14,12 +14,14 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains released Chapters 01–06, tagged
-`chapter-01` through `chapter-06` with application versions `0.1.0` through `0.6.0`.
+**Current progress:** This snapshot contains released Chapters 01–07, tagged
+`chapter-01` through `chapter-07` with application versions `0.1.0` through `0.7.0`.
 Chapter 01 introduces streaming terminal conversations; Chapter 02 adds JSONL
 history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop. Chapter 04 adds isolated sessions, selection, and confirmed clearing.
 Chapter 05 adds context compaction: manual `/compact`, automatic budget checks, and durable summaries.
 Chapter 06 adds project Skills: a fixed per-session catalog and on-demand `skill_view` reads.
+Chapter 07 adds project file tools: `read_file`, `write_file`, and `edit_file`, confined to
+the project directory.
 Gateway and Agent directories are consistent from Chapter 01 onward. See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
@@ -229,16 +231,35 @@ No user-home skills are scanned. A missing directory means no skills; invalid
 metadata fails discovery. See [Chapter 06](docs/books/en/chapters/06-skills.md) for
 file limits, the observable interaction, and mock-service checks.
 
-This development version writes `v: 4` session records and reads versions 1–4.
+Chapter 06 writes `v: 4` session records and reads versions 1–4.
 Older releases cannot read the new records. Keep a private backup of `~/.mino/`
-before trying it if you need to return to a published chapter.
+before upgrading if you need to return to an earlier chapter.
+
+## Project file tools (Chapter 07)
+
+Install `chapter-07` with `mino update chapter-07`, then start Mino from your project directory. The model can
+call `read_file`, `write_file`, and `edit_file` with paths relative to that directory.
+Mino opens them through `os.Root`, so paths outside the project, symbolic links,
+special files, files with multiple hard links, non-UTF-8 text, and files over 64 KiB
+are refused.
+
+`read_file` needs no confirmation; its content is sent to your model service as a
+tool result. `write_file` must state `create` or `overwrite`, and `edit_file` replaces
+one exact fragment that occurs once. Before each write or edit, Mino shows the path, a
+bounded preview, and sizes, then asks for approval (default deny). If the file changes
+after approval, nothing is written. Bash keeps its own approval.
+
+File tools refuse to run when the project directory contains `~/.mino`, for example
+when Mino starts in your home directory. Records remain `v: 4`, but `chapter-06`
+cannot load a session that started a file tool. See
+[Chapter 07](docs/books/en/chapters/07-file-tools.md).
 
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-06   # Install the latest published chapter
+mino update chapter-07   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-04` reports
@@ -258,6 +279,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 04 | `0.4.0` | [`chapter-04`](https://github.com/qshine/mino/releases/tag/chapter-04) |
 | Chapter 05 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 | Chapter 06 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
+| Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. This tag migration is
@@ -290,6 +312,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 04: multiple sessions](docs/books/en/chapters/04-jsonl-sessions.md)
 - [Chapter 05: context compaction](docs/books/en/chapters/05-context-compaction.md)
 - [Chapter 06: project Skills](docs/books/en/chapters/06-skills.md)
+- [Chapter 07: project file tools](docs/books/en/chapters/07-file-tools.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

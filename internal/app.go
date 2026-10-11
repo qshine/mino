@@ -80,7 +80,11 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 	if err != nil {
 		return err
 	}
-	available := []tools.Tool{bash, tools.NewSkillView(nil)}
+	files, err := tools.NewFiles(bash.Directory(), directory)
+	if err != nil {
+		return err
+	}
+	available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit()}
 	session, err := agent.OpenSessions(directory, available)
 	if err != nil {
 		return err

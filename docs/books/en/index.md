@@ -12,7 +12,7 @@ By [qqling | AI Builder](./about-author.md)
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: Tools and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Multiple sessions](./chapters/04-jsonl-sessions.md) · [Chapter 05: Context compaction](./chapters/05-context-compaction.md) · [Chapter 06: Skills](./chapters/06-skills.md). Chapters 01–06 are released; Chapter 06 is available in `chapter-06` (version `0.6.0`). File tools, MCP, and guardrails remain [planned](./plan-todo-chapters.md).
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: Tools and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Multiple sessions](./chapters/04-jsonl-sessions.md) · [Chapter 05: Context compaction](./chapters/05-context-compaction.md) · [Chapter 06: Skills](./chapters/06-skills.md) · [Chapter 07: File tools](./chapters/07-file-tools.md). Chapters 01–07 are released; Chapter 07 is available in `chapter-07` (version `0.7.0`). MCP and guardrails remain [planned](./plan-todo-chapters.md).
 
 ## Who this book is for
 
@@ -30,7 +30,7 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-Chapters 01–05 were released on **2026-09-26** as `chapter-01` through `chapter-05`, with application versions `0.1.0` through `0.5.0`. Chapter 05 adds manual and automatic context compaction. Each released lesson identifies the source tag for its experiments.
+Chapters 01–05 were released on **2026-09-26** as `chapter-01` through `chapter-05`, with application versions `0.1.0` through `0.5.0`. Chapter 05 adds manual and automatic context compaction. Chapter 06 followed on **2026-10-11** as `chapter-06` (version `0.6.0`), and Chapter 07 on **2026-10-11** as `chapter-07` (version `0.7.0`). Each released lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
@@ -40,12 +40,12 @@ Chapters 01–05 were released on **2026-09-26** as `chapter-01` through `chapte
 | [04 Multiple sessions](./chapters/04-jsonl-sessions.md)  | How do you select one conversation's context, keep another, and safely clear the current one? |
 | [05 Context compaction](./chapters/05-context-compaction.md) | How do manual and automatic compaction share a budget and preserve useful context? |
 | [06 Skills](./chapters/06-skills.md) | How does a fixed catalog guide the model to request task knowledge with `skill_view`? |
-| 07 File tools — planned | How can the program confine the model's project-file reads and writes? |
+| [07 File tools](./chapters/07-file-tools.md) | How can the program confine the model's project-file reads and bind each approved write to the file you saw? |
 | 08–09 MCP and guardrails — planned | How do external tools connect, and how are actual permissions enforced? |
 
 ## Read alongside the code
 
-Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The latest, Chapter 06, follows [chapter-06](https://github.com/qshine/mino/tree/chapter-06); its [source setup](./getting-started.md#try-chapter-06-from-source) explains how to run the same snapshot locally.
+Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The latest, Chapter 07, follows [chapter-07](https://github.com/qshine/mino/tree/chapter-07); its [source setup](./getting-started.md#try-chapter-07-from-source) explains how to run the same snapshot locally.
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-04.1` produces version `0.4.1` and updates the relevant lesson without creating an extra chapter.
 
