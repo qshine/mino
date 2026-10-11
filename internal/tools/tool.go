@@ -17,6 +17,14 @@ type Tool interface {
 	Execute(context.Context, Call) Result
 }
 
+// Inspector is implemented by tools whose confirmation depends on current local
+// state. Prepare must stay independent of that state because history replay calls
+// it to validate recorded arguments; the caller runs Inspect only for live calls,
+// after Prepare and before approval.
+type Inspector interface {
+	Inspect(Call) (Call, error)
+}
+
 type Definition struct {
 	Name, Description string
 	Parameters        map[string]any
@@ -27,7 +35,8 @@ type Definition struct {
 type Field struct{ Label, Value string }
 type Call struct {
 	Arguments json.RawMessage
-	ReadOnly  bool // Set by trusted tool code, never decoded from model arguments.
+	ReadOnly  bool   // Set by trusted tool code, never decoded from model arguments.
+	Expect    string // State captured by Inspect and rechecked by Execute; never persisted.
 	Directory string
 	Fields    []Field
 	Warning   string

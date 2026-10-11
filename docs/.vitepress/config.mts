@@ -83,7 +83,8 @@ export default withMermaid({
             { text: '06 Context compaction', link: '/chapters/06-context-compaction' }
           ] },
           { text: 'Part IV · Extend the agent', items: [
-            { text: '07 Project Skills', link: '/chapters/07-skills' }
+            { text: '07 Project Skills', link: '/chapters/07-skills' },
+            { text: '08 Project file tools', link: '/chapters/08-file-tools' }
           ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
@@ -125,7 +126,8 @@ export default withMermaid({
             { text: '06 上下文压缩', link: '/zh/chapters/06-context-compaction' }
           ] },
           { text: '第四部分 · 扩展 Agent 能力', items: [
-            { text: '07 项目 Skills', link: '/zh/chapters/07-skills' }
+            { text: '07 项目 Skills', link: '/zh/chapters/07-skills' },
+            { text: '08 项目文件工具', link: '/zh/chapters/08-file-tools' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-07`（程序版本 `0.7.0`），覆盖本书到第 07 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-21 发布的 `chapter-08`（程序版本 `0.8.0`），覆盖本书到第 08 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -23,6 +23,8 @@ next:
 
 第七章加入[项目 Skills](#从源码体验第七章)。升级已有会话前，也请阅读[第七章的历史兼容性](#第七章的历史兼容性)：新记录使用版本 4。
 
+第八章加入[项目文件工具](#从源码体验第八章)。在已有会话上使用前，请阅读[第八章的历史兼容性](#第八章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -34,10 +36,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-07 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-07`。省略 `-- chapter-07` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-08`。省略 `-- chapter-08` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -77,10 +79,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-07
+mino update chapter-08
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.7.0` 或 `v0.7.0`，两者都指向 `chapter-07`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.8.0` 或 `v0.8.0`，两者都指向 `chapter-08`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -273,14 +275,35 @@ description: 结合测试和具体证据审查代码改动。
 
 目录会把启动时确定的项目路径、技能名称与简介发送给配置的模型服务。请求读取的完整文件会作为工具结果，进入会话日志与模型上下文。技能中不要放入秘密信息，会话日志也应保持私有；这些内容还可能进入后续摘要请求。固定元数据、读取当前文件，以及缓存相关验证的边界，见[第七章](./chapters/07-skills.md)。
 
+## 从源码体验第八章
+
+第八章已随 [chapter-08](https://github.com/qshine/mino/releases/tag/chapter-08) 发布，程序版本为 `0.8.0`。在项目目录启动已安装的 `mino` 即可使用文件工具。若要运行对应源码，请在仓库根目录选择该标签并构建，再在你希望它处理的项目里启动：
+
+```bash
+git checkout chapter-08
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换成你自己的目录。横幅显示 `Mino - Chapter 08: Project File Tools`，源码版本为 `dev`，启动提示以 `Bash commands and file writes require approval; project file reads do not.` 结尾。既有的 Go、Responses 工具、压缩与技能要求继续适用。不产生模型费用的模拟检查见[本章实验](./chapters/08-file-tools.md#_4-用模拟测试检查批准流程)。
+
+文件工具只在启动 Mino 的目录内工作，也就是 Bash 使用的目录；`/new` 和 `/resume` 不会改变它。`read_file` 无需批准，所以它读到的任何内容，包括项目里的 `.env` 文件，都会发送给配置的模型服务并保存到会话日志。请在项目目录而不是用户主目录启动 Mino：如果启动目录包含 `~/.mino`，每个文件工具都会返回错误结果，不读也不写。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 会告诉模型：处理项目文件时优先使用文件工具而不是 Bash，编辑前先读取文件。如果你的 SOUL 把 Bash 写成唯一的工具，请自行补充类似说明，再重启。
+
+### 第八章的历史兼容性
+
+第八章沿用记录版本 4，没有新增记录类型，因此无需迁移即可打开第七章的会话。反过来则不行：会话中一旦运行过任何文件工具（包括免批准的读取），`chapter-07` 就无法加载它，会报告存在一个针对不可用工具的已开始调用。在已有对话上体验第八章前，关闭 Mino，私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复对应的备份。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-07`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-08`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-07
+git checkout chapter-08
 go run ./cmd/mino
 ```
 

@@ -10,7 +10,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–07 章，对应发布版本 `chapter-07`（程序版本 `0.7.0`）。
+**当前进度：**本快照包含第 01–08 章，对应发布版本 `chapter-08`（程序版本 `0.8.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -18,6 +18,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 05 章加入独立会话、新建、恢复和确认清空。
 第 06 章加入上下文压缩：手动 `/compact`、自动预算检查和摘要持久化。
 第 07 章加入项目 Skills：会话内固定的技能目录，以及按需读取正文的 `skill_view`。
+第 08 章加入项目文件工具：限定在项目目录内的 `read_file`、`write_file` 和 `edit_file`。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -33,10 +34,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-07 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-07` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载本快照对应的 `chapter-08` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -203,12 +204,26 @@ Mino 每个会话只保存一次排序后的目录，空目录也会保存。重
 第 07 章写入 `v: 4` 会话记录，读取版本 1–4。旧发布版无法读取新记录；
 如需退回更早的章节，请在升级前为 `~/.mino/` 保留私有备份。
 
+## 项目文件工具（第 08 章）
+
+执行 `mino update chapter-08` 安装第 08 章，然后在项目目录启动 Mino。模型可以调用 `read_file`、`write_file` 和 `edit_file`，
+路径相对于该目录。Mino 通过 `os.Root` 打开文件，拒绝项目外路径、符号链接、特殊文件、
+多硬链接文件、非 UTF-8 文本和超过 64 KiB 的文件。
+
+`read_file` 无需确认，读取的内容会作为工具结果发送给模型服务。`write_file` 必须指明
+`create` 或 `overwrite`，`edit_file` 只替换恰好出现一次的确切片段。每次写入或编辑前，
+Mino 显示路径、有界预览和大小，再请求批准（默认拒绝）。批准后文件若发生变化，则不写入。
+Bash 仍单独请求批准。
+
+项目目录包含 `~/.mino` 时（例如在用户主目录启动），文件工具拒绝执行。记录仍为 `v: 4`，
+但 `chapter-07` 无法加载启动过文件工具的会话。详见[第 08 章](docs/books/zh/chapters/08-file-tools.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-07   # 安装本快照对应的章节
+mino update chapter-08   # 安装本快照对应的章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -230,6 +245,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 05 章 | `0.5.0` | [`chapter-05`](https://github.com/qshine/mino/releases/tag/chapter-05) |
 | 第 06 章 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | 第 07 章 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
+| 第 08 章 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -257,6 +273,7 @@ bash scripts/check.sh
 - [第 05 章：JSONL 多会话](docs/books/zh/chapters/05-jsonl-sessions.md)
 - [第 06 章：上下文压缩](docs/books/zh/chapters/06-context-compaction.md)
 - [第 07 章：项目 Skills](docs/books/zh/chapters/07-skills.md)
+- [第 08 章：项目文件工具](docs/books/zh/chapters/08-file-tools.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。

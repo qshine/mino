@@ -18,6 +18,29 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-21
+
+### Added
+
+- Chapter 08 project file tools: `read_file`, `write_file`, and `edit_file`, confined
+  to the startup project directory with `os.Root`. Symbolic-link targets, special
+  files, multiple hard links, non-UTF-8 text, and files over 64 KiB are refused.
+- `read_file` is a confined read and needs no approval. `write_file` requires an
+  explicit `create` or `overwrite` mode; `edit_file` replaces one exact fragment that
+  occurs once. Each write or edit shows a bounded preview and requires separate
+  default-deny approval bound to the inspected file content; a file changed after
+  approval is not written. Writes publish atomically through a synced temporary file.
+- File tools are unavailable when the project directory contains `~/.mino`, such as
+  when Mino starts in the home directory, so unapproved reads cannot expose settings
+  or session history.
+
+### Changed
+
+- Tools may implement a live-only inspection step before approval; history replay
+  still validates recorded arguments without reading project files. History records
+  remain version 4, but `chapter-07` cannot load sessions that started file tools.
+- Extend the default SOUL with file tool guidance, preserving existing user SOUL files.
+
 ## [0.7.0] - 2026-10-21
 
 ### Added
