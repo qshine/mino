@@ -59,7 +59,7 @@ func (c *CLI) Command(ctx context.Context, version string, args []string) (bool,
 			_, err := fmt.Fprintln(c.output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | mcp | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nMCP servers: ~/.mino/mcp.json (mino mcp help)\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
+			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | mcp | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nMCP servers: ~/.mino/mcp.json (mino mcp help)\nTool policy: ~/.mino/policy.json\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
 			return true, err
 		}
 	}
@@ -85,8 +85,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 08: MCP Tools")
-	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval; project file reads do not. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 09: Guardrails")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval; ~/.mino/policy.json can deny tools or allow named MCP tools. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
 		select {

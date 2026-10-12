@@ -12,6 +12,7 @@ import (
 	"github.com/qshine/mino/internal/agent"
 	"github.com/qshine/mino/internal/gateway"
 	"github.com/qshine/mino/internal/mcp"
+	"github.com/qshine/mino/internal/policy"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -90,6 +91,11 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		return err
 	}
 	available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit()}
+	rules, err := policy.Load(filepath.Join(directory, "policy.json"))
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(output, rules.Summary())
 	servers, err := mcp.Load(filepath.Join(directory, "mcp.json"))
 	if err != nil {
 		return fmt.Errorf("%w. Fix it, or manage servers with mino mcp", err)
@@ -106,12 +112,19 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		}
 	}
 	available = append(available, manager.Tools()...)
+	var names []string
+	for _, tool := range available {
+		names = append(names, tool.Definition().Name)
+	}
+	for _, name := range rules.Unknown(names) {
+		fmt.Fprintf(output, "Policy warning: %s is not an available tool; check ~/.mino/policy.json or the MCP server.\n", gateway.Text(name))
+	}
 	session, err := agent.OpenSessions(directory, available)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, session.Close()) }()
-	runner, err := agent.NewSessionManager(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions, ContextWindow: cfg.ContextWindow, ProjectDirectory: bash.Directory()}, session, available)
+	runner, err := agent.NewSessionManager(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions, ContextWindow: cfg.ContextWindow, ProjectDirectory: bash.Directory(), Policy: rules}, session, available)
 	if err != nil {
 		return err
 	}

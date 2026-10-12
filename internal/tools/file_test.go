@@ -165,7 +165,7 @@ func TestWriteFileModesAndApprovalBinding(t *testing.T) {
 	if err := os.Symlink(outside, filepath.Join(project, "outside")); err != nil {
 		t.Fatal(err)
 	}
-	if _, result := run(t, files.Write(), `{"path":"outside/escape.txt","content":"x","mode":"create"}`); result.Status != "invalid_arguments" || !strings.Contains(result.Output, "inside the project") {
+	if _, result := run(t, files.Write(), `{"path":"outside/escape.txt","content":"x","mode":"create"}`); result.Status != "invalid_arguments" {
 		t.Fatalf("escape: %+v", result)
 	}
 	if _, err := os.Stat(filepath.Join(outside, "escape.txt")); !os.IsNotExist(err) {

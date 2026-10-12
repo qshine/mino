@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-11 发布的 `chapter-08`（程序版本 `0.8.0`），包含终端问答、历史保存、获批的 Bash 执行、独立会话、手动与自动上下文压缩、项目 Skills、项目文件工具，以及 MCP 工具。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-12 发布的 `chapter-09`（程序版本 `0.9.0`），包含终端问答、历史保存、获批的 Bash 执行、独立会话、手动与自动上下文压缩、项目 Skills、项目文件工具、MCP 工具，以及安全防护。运行各章实验时，请使用该章注明的标签。
 
 第五章默认使用 **128,000 tokens** 的上下文窗口，支持[配置覆盖](#配置上下文窗口)。升级已有会话前，请阅读[历史兼容性说明](#第五章的历史兼容性)：新记录采用版本 3。
 
@@ -18,6 +18,8 @@ next:
 第七章加入[项目文件工具](#从源码体验第七章)。在已有会话上使用前，请阅读[第七章的历史兼容性](#第七章的历史兼容性)。
 
 第八章加入 [MCP 工具](#从源码体验第八章)。在已有会话上使用前，请阅读[第八章的历史兼容性](#第八章的历史兼容性)。
+
+第九章加入[安全防护](#从源码体验第九章)：统一的工具策略和可选的 `~/.mino/policy.json`。
 
 ## 准备一台 Mac
 
@@ -30,10 +32,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-08`。省略 `-- chapter-08` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-09`。省略 `-- chapter-09` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -73,10 +75,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-08
+mino update chapter-09
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.8.0` 或 `v0.8.0`，两者都指向 `chapter-08`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.9.0` 或 `v0.9.0`，两者都指向 `chapter-09`。下载或校验失败时保留现有程序。详见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -334,14 +336,62 @@ context7  http  https://mcp.context7.com/mcp  headers=Authorization (values hidd
 
 第八章沿用记录版本 4，没有新增记录类型，因此无需迁移即可打开第七章的会话。已记录的 MCP 调用只按参数形状校验，所以服务离线或已被删除时，会话仍能打开，也不会重新调用任何东西。反过来则不行：会话一旦开始过 MCP 调用，`chapter-07` 就无法加载它，会报告存在一个针对不可用工具的已开始调用。在已有对话上体验第八章前，关闭 Mino，私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复对应的备份。`chapter-07` 的可执行文件会忽略 `~/.mino/mcp.json`。
 
+## 从源码体验第九章
+
+第九章已随 [chapter-09](https://github.com/qshine/mino/releases/tag/chapter-09) 发布，程序版本为 `0.9.0`。已安装的 `mino` 已经执行这套策略。若要运行对应源码，请在仓库根目录选择该标签并构建，再在项目目录中启动：
+
+```bash
+git checkout chapter-09
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换成你自己的目录。启动时会先打印一行策略摘要；没有策略文件时显示 `Policy: Bash ask; 15 protected path patterns; 0 MCP tools allowed without confirmation; 0 tools denied.`。横幅显示 `Mino - Chapter 09: Guardrails`，源码版本为 `dev`。既有的 Go、Responses 工具、压缩、技能、文件工具与 MCP 要求继续适用。不产生模型费用的模拟检查见[本章实验](./chapters/09-guardrails.md#_6-用模拟测试检查这个决定)。
+
+### 第九章的策略文件
+
+策略文件是 `~/.mino/policy.json`。它是可选的，Mino 从不创建或修改它，需要你自己编写。例如，移除 Bash，并让一个 Context7 工具无需确认即可运行：
+
+```bash
+cat > ~/.mino/policy.json <<'JSON'
+{
+  "bash": "deny",
+  "allow_tools": ["mcp_context7_resolve-library-id"]
+}
+JSON
+chmod 600 ~/.mino/policy.json
+```
+
+| 字段 | 含义 |
+| --- | --- |
+| `bash` | `"ask"`（默认）：每条命令都需要批准。`"deny"`：不向模型提供 Bash，每次调用都被拒绝。 |
+| `protected_paths` | 追加到默认规则之后的规则。不含 `/` 的规则匹配文件名，例如 `*.sqlite`；以 `/` 结尾的规则匹配路径中任意位置的目录名，例如 `secrets/`。规则中不能包含其他斜杠。 |
+| `allow_tools` | 无需询问即可运行的 MCP 工具的确切名称，即确认界面中显示的名称。只接受以 `mcp_` 开头的名称。 |
+| `deny_tools` | 被拒绝且不提供给模型的工具的确切名称，例如 `mcp_tickets_create` 或 `read_file`。 |
+
+默认规则始终生效：`.env`、`.env.*`、`*.pem`、`*.key`、`*.p12`、`id_rsa*`、`id_ecdsa*`、`id_ed25519*`、`.netrc`、`.npmrc`、`.pypirc`，以及 `.git/`、`.ssh/`、`.aws/`、`.gnupg/` 目录。文件工具从不读写匹配的路径，也没有可以覆盖这一点的提示。匹配不区分大小写，与默认的 macOS 文件系统一致，所以 `.ENV` 同样受保护。
+
+该文件必须是普通文件，不能是符号链接，最大 64 KiB，且不能被组或其他用户写入。它必须是只含上述字段的严格 JSON。任何一项检查失败，Mino 都会打印原因并且不启动聊天；请修正或删除该文件。Mino 只在启动时读取一次，从不读取项目中的策略；编辑后请重启。如果 `allow_tools` 或 `deny_tools` 中的名称不对应任何可用工具（例如拼写错误，或服务没有连上），启动时会输出一行 `Policy warning:`。
+
+文件工具还有一处变化：只要路径的任意一段目录经过符号链接，即使链接仍指向项目内部，也会被拒绝。如果你的项目通过链接目录访问文件，请改用真实路径。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 增加了一段话，要求模型如实报告策略拦截，不要设法绕过。如果需要，请在自己的 SOUL 中补充类似说明，再重启。无论 SOUL 怎么写，策略都会执行。
+
+策略约束的是哪些工具可以运行，以及文件工具可以碰哪些文件。它不是沙箱：获批的 Bash 命令或已配置的 MCP 服务以你的账户权限运行。这些限制见[本章说明](./chapters/09-guardrails.md#_5-策略看不到的地方)。
+
+### 第九章的历史兼容性
+
+第九章沿用记录版本 4，没有新增记录类型或结果状态。被策略拒绝的调用，和你拒绝的调用保存方式相同：模型的请求，后面跟着一个 `denied` 结果。它无需迁移即可打开第八章的会话，`chapter-08` 也仍能打开第九章写入的会话。不过回退会让策略失效：`chapter-08` 会忽略 `~/.mino/policy.json`，受保护路径和被拒绝的工具都不再执行。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-08`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-09`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-08
+git checkout chapter-09
 go run ./cmd/mino
 ```
 

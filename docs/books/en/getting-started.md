@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-08` release (application version `0.8.0`), published on 2026-10-11. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, project Skills, project file tools, and MCP tools. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-09` release (application version `0.9.0`), published on 2026-10-12. It includes terminal conversation, saved history, approved Bash execution, separate sessions, manual and automatic context compaction, project Skills, project file tools, MCP tools, and guardrails. Use the tag named in each lesson when running its experiments.
 
 Chapter 05 uses a default context window of **128,000 tokens**, with a [configuration override](#configure-the-context-window). Before upgrading existing sessions, read the [history compatibility notes](#chapter-05-history-compatibility): new records use version 3.
 
@@ -18,6 +18,8 @@ Chapter 06 adds [project Skills](#try-chapter-06-from-source). Before upgrading 
 Chapter 07 adds [project file tools](#try-chapter-07-from-source). Before using it on existing sessions, read the [Chapter 07 history compatibility notes](#chapter-07-history-compatibility).
 
 Chapter 08 adds [MCP tools](#try-chapter-08-from-source). Before using it on existing sessions, read the [Chapter 08 history compatibility notes](#chapter-08-history-compatibility).
+
+Chapter 09 adds [guardrails](#try-chapter-09-from-source): one tool policy and an optional `~/.mino/policy.json`.
 
 ## Prepare your Mac
 
@@ -30,10 +32,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-08 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-08`. Omit `-- chapter-08` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-09`. Omit `-- chapter-09` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -73,10 +75,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-08
+mino update chapter-09
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.8.0` or `v0.8.0` as aliases for `chapter-08`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.9.0` or `v0.9.0` as aliases for `chapter-09`. Download or verification failures preserve the existing executable. See the [release and patch rules](./releases.md#version-policy).
 
 ## Mino identity
 
@@ -334,14 +336,62 @@ Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new inst
 
 Chapter 08 keeps record version 4 and adds no record kinds, so it opens Chapter 07 sessions without migration. Recorded MCP calls are validated only by their argument shape, so a session still opens when its server is offline or removed; nothing is called again. The reverse does not hold: once a session has started an MCP call, `chapter-07` cannot load it and reports a started call for an unavailable tool. Before trying Chapter 08 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the matching copies. A `chapter-07` executable ignores `~/.mino/mcp.json`.
 
+## Try Chapter 09 from source
+
+Chapter 09 is available as the [chapter-09 release](https://github.com/qshine/mino/releases/tag/chapter-09), with application version `0.9.0`. An installed `mino` already applies the policy. To run the matching source, select its tag from the repository root, build, then start it in a project directory:
+
+```bash
+git checkout chapter-09
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. Startup first prints a one-line policy summary; without a policy file it reads `Policy: Bash ask; 15 protected path patterns; 0 MCP tools allowed without confirmation; 0 tools denied.` The banner reads `Mino - Chapter 09: Guardrails` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, and MCP requirements still apply. The no-cost mock checks are in [the lesson](./chapters/09-guardrails.md#_6-check-the-decision-with-mock-tests).
+
+### Chapter 09 policy file
+
+The policy is `~/.mino/policy.json`. It is optional, and Mino never creates or edits it; write it yourself. For example, to remove Bash and let one Context7 tool run without confirmation:
+
+```bash
+cat > ~/.mino/policy.json <<'JSON'
+{
+  "bash": "deny",
+  "allow_tools": ["mcp_context7_resolve-library-id"]
+}
+JSON
+chmod 600 ~/.mino/policy.json
+```
+
+| Field | Meaning |
+| --- | --- |
+| `bash` | `"ask"` (default): each command needs approval. `"deny"`: Bash is not offered to the model and every call is refused. |
+| `protected_paths` | Patterns added to the defaults. A pattern without `/` matches a file name, such as `*.sqlite`; a pattern ending in `/` matches a directory name anywhere in the path, such as `secrets/`. Patterns cannot contain other slashes. |
+| `allow_tools` | Exact MCP tool names, as shown in confirmations, that run without asking. Only names starting with `mcp_` are accepted. |
+| `deny_tools` | Exact tool names that are refused and not offered to the model, for example `mcp_tickets_create` or `read_file`. |
+
+The defaults always apply: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `id_ecdsa*`, `id_ed25519*`, `.netrc`, `.npmrc`, `.pypirc`, and the `.git/`, `.ssh/`, `.aws/`, and `.gnupg/` directories. File tools never read or write a matching path, and there is no prompt to override this. Matching ignores case, as the default macOS file system does, so `.ENV` is protected too.
+
+The file must be a regular file, not a symbolic link, at most 64 KiB, and not writable by group or other users. It must be strict JSON with only the fields above. If any check fails, Mino prints the reason and does not start chat; fix the file or remove it. Mino reads it once at startup and never reads a policy from a project; restart after editing it. A name in `allow_tools` or `deny_tools` that matches no available tool, such as a typo or a server that failed to connect, produces a `Policy warning:` line at startup.
+
+The file tools also change in one way: a path that passes through a symbolic link in any directory component is refused, even when the link stays inside the project. If your project reaches files through a linked directory, use the real path.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations adds a paragraph asking the model to report policy blocks without working around them. Add similar guidance to your own SOUL if you want it, and restart. The policy is enforced either way.
+
+The policy covers which tools run and which files the file tools may touch. It is not a sandbox: an approved Bash command or a configured MCP server runs with your account's permissions. See [the lesson](./chapters/09-guardrails.md#_5-what-the-policy-cannot-see) for these limits.
+
+### Chapter 09 history compatibility
+
+Chapter 09 keeps record version 4 and adds no record kinds or result statuses. A call refused by policy is saved like a call you declined: the model's request followed by a `denied` result. It opens Chapter 08 sessions without migration, and `chapter-08` can still open sessions written by Chapter 09. Rolling back removes the policy, though: `chapter-08` ignores `~/.mino/policy.json`, so protected paths and denied tools are no longer enforced. As before, keep private copies of session logs and `active-session.json` before switching versions.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-08`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-09`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-08
+git checkout chapter-09
 go run ./cmd/mino
 ```
 

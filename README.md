@@ -14,8 +14,8 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains released Chapters 01–08, tagged
-`chapter-01` through `chapter-08` with application versions `0.1.0` through `0.8.0`.
+**Current progress:** This snapshot contains all nine released chapters, tagged
+`chapter-01` through `chapter-09` with application versions `0.1.0` through `0.9.0`.
 Chapter 01 introduces streaming terminal conversations; Chapter 02 adds JSONL
 history and restart recovery. Chapter 03 adds individually approved Bash calls and the Agent loop. Chapter 04 adds isolated sessions, selection, and confirmed clearing.
 Chapter 05 adds context compaction: manual `/compact`, automatic budget checks, and durable summaries.
@@ -24,6 +24,8 @@ Chapter 07 adds project file tools: `read_file`, `write_file`, and `edit_file`, 
 the project directory.
 Chapter 08 adds MCP tools: remote and local MCP servers such as Context7, managed with
 `mino mcp`.
+Chapter 09 adds guardrails: one code-enforced tool policy with protected paths and an
+optional `~/.mino/policy.json`.
 Gateway and Agent directories are consistent from Chapter 01 onward. See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
@@ -275,12 +277,35 @@ localhost), redirects are not followed, and OAuth, legacy SSE, and MCP resources
 prompts are not supported. `chapter-07` cannot load a session that started an MCP call.
 See [Chapter 08](docs/books/en/chapters/08-mcp.md).
 
+## Guardrails (Chapter 09)
+
+Every tool call now passes one policy decision before anything runs: allow, ask, or
+deny. Without configuration, Mino asks before Bash, file writes, and MCP calls, and file
+tools never read or write protected paths such as `.env`, `*.pem`, `*.key`, SSH keys,
+or anything under `.git/`, `.ssh/`, `.aws/`, or `.gnupg/`. Text in files or tool results
+cannot grant permission. To adjust it, create `~/.mino/policy.json` (not writable by
+other users):
+
+```json
+{
+  "bash": "deny",
+  "protected_paths": ["secrets/", "*.sqlite"],
+  "allow_tools": ["mcp_context7_query-docs"],
+  "deny_tools": ["mcp_tickets_create"]
+}
+```
+
+`"bash": "deny"` removes general Bash entirely. `allow_tools` accepts only MCP tool names;
+Bash and file writes always ask. Protected patterns add to the defaults. There is no OS
+sandbox: approved Bash commands and MCP servers still run with your account permissions.
+See [Chapter 09](docs/books/en/chapters/09-guardrails.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-08   # Install the latest published chapter
+mino update chapter-09   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-04` reports
@@ -302,6 +327,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 06 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 | Chapter 08 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
+| Chapter 09 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. This tag migration is
@@ -336,6 +362,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 06: project Skills](docs/books/en/chapters/06-skills.md)
 - [Chapter 07: project file tools](docs/books/en/chapters/07-file-tools.md)
 - [Chapter 08: MCP tools](docs/books/en/chapters/08-mcp.md)
+- [Chapter 09: guardrails](docs/books/en/chapters/09-guardrails.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

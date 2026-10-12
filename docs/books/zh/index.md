@@ -12,7 +12,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md) · [第四章：多会话](./chapters/04-jsonl-sessions.md) · [第五章：上下文压缩](./chapters/05-context-compaction.md) · [第六章：Skills](./chapters/06-skills.md) · [第七章：文件工具](./chapters/07-file-tools.md) · [第八章：MCP 工具](./chapters/08-mcp.md)。第 01–08 章均已发布，第八章对应 `chapter-08`（版本 `0.8.0`）。安全防护仍在[规划中](./plan-todo-chapters.md)。
+**当前可读：**[第一章：与模型对话](./chapters/01-terminal-chat.md) · [第二章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第三章：工具调用与 Bash](./chapters/03-tools-and-bash.md) · [第四章：多会话](./chapters/04-jsonl-sessions.md) · [第五章：上下文压缩](./chapters/05-context-compaction.md) · [第六章：Skills](./chapters/06-skills.md) · [第七章：文件工具](./chapters/07-file-tools.md) · [第八章：MCP 工具](./chapters/08-mcp.md) · [第九章：安全防护](./chapters/09-guardrails.md)。全部九章均已发布，最后一章对应 `chapter-09`（版本 `0.9.0`）。
 
 ## 适合谁读
 
@@ -30,7 +30,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，程序版本为 `0.1.0` 至 `0.5.0`。第 05 章加入手动与自动上下文压缩。第 06 章于 **2026-10-11** 以 `chapter-06` 发布（版本 `0.6.0`），第 07 章于 **2026-10-11** 以 `chapter-07` 发布（版本 `0.7.0`），第 08 章于 **2026-10-11** 以 `chapter-08` 发布（版本 `0.8.0`）。各已发布章节注明了实验所需的源码标签。
+第 01–05 章于 **2026-09-26** 以 `chapter-01` 至 `chapter-05` 发布，程序版本为 `0.1.0` 至 `0.5.0`。第 05 章加入手动与自动上下文压缩。第 06 章于 **2026-10-11** 以 `chapter-06` 发布（版本 `0.6.0`），第 07 章于 **2026-10-11** 以 `chapter-07` 发布（版本 `0.7.0`），第 08 章于 **2026-10-11** 以 `chapter-08` 发布（版本 `0.8.0`），最后一章第 09 章于 **2026-10-12** 以 `chapter-09` 发布（版本 `0.9.0`）。各已发布章节注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
@@ -42,11 +42,11 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [06 Skills](./chapters/06-skills.md) | 固定目录怎样引导模型用 `skill_view` 请求任务知识？ |
 | [07 文件工具](./chapters/07-file-tools.md) | 程序怎样限定模型读取项目文件的范围，并把每次获批的写入绑定到你看到的文件？ |
 | [08 MCP 工具](./chapters/08-mcp.md) | 远端服务或本地进程提供的工具怎样加入 Agent 循环？每次批准决定的是什么？ |
-| 09 安全防护（规划中） | 怎样把实际权限统一成一套由代码执行的策略？ |
+| [09 安全防护](./chapters/09-guardrails.md) | 怎样把实际权限统一成一套由代码执行的策略？ |
 
 ## 如何配合代码阅读
 
-已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。最新的第八章对应 [chapter-08](https://github.com/qshine/mino/tree/chapter-08)，[源码准备说明](./getting-started.md#从源码体验第八章)介绍了怎样在本地运行同一份快照。
+已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。最新的第九章对应 [chapter-09](https://github.com/qshine/mino/tree/chapter-09)，[源码准备说明](./getting-started.md#从源码体验第九章)介绍了怎样在本地运行同一份快照。
 
 发布标签使用 `chapter-NN`，程序版本采用 `0.章节.修订号`。例如，补丁标签 `chapter-04.1` 生成版本 `0.4.1`，并更新对应章节的说明，无需新增一章。
 

@@ -10,12 +10,13 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含已发布的第 01–08 章，标签为 `chapter-01` 至 `chapter-08`，程序版本对应 `0.1.0` 至 `0.8.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+**当前进度：**本快照包含全部九个已发布章节，标签为 `chapter-01` 至 `chapter-09`，程序版本对应 `0.1.0` 至 `0.9.0`。第一章实现流式终端问答，第二章加入 JSONL 历史和重启恢复。第三章加入逐次批准的 Bash 执行与 Agent 循环。第四章加入独立会话、新建、恢复和确认清空。Gateway 与 Agent 目录从第一章起保持一致。详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
 第五章加入上下文压缩：手动 `/compact`、自动预算检查和摘要持久化。
 第六章加入项目 Skills：会话内固定的技能目录，以及按需读取正文的 `skill_view`。
 第七章加入项目文件工具：限定在项目目录内的 `read_file`、`write_file` 和 `edit_file`。
 第八章加入 MCP 工具：用 `mino mcp` 管理 Context7 等远端和本地 MCP 服务。
+第九章加入安全防护：由代码执行的统一工具策略、受保护路径和可选的 `~/.mino/policy.json`。
 
 **作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
 你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
@@ -211,12 +212,32 @@ mino mcp list
 不跟随跳转；不支持 OAuth、旧版 SSE 以及 MCP resources、prompts。`chapter-07`
 无法加载启动过 MCP 调用的会话。详见[第八章](docs/books/zh/chapters/08-mcp.md)。
 
+## 安全防护（第九章）
+
+现在每次工具调用在执行前都要经过同一个策略决定：允许、询问或拒绝。没有配置时，Mino 在运行 Bash、
+写文件和调用 MCP 前询问；文件工具永远不读写 `.env`、`*.pem`、`*.key`、SSH 密钥，以及 `.git/`、
+`.ssh/`、`.aws/`、`.gnupg/` 下的任何内容。文件或工具结果中的文字无法授予权限。如需调整，
+创建 `~/.mino/policy.json`（不能被其他用户写入）：
+
+```json
+{
+  "bash": "deny",
+  "protected_paths": ["secrets/", "*.sqlite"],
+  "allow_tools": ["mcp_context7_query-docs"],
+  "deny_tools": ["mcp_tickets_create"]
+}
+```
+
+`"bash": "deny"` 会完全移除通用 Bash。`allow_tools` 只接受 MCP 工具名；Bash 和文件写入始终询问。
+受保护规则只能在默认规则之上追加。本章没有操作系统沙箱：获批的 Bash 命令和 MCP 服务仍以你的账户权限运行。
+详见[第九章](docs/books/zh/chapters/09-guardrails.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-08   # 安装最新已发布章节
+mino update chapter-09   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04` 对应 `mino 0.4.0`。
@@ -236,6 +257,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-04`
 | 第 06 章 | `0.6.0` | [`chapter-06`](https://github.com/qshine/mino/releases/tag/chapter-06) |
 | 第 07 章 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 | 第 08 章 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
+| 第 09 章 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。本次标签调整经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -264,6 +286,7 @@ bash scripts/check.sh
 - [第六章：项目 Skills](docs/books/zh/chapters/06-skills.md)
 - [第七章：项目文件工具](docs/books/zh/chapters/07-file-tools.md)
 - [第八章：MCP 工具](docs/books/zh/chapters/08-mcp.md)
+- [第九章：安全防护](docs/books/zh/chapters/09-guardrails.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`SessionManager`](internal/agent/session_commands.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。

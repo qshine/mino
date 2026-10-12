@@ -16,6 +16,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/policy"
 	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
@@ -58,6 +59,7 @@ type Options struct {
 	BaseURL, APIKey, Model, Instructions string
 	ProjectDirectory                     string
 	ContextWindow                        int
+	Policy                               *policy.Policy // nil uses policy.Default()
 }
 
 type Agent struct {
@@ -78,6 +80,9 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	}
 	if options.ContextWindow == 0 {
 		options.ContextWindow = DefaultContextWindow
+	}
+	if options.Policy == nil {
+		options.Policy = policy.Default()
 	}
 	registry, err := toolRegistry(available)
 	if err != nil {
@@ -115,6 +120,11 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	}}
 	for _, tool := range available {
 		d := tool.Definition()
+		// Denied tools stay registered so history validates, but the model is
+		// never offered them.
+		if !options.Policy.Offered(d.Name) {
+			continue
+		}
 		definition := responses.ToolParamOfFunction(d.Name, d.Parameters, d.Strict)
 		definition.OfFunction.Description = openai.String(d.Description)
 		a.definitions = append(a.definitions, definition)
@@ -333,6 +343,12 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	if err != nil {
 		return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 	}
+	// One policy decision covers every tool, before inspection reads anything:
+	// a protected file is never opened, even to build a confirmation.
+	decision, reason := a.options.Policy.Decide(policy.Call{Tool: call.Name, ReadOnly: prepared.ReadOnly, Target: prepared.Target})
+	if decision == policy.Deny {
+		return tools.Result{Status: "denied", Output: "Blocked by policy: " + reason + " Do not retry or work around this with another tool."}, nil
+	}
 	// Inspection reads current local state for the confirmation and binds approval
 	// to it. It runs only here, never while history is being validated.
 	if inspector, ok := tool.(tools.Inspector); ok {
@@ -340,7 +356,13 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 			return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 		}
 	}
-	if !prepared.ReadOnly {
+	if decision == policy.Allow && !prepared.ReadOnly {
+		// A policy allowance skips the question, not the visibility.
+		if err := interaction.Emit(Event{Kind: "info", Text: "\n[Tool: " + call.Name + ", allowed without confirmation by ~/.mino/policy.json]\n"}); err != nil {
+			return tools.Result{}, err
+		}
+	}
+	if decision == policy.Ask {
 		// Give the gateway a copy of display data, never executable arguments.
 		approved, err := interaction.Confirm(ctx, Confirmation{Kind: "tool", ToolName: call.Name, Fields: append([]tools.Field(nil), prepared.Fields...), Warning: prepared.Warning})
 		if err != nil {
