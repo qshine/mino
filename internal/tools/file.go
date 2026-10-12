@@ -113,10 +113,40 @@ func pathSchema() map[string]any {
 	return map[string]any{"type": "string", "description": "A file path relative to the project directory."}
 }
 
+// checkParents refuses symbolic links in directory components. os.Root keeps a
+// link inside the project, but a link could still give a protected directory such
+// as .git an innocent-looking name and bypass name-based policy.
+func checkParents(root *os.Root, path string) error {
+	current := ""
+	for _, part := range strings.Split(filepath.Dir(path), string(filepath.Separator)) {
+		if part == "." {
+			return nil
+		}
+		current = filepath.Join(current, part)
+		info, err := root.Lstat(current)
+		if errors.Is(err, os.ErrNotExist) {
+			return errors.New("Parent directory does not exist")
+		}
+		if err != nil {
+			return fileError(err)
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return errors.New("Path must not pass through a symbolic link")
+		}
+		if !info.IsDir() {
+			return errors.New("Parent path must be a directory")
+		}
+	}
+	return nil
+}
+
 // openRegular opens a project file without following a final symlink or blocking
 // on special files. Multiple hard links are refused because one may connect a
 // project path to a file elsewhere.
 func openRegular(root *os.Root, path string) (*os.File, fs.FileInfo, error) {
+	if err := checkParents(root, path); err != nil {
+		return nil, nil, err
+	}
 	file, err := root.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		return nil, nil, fileError(err)
@@ -211,6 +241,9 @@ func size(text string) string {
 // directory. Creation links the temporary file so an existing target is never
 // overwritten; replacement renames over the checked target.
 func replace(root *os.Root, path, data string, perm fs.FileMode, create bool) error {
+	if err := checkParents(root, path); err != nil {
+		return err
+	}
 	random := make([]byte, 8)
 	rand.Read(random)
 	temp := filepath.Join(filepath.Dir(path), "."+filepath.Base(path)+".mino-"+hex.EncodeToString(random)+".tmp")
@@ -285,7 +318,7 @@ func (r *ReadFile) Prepare(raw string) (Call, error) {
 		return Call{}, err
 	}
 	encoded, _ := json.Marshal(map[string]string{"path": path})
-	return Call{Arguments: encoded, ReadOnly: true, Directory: r.files.root, Fields: []Field{{"Path", path}}}, nil
+	return Call{Arguments: encoded, ReadOnly: true, Directory: r.files.root, Target: path, Fields: []Field{{"Path", path}}}, nil
 }
 
 func (r *ReadFile) Execute(ctx context.Context, call Call) Result {
@@ -347,7 +380,7 @@ func (w *WriteFile) Prepare(raw string) (Call, error) {
 		return Call{}, err
 	}
 	encoded, _ := json.Marshal(args)
-	return Call{Arguments: encoded, Directory: w.files.root, Fields: []Field{{"Path", args.Path}, {"Mode", args.Mode}}}, nil
+	return Call{Arguments: encoded, Directory: w.files.root, Target: args.Path, Fields: []Field{{"Path", args.Path}, {"Mode", args.Mode}}}, nil
 }
 
 // Inspect checks the target against the requested mode and binds approval to
@@ -365,6 +398,9 @@ func (w *WriteFile) Inspect(call Call) (Call, error) {
 	mode := "Create a new file"
 	call.Expect = "absent"
 	if args.Mode == "create" {
+		if err := checkParents(root, args.Path); err != nil {
+			return Call{}, err
+		}
 		if _, err := root.Lstat(args.Path); err == nil {
 			return Call{}, errors.New("File already exists; use mode overwrite after reading it")
 		} else if !errors.Is(err, os.ErrNotExist) {
@@ -469,7 +505,7 @@ func (e *EditFile) Prepare(raw string) (Call, error) {
 		return Call{}, err
 	}
 	encoded, _ := json.Marshal(args)
-	return Call{Arguments: encoded, Directory: e.files.root, Fields: []Field{{"Path", args.Path}}}, nil
+	return Call{Arguments: encoded, Directory: e.files.root, Target: args.Path, Fields: []Field{{"Path", args.Path}}}, nil
 }
 
 // edited applies the replacement only when old_string occurs exactly once.

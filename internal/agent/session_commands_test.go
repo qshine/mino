@@ -250,3 +250,73 @@ func TestSessionCommandsCannotInterleaveWithRunningTurn(t *testing.T) {
 		t.Fatal("running session was replaced")
 	}
 }
+
+func TestModeCommandIsPerSessionAndConfirmsOnlyLooserModes(t *testing.T) {
+	store, err := OpenSessions(t.TempDir(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	manager, err := NewSessionManager(Options{BaseURL: "http://127.0.0.1:1", APIKey: "test", Model: "test"}, store, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var asked []string
+	var infos strings.Builder
+	approve := false
+	interaction := testInteraction{emit: func(e Event) error {
+		infos.WriteString(e.Text)
+		return nil
+	}, confirm: func(_ context.Context, c Confirmation) (bool, error) {
+		asked = append(asked, c.Kind+":"+c.Warning)
+		return approve, nil
+	}}
+	do := func(message string) {
+		t.Helper()
+		if err := manager.Handle(context.Background(), message, interaction); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mode := func() string { return manager.runner.options.Policy.Mode().String() }
+	first := store.id
+	do("/mode")
+	do("/mode bypass") // refused
+	if mode() != "manual" || len(asked) != 1 || !strings.HasPrefix(asked[0], "mode:In this session, bypass mode runs every tool call") {
+		t.Fatalf("mode=%s asked=%v", mode(), asked)
+	}
+	approve = true
+	do("/mode accept-edits")
+	do("/mode bypass")
+	do("/clear") // clearing keeps the session, and with it the mode
+	if mode() != "bypass" {
+		t.Fatal("mode did not survive /clear")
+	}
+	do("/new")
+	second := store.id
+	if mode() != "manual" {
+		t.Fatalf("new session inherited mode %s", mode())
+	}
+	do("/mode accept-edits")
+	do("/resume " + first)
+	if mode() != "bypass" {
+		t.Fatalf("resumed session mode = %s", mode())
+	}
+	do("/resume " + second)
+	if mode() != "accept-edits" {
+		t.Fatalf("second session mode = %s", mode())
+	}
+	approve = false
+	do("/mode manual") // tightening never asks
+	if mode() != "manual" || len(asked) != 5 {
+		t.Fatalf("mode=%s asked=%d", mode(), len(asked))
+	}
+	for _, bad := range []string{"/mode auto", "/mode bypass now"} {
+		if err := manager.Handle(context.Background(), bad, interaction); err == nil {
+			t.Fatalf("accepted %q", bad)
+		}
+	}
+	text := infos.String()
+	if !strings.Contains(text, "Permission mode for this session unchanged: manual.") || !strings.Contains(text, "Session: "+first+"\nPermission mode: bypass.") {
+		t.Fatalf("infos=%q", text)
+	}
+}

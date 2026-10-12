@@ -10,7 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–09 章，对应发布版本 `chapter-09`（程序版本 `0.9.0`）。
+**当前进度：**本快照包含第 01–10 章，对应发布版本 `chapter-10`（程序版本 `0.10.0`）。
+全部十章均已发布，标签为 `chapter-01` 至 `chapter-10`，程序版本对应 `0.1.0` 至 `0.10.0`。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -20,8 +21,9 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 07 章加入项目 Skills：会话内固定的技能目录，以及按需读取正文的 `skill_view`。
 第 08 章加入项目文件工具：限定在项目目录内的 `read_file`、`write_file` 和 `edit_file`。
 第 09 章加入 MCP 工具：用 `mino mcp` 管理 Context7 等远端和本地 MCP 服务。
+第 10 章加入安全防护：由代码执行的统一工具策略、受保护路径，以及用 `/mode` 选择的三种权限模式。
 Gateway 与 Agent 目录从第 01 章起保持一致。
-后续章节见[章节规划](docs/books/zh/plan-todo-chapters.md)。
+详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
 **作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
 你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
@@ -35,10 +37,10 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 在 Bash 或 zsh 中执行这一行命令：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-安装程序会识别 Mac 架构，下载本快照对应的 `chapter-09` 版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
+安装程序会识别 Mac 架构，下载最新发布版本，校验 SHA-256 和程序版本，然后安装到 `~/.mino/bin/mino`。
 程序目录会加入 zsh 或 Bash 登录配置；命令最后的 `export` 让当前终端也能立即使用 `mino`。
 不需要 `sudo`，已有配置会保留。
 
@@ -235,12 +237,28 @@ mino mcp list
 不跟随跳转；不支持 OAuth、旧版 SSE 以及 MCP resources、prompts。`chapter-08`
 无法加载启动过 MCP 调用的会话。详见[第 09 章](docs/books/zh/chapters/09-mcp.md)。
 
+## 安全防护（第 10 章）
+
+执行 `mino update chapter-10` 安装第 10 章。现在每次工具调用在执行前都要经过同一个策略决定：允许、询问或拒绝。
+无论哪种模式，文件工具都不读写 `.env`、`*.pem`、`*.key`、SSH 密钥，以及 `.git/`、`.ssh/`、`.aws/`、`.gnupg/`
+下的任何内容。文件或工具结果中的文字无法授予权限。本章没有配置文件，在聊天中选择权限模式：
+
+| 命令 | 无需询问即可运行的调用 |
+| --- | --- |
+| `/mode manual`（每次启动的默认模式） | 只有受限读取：`read_file` 和 `skill_view` |
+| `/mode accept-edits` | 另加项目内的 `write_file` 和 `edit_file` |
+| `/mode bypass` | 所有工具调用，包括 Bash 和 MCP |
+
+单独输入 `/mode` 显示当前模式。切换到更宽松的模式时，需要在交互式终端中确认；切换回更严格的模式从不询问。
+每个会话有自己的模式：`/new` 创建的会话从 manual 开始，`/resume` 回到该会话之前的模式，直到 Mino 退出。无需询问而运行的调用仍会显示出来。本章没有操作系统沙箱：Bash 命令和 MCP 服务以你的账户权限运行。
+详见[第 10 章](docs/books/zh/chapters/10-guardrails.md)。
+
 ## 版本与升级
 
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-09   # 安装本快照对应的章节
+mino update chapter-10   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -264,6 +282,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 07 章 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 | 第 08 章 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 | 第 09 章 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
+| 第 10 章 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
@@ -293,6 +312,7 @@ bash scripts/check.sh
 - [第 07 章：项目 Skills](docs/books/zh/chapters/07-skills.md)
 - [第 08 章：项目文件工具](docs/books/zh/chapters/08-file-tools.md)
 - [第 09 章：MCP 工具](docs/books/zh/chapters/09-mcp.md)
+- [第 10 章：安全防护](docs/books/zh/chapters/10-guardrails.md)
 - [全部章节规划](docs/books/zh/plan-todo-chapters.md)
 - 启动入口：`cmd/mino/main.go`；依赖组装：`internal/app.go`。
 - 核心阅读路径：[`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` 与 `runLoop`](internal/agent/agent.go)。`Handle` 先保存用户消息，`runLoop` 直接调用 Responses SDK、保存每次完整响应并处理工具调用。
@@ -319,7 +339,8 @@ bash scripts/check.sh
 修改书稿后重新运行即可构建新版。边写边预览时，也可使用 `npm run book:dev`。
 `npm run book:build` 检查站内链接并构建两种语言。
 
-项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
+项目专用 `book_writer` subagent（Claude Code 中为 `book-writer`）会在 Codex 或 Claude Code
+完成代码修改后维护教程。
 GitHub Actions 会在 `main` 上的相关内容更新后检查书籍并发布到 GitHub Pages。
 上方在线链接直接打开教程网站。
 详见[写作与发布流程](docs/books/zh/maintaining-the-book.md)。

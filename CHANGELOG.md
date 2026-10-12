@@ -16,7 +16,48 @@ used the old numbering and are superseded; sessions they wrote under
 longer imported. This authorized replacement is an exception; future fixes receive
 new patch tags.
 
+On 2026-10-26, again at the owner's request, Chapter 10 was rewritten in place and
+`chapter-10` (`0.10.0`) was republished: the optional `~/.mino/policy.json` was
+replaced by three permission modes selected with `/mode`. Earlier chapters and their
+releases are unchanged. A `~/.mino/policy.json` left by the first 0.10.0 release is
+now ignored.
+
 ## [Unreleased]
+
+## [0.10.0] - 2026-10-26
+
+### Added
+
+- Chapter 10 guardrails: every live tool call passes one policy decision (allow, ask,
+  or deny) before inspection or confirmation. Denied calls return a `denied` result
+  explaining the policy and never run; protected files are never opened, even to
+  build a confirmation.
+- Three permission modes, chosen in chat with `/mode manual|accept-edits|bypass`
+  (`/mode` alone shows the current one). `manual`, the mode at every start, asks before
+  every call except confined reads. `accept-edits` also runs `write_file` and
+  `edit_file` without asking. `bypass` runs every call, including Bash and MCP, without
+  asking. Loosening the mode requires confirmation in an interactive terminal;
+  tightening it never asks. Each session has its own mode: a new session starts in
+  `manual`, `/resume` returns to the mode that session had, and `/clear` keeps it.
+  Modes last until Mino exits and are never saved or recorded in history.
+- Built-in protected paths, refused in every mode: `.env`, `.env.*`, `*.pem`, `*.key`,
+  `*.p12`, SSH keys, `.netrc`, `.npmrc`, `.pypirc`, and the `.git/`, `.ssh/`, `.aws/`,
+  and `.gnupg/` directories, matched on every path component and ignoring case.
+- Calls that a mode runs without asking still print the tool and its confirmation
+  fields, such as the Bash command or the file path and preview.
+- Claude Code project notes (`CLAUDE.md`) and a `book-writer` subagent that loads the
+  same writing contract as the Codex `book_writer` role.
+
+### Changed
+
+- File tools refuse symbolic links in directory components, so a project link cannot
+  rename a protected directory.
+- There is no policy file; protected paths cannot be extended and no tool can be
+  denied by name. There is no OS sandbox; Bash and MCP processes remain outside path
+  rules.
+- History records remain version 4; no new record kinds or statuses.
+- Extend the default SOUL with permission-mode guidance, preserving existing user SOUL
+  files.
 
 ## [0.9.0] - 2026-10-21
 

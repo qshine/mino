@@ -95,7 +95,7 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		return fmt.Errorf("%w. Fix it, or manage servers with mino mcp", err)
 	}
 	// Adding a server with mino mcp is the user's consent to connect at startup;
-	// each tool call still requires its own approval.
+	// each tool call still follows the current permission mode.
 	manager, statuses := mcp.Connect(ctx, servers, home)
 	defer manager.Close()
 	for _, status := range statuses {

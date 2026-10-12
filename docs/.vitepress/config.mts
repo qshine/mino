@@ -87,6 +87,9 @@ export default withMermaid({
             { text: '08 Project file tools', link: '/chapters/08-file-tools' },
             { text: '09 MCP tools', link: '/chapters/09-mcp' }
           ] },
+          { text: 'Part V · Stay within bounds', items: [
+            { text: '10 Guardrails', link: '/chapters/10-guardrails' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -130,6 +133,9 @@ export default withMermaid({
             { text: '07 项目 Skills', link: '/zh/chapters/07-skills' },
             { text: '08 项目文件工具', link: '/zh/chapters/08-file-tools' },
             { text: '09 MCP 工具', link: '/zh/chapters/09-mcp' }
+          ] },
+          { text: '第五部分 · 守住边界', items: [
+            { text: '10 安全防护', link: '/zh/chapters/10-guardrails' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

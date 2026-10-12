@@ -14,8 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–09, release
-`chapter-09` (application version `0.9.0`).
+**Current progress:** This snapshot contains Chapters 01–10, release
+`chapter-10` (application version `0.10.0`).
+All ten chapters are released, tagged `chapter-01` through `chapter-10` with
+application versions `0.1.0` through `0.10.0`.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -28,8 +30,10 @@ Chapter 08 adds project file tools: `read_file`, `write_file`, and `edit_file`, 
 the project directory.
 Chapter 09 adds MCP tools: remote and local MCP servers such as Context7, managed with
 `mino mcp`.
+Chapter 10 adds guardrails: one code-enforced tool policy with protected paths and three
+permission modes selected with `/mode`.
 Gateway and Agent directories are consistent from Chapter 01 onward.
-Later chapters are planned in the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
+See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
 turn what I learn through ongoing research and practice into beginner tutorials.
@@ -45,11 +49,11 @@ or GitHub login is needed; the installer uses the `curl` included with macOS.
 Run this **one-line command** in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
 The installer selects your Mac architecture, downloads
-this snapshot's `chapter-09` release,
+the latest release,
 verifies its SHA-256 checksum and version, and installs `~/.mino/bin/mino`.
 It adds that directory to your zsh or Bash login configuration; the final
 `export` also makes the command available in your current terminal. No `sudo`
@@ -311,12 +315,34 @@ localhost), redirects are not followed, and OAuth, legacy SSE, and MCP resources
 prompts are not supported. `chapter-08` cannot load a session that started an MCP call.
 See [Chapter 09](docs/books/en/chapters/09-mcp.md).
 
+## Guardrails (Chapter 10)
+
+Install `chapter-10` with `mino update chapter-10`. Every tool call now passes one
+policy decision before anything runs: allow, ask, or deny. File tools never read or
+write protected paths such as `.env`, `*.pem`, `*.key`, SSH keys, or anything under
+`.git/`, `.ssh/`, `.aws/`, or `.gnupg/`, in any mode. Text in files or tool results
+cannot grant permission. There is no configuration file; choose a permission mode in
+chat:
+
+| Command | Runs without asking |
+| --- | --- |
+| `/mode manual` (default at every start) | Only confined reads: `read_file` and `skill_view` |
+| `/mode accept-edits` | Also `write_file` and `edit_file` inside the project |
+| `/mode bypass` | Every tool call, including Bash and MCP |
+
+`/mode` alone shows the current mode. Switching to a looser mode asks for confirmation
+in an interactive terminal; switching back never asks. Each session has its own
+mode: `/new` starts in `manual`, and `/resume` returns to the mode that session had
+until Mino exits. Calls that run unasked are still printed. There is no OS
+sandbox: Bash commands and MCP servers run with your account permissions.
+See [Chapter 10](docs/books/en/chapters/10-guardrails.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-09   # Install this snapshot's chapter
+mino update chapter-10   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -344,6 +370,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 07 | `0.7.0` | [`chapter-07`](https://github.com/qshine/mino/releases/tag/chapter-07) |
 | Chapter 08 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 | Chapter 09 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
+| Chapter 10 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -380,6 +407,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 07: project Skills](docs/books/en/chapters/07-skills.md)
 - [Chapter 08: project file tools](docs/books/en/chapters/08-file-tools.md)
 - [Chapter 09: MCP tools](docs/books/en/chapters/09-mcp.md)
+- [Chapter 10: guardrails](docs/books/en/chapters/10-guardrails.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.
@@ -405,7 +433,8 @@ terminal open and press Ctrl+C to stop the preview. Run it again after edits to
 rebuild. For live preview while editing, use `npm run book:dev` instead.
 `npm run book:build` checks internal links and builds both languages.
 
-The project `book_writer` subagent maintains the book after Codex code changes.
+The project `book_writer` subagent (`book-writer` in Claude Code) maintains the
+book after Codex or Claude Code code changes.
 GitHub Actions checks and publishes the book to GitHub Pages after relevant
 updates to `main`. The online links above open the tutorial website.
 See [the writing and publishing workflow](docs/books/en/maintaining-the-book.md).

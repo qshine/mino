@@ -115,3 +115,19 @@ func TestClearRequiresExactSessionIDInInteractiveTerminal(t *testing.T) {
 		}
 	}
 }
+
+func TestModeConfirmationRequiresInteractiveYes(t *testing.T) {
+	for _, tc := range []struct {
+		answer            string
+		interactive, want bool
+	}{{"y", true, true}, {"", true, false}, {"y", false, false}} {
+		var output bytes.Buffer
+		lines := make(chan inputLine, 1)
+		lines <- inputLine{text: tc.answer}
+		terminal := CLI{lines: lines, output: &output, interactive: tc.interactive}
+		approved, err := terminal.Confirm(context.Background(), agent.Confirmation{Kind: "mode", Warning: "Bypass mode runs every tool call without asking."})
+		if err != nil || approved != tc.want || !strings.Contains(output.String(), "Bypass mode runs every tool call") {
+			t.Fatalf("answer=%q interactive=%v approved=%v err=%v output=%q", tc.answer, tc.interactive, approved, err, output.String())
+		}
+	}
+}

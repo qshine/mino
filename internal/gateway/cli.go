@@ -59,7 +59,7 @@ func (c *CLI) Command(ctx context.Context, version string, args []string) (bool,
 			_, err := fmt.Fprintln(c.output, "mino "+version)
 			return true, err
 		case "help", "--help", "-h":
-			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | mcp | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nMCP servers: ~/.mino/mcp.json (mino mcp help)\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit")
+			_, err := fmt.Fprintln(c.output, "Usage: mino [version | update [VERSION] | mcp | help]\n\nRun without arguments to start a terminal chat.\nSettings: ~/.mino/config.json\nMCP servers: ~/.mino/mcp.json (mino mcp help)\nSessions: ~/.mino/sessions/<id>.jsonl\nChat commands: /new, /sessions, /resume <id>, /clear, /compact, /mode, /help, /exit")
 			return true, err
 		}
 	}
@@ -85,8 +85,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 09: MCP Tools")
-	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval; project file reads do not. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 10: Guardrails")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval in manual mode; /mode accept-edits skips it for file writes and /mode bypass for every call. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
 		select {
@@ -170,6 +170,18 @@ func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, er
 			return false, nil
 		}
 		return c.confirmAnswer(ctx, "Type the complete session ID to clear it: ", request.SessionID)
+	}
+	if request.Kind == "mode" {
+		if _, err := fmt.Fprintf(c.output, "\n%s\n", Text(request.Warning)); err != nil {
+			return false, errTerminalOutput
+		}
+		if !c.interactive {
+			if _, err := fmt.Fprintln(c.output, "Denied: changing the permission mode requires an interactive terminal."); err != nil {
+				return false, errTerminalOutput
+			}
+			return false, nil
+		}
+		return c.confirm(ctx, "Switch to this mode? [y/N] ")
 	}
 	prompt := "Approve this operation? [y/N] "
 	if request.Kind == "recovery" {

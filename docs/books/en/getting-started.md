@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-09` release (application version `0.9.0`), published on 2026-10-21. It covers the book up to Chapter 09; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-10` release (application version `0.10.0`), republished on 2026-10-26. It covers the book up to Chapter 10; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -27,6 +27,8 @@ Chapter 08 adds [project file tools](#try-chapter-08-from-source). Before using 
 
 Chapter 09 adds [MCP tools](#try-chapter-09-from-source). Before using it on existing sessions, read the [Chapter 09 history compatibility notes](#chapter-09-history-compatibility).
 
+Chapter 10 adds [guardrails](#try-chapter-10-from-source): one decision for every tool call, built-in protected paths, and [permission modes](#chapter-10-permission-modes) chosen with `/mode`.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -38,10 +40,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-10 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-09`. Omit `-- chapter-09` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-10`. Omit `-- chapter-10` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -81,10 +83,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-09
+mino update chapter-10
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.9.0` or `v0.9.0` as aliases for `chapter-09`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.10.0` or `v0.10.0` as aliases for `chapter-10`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -356,14 +358,54 @@ Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new inst
 
 Chapter 09 keeps record version 4 and adds no record kinds, so it opens Chapter 08 sessions without migration. Recorded MCP calls are validated only by their argument shape, so a session still opens when its server is offline or removed; nothing is called again. The reverse does not hold: once a session has started an MCP call, `chapter-08` cannot load it and reports a started call for an unavailable tool. Before trying Chapter 09 on existing conversations, close Mino and keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the matching copies. A `chapter-08` executable ignores `~/.mino/mcp.json`.
 
+## Try Chapter 10 from source
+
+Chapter 10 is available as the [chapter-10 release](https://github.com/qshine/mino/releases/tag/chapter-10), with application version `0.10.0`, republished on 2026-10-26 with permission modes. To run the matching source, select its tag from the repository root, build, then start it in a project directory:
+
+```bash
+git checkout chapter-10
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. Below the `Session:` line, startup prints `Permission mode: manual. Use /mode to change it.`; the same two lines appear after `/new` and `/resume`. The banner reads `Mino - Chapter 10: Guardrails` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, and MCP requirements still apply. The no-cost mock checks are in [the lesson](./chapters/10-guardrails.md#_7-check-the-decision-with-mock-tests).
+
+### Chapter 10 permission modes
+
+Chapter 10 has no configuration file for permissions. Choose a mode for the current session in chat:
+
+| Command | Effect |
+| --- | --- |
+| `/mode` | Show the current session's mode. |
+| `/mode manual` | Ask before every Bash command, file write or edit, and MCP call. Every session starts in this mode. |
+| `/mode accept-edits` | Also run `write_file` and `edit_file` without asking. Bash and MCP calls still ask. |
+| `/mode bypass` | Run every call without asking, including Bash and MCP. |
+
+Moving to a looser mode prints a warning and asks `Switch to this mode? [y/N]`; it works only in an interactive terminal. Moving to a tighter mode never asks. Each session keeps its own mode until Mino exits: `/new` starts in `manual`, `/resume` returns to the mode that session had earlier in this run, and `/clear` keeps it. Modes are never saved, so after a restart every session is `manual` again. Every call that a mode lets run without asking is still printed with its fields. `/help` lists the command.
+
+Protected paths apply in every mode, including `bypass`: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `id_rsa*`, `id_ecdsa*`, `id_ed25519*`, `.netrc`, `.npmrc`, `.pypirc`, and the `.git/`, `.ssh/`, `.aws/`, and `.gnupg/` directories. File tools never read or write a matching path, and there is no prompt or setting to override this. Matching ignores case, as the default macOS file system does, so `.ENV` is protected too.
+
+The file tools also change in one way: a path that passes through a symbolic link in any directory component is refused, even when the link stays inside the project. If your project reaches files through a linked directory, use the real path.
+
+If you installed `0.10.0` before it was republished, its startup prints a `Policy:` line; run `mino update chapter-10` to replace it. The republished release ignores `~/.mino/policy.json`. Settings such as `"bash": "deny"` or `deny_tools` no longer apply: every tool is offered again, and in `manual` mode each Bash, write, and MCP call asks. Tools that `allow_tools` let run unasked now ask too. You may delete the file.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes the permission modes and asks the model to report blocks without working around them. Add similar guidance to your own SOUL if you want it, and restart. The decision is enforced either way.
+
+The modes decide which calls need your answer, and protected paths limit the file tools. Neither is a sandbox: a Bash command or a configured MCP server that runs does so with your account's permissions, and in `bypass` mode a Bash command such as `cat .env` runs without asking. See [the lesson](./chapters/10-guardrails.md#_6-what-the-policy-cannot-see) for these limits.
+
+### Chapter 10 history compatibility
+
+Chapter 10 keeps record version 4 and adds no record kinds or result statuses. The permission mode is never written to a session. A call refused by the decision is saved like a call you declined: the model's request followed by a `denied` result. It opens Chapter 09 sessions without migration, and `chapter-09` can still open sessions written by Chapter 10. Rolling back removes the guardrails, though: `chapter-09` has no protected paths, so its `read_file` reads `.env` without asking. As before, keep private copies of session logs and `active-session.json` before switching versions.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-09`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-10`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-09
+git checkout chapter-10
 go run ./cmd/mino
 ```
 

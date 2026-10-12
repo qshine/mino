@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-21 发布的 `chapter-09`（程序版本 `0.9.0`），覆盖本书到第 09 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-26 重新发布的 `chapter-10`（程序版本 `0.10.0`），覆盖本书到第 10 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -27,6 +27,8 @@ next:
 
 第九章加入 [MCP 工具](#从源码体验第九章)。在已有会话上使用前，请阅读[第九章的历史兼容性](#第九章的历史兼容性)。
 
+第十章加入[安全防护](#从源码体验第十章)：每次工具调用都经过同一个决定，内置受保护路径，并可用 `/mode` 选择[权限模式](#第十章的权限模式)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -38,10 +40,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-09 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-10 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-09`。省略 `-- chapter-09` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-10`。省略 `-- chapter-10` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -81,10 +83,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-09
+mino update chapter-10
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.9.0` 或 `v0.9.0`，两者都指向 `chapter-09`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.10.0` 或 `v0.10.0`，两者都指向 `chapter-10`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -356,14 +358,54 @@ context7  http  https://mcp.context7.com/mcp  headers=Authorization (values hidd
 
 第九章沿用记录版本 4，没有新增记录类型，因此无需迁移即可打开第八章的会话。已记录的 MCP 调用只按参数形状校验，所以服务离线或已被删除时，会话仍能打开，也不会重新调用任何东西。反过来则不行：会话一旦开始过 MCP 调用，`chapter-08` 就无法加载它，会报告存在一个针对不可用工具的已开始调用。在已有对话上体验第九章前，关闭 Mino，私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复对应的备份。`chapter-08` 的可执行文件会忽略 `~/.mino/mcp.json`。
 
+## 从源码体验第十章
+
+第十章已随 [chapter-10](https://github.com/qshine/mino/releases/tag/chapter-10) 发布，程序版本为 `0.10.0`，并于 2026-10-26 以权限模式重新发布。若要运行对应源码，请在仓库根目录选择该标签并构建，再在项目目录中启动：
+
+```bash
+git checkout chapter-10
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换成你自己的目录。启动时，`Session:` 那一行下面会打印 `Permission mode: manual. Use /mode to change it.`；`/new` 和 `/resume` 之后也会出现这两行。横幅显示 `Mino - Chapter 10: Guardrails`，源码版本为 `dev`。既有的 Go、Responses 工具、压缩、技能、文件工具与 MCP 要求继续适用。不产生模型费用的模拟检查见[本章实验](./chapters/10-guardrails.md#_7-用模拟测试检查这个决定)。
+
+### 第十章的权限模式
+
+第十章没有权限配置文件。请在聊天中为当前会话选择模式：
+
+| 命令 | 效果 |
+| --- | --- |
+| `/mode` | 显示当前会话的模式。 |
+| `/mode manual` | 每条 Bash 命令、每次文件写入或编辑、每次 MCP 调用之前都询问。每个会话都从这个模式开始。 |
+| `/mode accept-edits` | 另外让 `write_file` 和 `edit_file` 不经询问运行。Bash 和 MCP 调用仍会询问。 |
+| `/mode bypass` | 所有调用都不经询问运行，包括 Bash 和 MCP。 |
+
+切换到更宽松的模式会打印警告并询问 `Switch to this mode? [y/N]`，而且只能在交互式终端中完成。切换到更严格的模式从不询问。每个会话保留自己的模式，直到 Mino 退出：`/new` 从 `manual` 开始，`/resume` 回到该会话在这次运行中先前的模式，`/clear` 保留模式。模式从不保存，所以重启之后每个会话又都是 `manual`。模式放行、不经询问运行的每次调用，仍会连同字段一起打印出来。`/help` 列出了这个命令。
+
+受保护路径在每种模式下都生效，包括 `bypass`：`.env`、`.env.*`、`*.pem`、`*.key`、`*.p12`、`id_rsa*`、`id_ecdsa*`、`id_ed25519*`、`.netrc`、`.npmrc`、`.pypirc`，以及 `.git/`、`.ssh/`、`.aws/`、`.gnupg/` 目录。文件工具从不读写匹配的路径，也没有可以覆盖这一点的提示或设置。匹配不区分大小写，与默认的 macOS 文件系统一致，所以 `.ENV` 同样受保护。
+
+文件工具还有一处变化：只要路径的任意一段目录经过符号链接，即使链接仍指向项目内部，也会被拒绝。如果你的项目通过链接目录访问文件，请改用真实路径。
+
+如果你在重新发布之前安装了 `0.10.0`，它启动时会打印一行 `Policy:`；请运行 `mino update chapter-10` 替换它。重新发布的版本会忽略 `~/.mino/policy.json`。`"bash": "deny"` 或 `deny_tools` 这样的设置不再生效：所有工具都会重新提供给模型，在 `manual` 模式下每次 Bash、写入和 MCP 调用都会询问。原先由 `allow_tools` 免确认的工具现在也会询问。你可以删除这个文件。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 介绍了权限模式，并要求模型如实报告拦截，不要设法绕过。如果需要，请在自己的 SOUL 中补充类似说明，再重启。无论 SOUL 怎么写，这个决定都会执行。
+
+模式决定哪些调用需要你回答，受保护路径约束文件工具。两者都不是沙箱：运行起来的 Bash 命令或已配置的 MCP 服务以你的账户权限运行；在 `bypass` 模式下，`cat .env` 这样的 Bash 命令会不经询问运行。这些限制见[本章说明](./chapters/10-guardrails.md#_6-策略看不到的地方)。
+
+### 第十章的历史兼容性
+
+第十章沿用记录版本 4，没有新增记录类型或结果状态，权限模式也从不写入会话。被这个决定拒绝的调用，和你拒绝的调用保存方式相同：模型的请求，后面跟着一个 `denied` 结果。它无需迁移即可打开第九章的会话，`chapter-09` 也仍能打开第十章写入的会话。不过回退会让安全防护失效：`chapter-09` 没有受保护路径，它的 `read_file` 会不经询问读取 `.env`。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-09`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-10`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-09
+git checkout chapter-10
 go run ./cmd/mino
 ```
 

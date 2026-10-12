@@ -8,9 +8,11 @@
 
 项目在 [`.codex/agents/book_writer.toml`](https://github.com/qshine/mino/blob/main/.codex/agents/book_writer.toml) 中定义了名为 **`book_writer`** 的 Codex 专用 agent。支持此功能的 Codex 客户端会在受信任项目中发现这份独立定义，无需再在 `.codex/config.toml` 中显式注册。它沿用主任务的模型和权限。在 Codex 中打开并信任这个项目；已有任务若尚未发现该定义，开启一个新任务即可重新加载。
 
+Claude Code 使用 [`.claude/agents/book-writer.md`](https://github.com/qshine/mino/blob/main/.claude/agents/book-writer.md) 中的项目 subagent **`book-writer`**，会话启动时自动加载。这个文件不复制写作要求：subagent 会先读取 `.codex/agents/book_writer.toml` 并照此执行，因此两个客户端共用同一份写作约定。修改写作规则时只改 TOML 文件。
+
 [仓库规则](https://github.com/qshine/mino/blob/main/AGENTS.md) 要求主编码 agent 在完成代码改动及相关检查后、最终交付和提交完整改动前，主动调用写作 agent。每次代码改动都要检查文档影响，包括新增功能、修改已有功能、修复问题和重构，无需另行提出更新文档的请求。写作 agent 阅读差异和实际实现，在同一次改动中同步受影响的中英文章节、示例、图表、安装配置说明及章节规划，然后交回主任务审核。
 
-这是 **Codex 开发流程中的一个步骤**。它不是独立后台服务，也不会在每次手工 Git push 时自行运行。GitHub Actions 负责构建已经写好的页面，不调用模型生成文章。不需要额外配置云端 AI 密钥或定时任务。
+这是 **Codex 和 Claude Code 开发流程中的一个步骤**。它不是独立后台服务，也不会在每次手工 Git push 时自行运行。GitHub Actions 负责构建已经写好的页面，不调用模型生成文章。不需要额外配置云端 AI 密钥或定时任务。
 
 较宽的图可以左右滚动，保持图中文字清晰可读。
 

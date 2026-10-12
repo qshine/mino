@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/policy"
 	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
@@ -45,7 +47,7 @@ type Event struct {
 }
 
 type Confirmation struct {
-	Kind      string // tool, recovery, or clear
+	Kind      string // tool, recovery, clear, or mode
 	SessionID string
 	ToolName  string
 	Fields    []tools.Field
@@ -58,6 +60,7 @@ type Options struct {
 	BaseURL, APIKey, Model, Instructions string
 	ProjectDirectory                     string
 	ContextWindow                        int
+	Policy                               *policy.Policy // nil uses a new manual-mode policy
 }
 
 type Agent struct {
@@ -78,6 +81,9 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	}
 	if options.ContextWindow == 0 {
 		options.ContextWindow = DefaultContextWindow
+	}
+	if options.Policy == nil {
+		options.Policy = policy.New()
 	}
 	registry, err := toolRegistry(available)
 	if err != nil {
@@ -333,6 +339,12 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	if err != nil {
 		return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 	}
+	// One policy decision covers every tool, before inspection reads anything:
+	// a protected file is never opened, even to build a confirmation.
+	decision, reason := a.options.Policy.Decide(policy.Call{Tool: call.Name, ReadOnly: prepared.ReadOnly, Target: prepared.Target})
+	if decision == policy.Deny {
+		return tools.Result{Status: "denied", Output: "Blocked by policy: " + reason + " Do not retry or work around this with another tool."}, nil
+	}
 	// Inspection reads current local state for the confirmation and binds approval
 	// to it. It runs only here, never while history is being validated.
 	if inspector, ok := tool.(tools.Inspector); ok {
@@ -340,7 +352,18 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 			return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
 		}
 	}
-	if !prepared.ReadOnly {
+	if decision == policy.Allow && !prepared.ReadOnly {
+		// A mode skips the question, not the visibility: show what will run.
+		var text strings.Builder
+		fmt.Fprintf(&text, "\n[Tool: %s, allowed without confirmation in %s mode]\n", call.Name, a.options.Policy.Mode())
+		for _, field := range prepared.Fields {
+			fmt.Fprintf(&text, "%s: %s\n", field.Label, strconv.QuoteToASCII(field.Value))
+		}
+		if err := interaction.Emit(Event{Kind: "info", Text: text.String()}); err != nil {
+			return tools.Result{}, err
+		}
+	}
+	if decision == policy.Ask {
 		// Give the gateway a copy of display data, never executable arguments.
 		approved, err := interaction.Confirm(ctx, Confirmation{Kind: "tool", ToolName: call.Name, Fields: append([]tools.Field(nil), prepared.Fields...), Warning: prepared.Warning})
 		if err != nil {

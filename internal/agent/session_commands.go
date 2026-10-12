@@ -8,11 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/qshine/mino/internal/policy"
 	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
 )
 
-const sessionHelp = "Commands: /new, /sessions, /resume <id>, /clear, /compact, /help, /exit.\n"
+const sessionHelp = "Commands: /new, /sessions, /resume <id>, /clear, /compact, /mode [manual|accept-edits|bypass], /help, /exit.\n"
 
 // SessionManager serializes selection commands and whole turns. Agent remains
 // responsible for model/tool execution and recovery acknowledgement.
@@ -23,6 +24,9 @@ type SessionManager struct {
 	available []tools.Tool
 	busy      sync.Mutex
 	broken    bool
+	// Each session keeps its own permission mode until Mino exits; modes are
+	// never saved, so every session starts in manual mode after a restart.
+	modes map[string]*policy.Policy
 }
 
 func NewSessionManager(options Options, store *Sessions, available []tools.Tool) (*SessionManager, error) {
@@ -35,10 +39,10 @@ func NewSessionManager(options Options, store *Sessions, available []tools.Tool)
 	if options.ContextWindow < 0 {
 		return nil, errors.New("context_window must be a non-negative integer")
 	}
-	m := &SessionManager{store: store, options: options, available: available}
+	m := &SessionManager{store: store, options: options, available: available, modes: map[string]*policy.Policy{}}
 	if store.current != nil {
 		var err error
-		m.runner, err = New(options, store.current, available)
+		m.runner, err = New(m.optionsFor(store.id), store.current, available)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +80,19 @@ func (m *SessionManager) Start(ctx context.Context, i Interaction) error {
 }
 
 func (m *SessionManager) showCurrent(i Interaction) error {
-	return i.Emit(Event{Kind: "info", Text: "Session: " + m.store.id + "\n"})
+	return i.Emit(Event{Kind: "info", Text: fmt.Sprintf("Session: %s\nPermission mode: %s. Use /mode to change it.\n", m.store.id, m.runner.options.Policy.Mode())})
+}
+
+// optionsFor binds a session's own policy, creating a manual-mode one on first use.
+func (m *SessionManager) optionsFor(id string) Options {
+	p := m.modes[id]
+	if p == nil {
+		p = policy.New()
+		m.modes[id] = p
+	}
+	options := m.options
+	options.Policy = p
+	return options
 }
 
 func (m *SessionManager) Handle(ctx context.Context, message string, i Interaction) (err error) {
@@ -107,6 +123,11 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		return m.runner.Handle(ctx, message, i)
 	}
 	switch fields[0] {
+	case "/mode":
+		if len(fields) > 2 {
+			break
+		}
+		return m.setMode(ctx, fields[1:], i)
 	case "/compact":
 		if len(fields) != 1 {
 			break
@@ -155,7 +176,7 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if err := m.store.createWithSkills(catalog); err != nil {
 			return err
 		}
-		m.runner, err = New(m.options, m.store.current, m.available)
+		m.runner, err = New(m.optionsFor(m.store.id), m.store.current, m.available)
 		if err != nil {
 			return err
 		}
@@ -171,7 +192,7 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if err != nil {
 			return err
 		}
-		runner, err := New(m.options, next, m.available)
+		runner, err := New(m.optionsFor(fields[1]), next, m.available)
 		if err == nil {
 			err = runner.Start(ctx, i)
 		}
@@ -205,13 +226,46 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if err = m.store.clear(); err != nil {
 			return err
 		}
-		m.runner, err = New(m.options, m.store.current, m.available)
+		m.runner, err = New(m.optionsFor(m.store.id), m.store.current, m.available)
 		if err != nil {
 			return err
 		}
 		return i.Emit(Event{Kind: "info", Text: "Cleared session: " + m.store.id + "\n"})
 	}
 	return errors.New("Unknown command or unexpected arguments. " + strings.TrimSpace(sessionHelp))
+}
+
+var modeWarnings = map[policy.Mode]string{
+	policy.AcceptEdits: "In this session, accept-edits mode writes and edits project files without asking. Bash and MCP calls still ask; protected files stay refused.",
+	policy.Bypass:      "In this session, bypass mode runs every tool call without asking, including Bash commands with your account permissions and MCP calls that send data to their servers. Only protected files stay refused.",
+}
+
+// setMode shows or changes the current session's permission mode. Loosening it
+// needs a separate confirmation in an interactive terminal; tightening never does.
+func (m *SessionManager) setMode(ctx context.Context, args []string, i Interaction) error {
+	if m.runner == nil {
+		return errors.New("Select a session before changing its permission mode")
+	}
+	rules := m.runner.options.Policy
+	current := rules.Mode()
+	if len(args) == 0 {
+		return i.Emit(Event{Kind: "info", Text: fmt.Sprintf("Permission mode for this session: %s. Modes: manual, accept-edits, bypass.\n", current)})
+	}
+	mode, ok := policy.ParseMode(args[0])
+	if !ok {
+		return errors.New("Unknown mode. Use /mode manual, /mode accept-edits, or /mode bypass.")
+	}
+	if mode > current {
+		approved, err := i.Confirm(ctx, Confirmation{Kind: "mode", Warning: modeWarnings[mode]})
+		if err != nil {
+			return err
+		}
+		if !approved {
+			return i.Emit(Event{Kind: "info", Text: fmt.Sprintf("Permission mode for this session unchanged: %s.\n", current)})
+		}
+	}
+	rules.SetMode(mode)
+	return i.Emit(Event{Kind: "info", Text: fmt.Sprintf("Permission mode for this session: %s.\n", mode)})
 }
 
 func (s *Sessions) clear() error {
