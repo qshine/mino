@@ -12,7 +12,7 @@ By [qqling | AI Builder](./about-author.md)
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md). This snapshot covers the book up to Chapter 09, release `chapter-09` (version `0.9.0`); later chapters arrive in their own releases.
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md). All ten chapters are released; the final chapter is available in `chapter-10` (version `0.10.0`).
 
 ## Who this book is for
 
@@ -30,7 +30,7 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-This snapshot is `chapter-09` (application version `0.9.0`), released on **2026-10-21**. Rows after Chapter 09 describe later releases and link to the [chapter roadmap](./plan-todo-chapters.md). Each released lesson identifies the source tag for its experiments.
+All ten chapters were released on **2026-10-21** as `chapter-01` through `chapter-10`, with application versions `0.1.0` through `0.10.0`. Chapter 10, the final chapter, consolidates the earlier controls into one guardrail policy. Each released lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
@@ -43,11 +43,11 @@ This snapshot is `chapter-09` (application version `0.9.0`), released on **2026-
 | [07 Skills](./chapters/07-skills.md) | How does a fixed catalog guide the model to request task knowledge with `skill_view`? |
 | [08 File tools](./chapters/08-file-tools.md) | How can the program confine the model's project-file reads and bind each approved write to the file you saw? |
 | [09 MCP tools](./chapters/09-mcp.md) | How do tools hosted by remote services or local processes join the loop, and what does each approval decide? |
-| [10 Guardrails](plan-todo-chapters.md) | How are actual permissions enforced as one policy in code? |
+| [10 Guardrails](./chapters/10-guardrails.md) | How are actual permissions enforced as one policy in code? |
 
 ## Read alongside the code
 
-Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 09, follows [chapter-09](https://github.com/qshine/mino/tree/chapter-09); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
+Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 10, follows [chapter-10](https://github.com/qshine/mino/tree/chapter-10); the [source setup](./getting-started.md#learn-from-the-source) explains how to run the same snapshot locally.
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-05.1` produces version `0.5.1` and updates the relevant lesson without creating an extra chapter.
 

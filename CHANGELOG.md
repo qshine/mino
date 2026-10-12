@@ -18,6 +18,36 @@ new patch tags.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-21
+
+### Added
+
+- Chapter 10 guardrails: every live tool call passes one policy decision (allow, ask,
+  or deny) before inspection or confirmation. Denied calls return a `denied` result
+  explaining the policy and never run; protected files are never opened, even to
+  build a confirmation.
+- Optional `~/.mino/policy.json`, owned by the user and not writable by others:
+  `bash` (`ask` or `deny`), additional `protected_paths`, `allow_tools` for MCP tools
+  that may run without confirmation, and `deny_tools`. It is read once at startup and
+  never from a project. Startup prints a one-line policy summary.
+- Default protected paths: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, SSH keys,
+  `.netrc`, `.npmrc`, `.pypirc`, and the `.git/`, `.ssh/`, `.aws/`, and `.gnupg/`
+  directories, matched on every path component and ignoring case.
+- Denied tools, including Bash in controlled mode, are not offered to the model.
+  Calls allowed by `allow_tools` still print a line naming the tool; policy names that
+  match no available tool produce a startup warning.
+- Claude Code project notes (`CLAUDE.md`) and a `book-writer` subagent that loads the
+  same writing contract as the Codex `book_writer` role.
+
+### Changed
+
+- File tools refuse symbolic links in directory components, so a project link cannot
+  rename a protected directory.
+- `allow_tools` accepts only MCP tool names: Bash and file writes always ask unless
+  denied. There is no OS sandbox; Bash and MCP processes remain outside path rules.
+- History records remain version 4; no new record kinds or statuses.
+- Extend the default SOUL with policy guidance, preserving existing user SOUL files.
+
 ## [0.9.0] - 2026-10-21
 
 ### Added

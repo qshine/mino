@@ -37,6 +37,7 @@ type Call struct {
 	Arguments json.RawMessage
 	ReadOnly  bool   // Set by trusted tool code, never decoded from model arguments.
 	Expect    string // State captured by Inspect and rechecked by Execute; never persisted.
+	Target    string // Canonical project-relative path for policy checks, set by trusted tool code.
 	Directory string
 	Fields    []Field
 	Warning   string

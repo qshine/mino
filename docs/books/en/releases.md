@@ -2,7 +2,7 @@
 
 This page covers application releases. For the book website, see [writing and updating the book](./maintaining-the-book.md).
 
-This checkout corresponds to the [chapter-09](https://github.com/qshine/mino/releases/tag/chapter-09) release, application version **0.9.0**, published on **2026-10-21** with macOS packages for Apple Silicon and Intel. Each lesson uses its matching source tag, and each later chapter has its own release. Building the working tree does not create a release or change published tags.
+All ten chapter releases, `chapter-01` through `chapter-10`, were published on **2026-10-21** with macOS packages for Apple Silicon and Intel. The latest chapter release is [chapter-10](https://github.com/qshine/mino/releases/tag/chapter-10), application version **0.10.0**; each lesson uses its matching source tag. Building the working tree does not create a release or change published tags.
 
 ## Republished releases
 
@@ -27,6 +27,8 @@ Chapter 07 writes version 4 records and reads versions 1–4; see [Chapter 07 co
 Chapter 08 keeps record version 4, but `chapter-07` cannot load a session that started a file-tool call; see [Chapter 08 compatibility](./getting-started.md#chapter-08-history-compatibility) before rolling back.
 
 Chapter 09 also keeps record version 4, but `chapter-08` cannot load a session that started an MCP call; see [Chapter 09 compatibility](./getting-started.md#chapter-09-history-compatibility) before rolling back.
+
+Chapter 10 keeps record version 4 and `chapter-09` can still open its sessions; see [Chapter 10 compatibility](./getting-started.md#chapter-10-history-compatibility).
 
 ## Version policy
 
@@ -53,7 +55,7 @@ Packaging derives `0.<chapter>.<patch>` from the tag and supplies it through Go 
 
 **An updater installed before the chapter-tag migration cannot resolve `chapter-*` tags.** Rerun the [current installation command](./getting-started.md#install-with-one-command) once, even if the displayed numeric version is unchanged. This fetches the new installer and replaces the executable while preserving settings, custom `~/.mino/SOUL.md`, and any history. Updating a tag or the script on `main` does not change an installed binary.
 
-After that installation, `mino update` selects the latest release and `mino update chapter-09` selects this chapter. The installer also accepts `0.9.0` or `v0.9.0` as aliases for `chapter-09`; these are version selectors, not additional Git tags.
+After that installation, `mino update` selects the latest release and `mino update chapter-10` selects this chapter. The installer also accepts `0.10.0` or `v0.10.0` as aliases for `chapter-10`; these are version selectors, not additional Git tags.
 
 ## Publish a version
 
@@ -80,10 +82,10 @@ The workflow uploads to a draft release, then publishes after all uploads succee
 
 ## Local packaging and recovery
 
-From the repository root at `chapter-09`, inspect this chapter's packages:
+From the repository root at `chapter-10`, inspect this chapter's packages:
 
 ```bash
-bash scripts/package.sh chapter-09
+bash scripts/package.sh chapter-10
 ```
 
 Packaging accepts the canonical chapter tag and builds the current working tree; it does not check out the tag. Output goes to the ignored `dist/` directory without creating a Git tag or release. If publishing fails, inspect the logs and any incomplete draft before rerunning the job.
