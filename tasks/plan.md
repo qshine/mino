@@ -1,21 +1,25 @@
-# Chapter 05 implementation plan
+# Chapter 10 implementation plan
 
-The approved bilingual roadmap is the feature specification: one chapter for manual `/compact` and automatic context compaction, a default 128,000-token context window, and a `context_window` configuration override. There is no model-metadata discovery. Release: `chapter-05`, version 0.5.0; source builds remain `dev`.
+Chapter 10 adds evals: declared YAML cases run through the real Agent loop and are graded with deterministic checks. The user confirmed the scope on 2026-10-16: a complete chapter, two modes (replay by default, opt-in `--live`), and deterministic graders only. Target release: `chapter-10`, version 0.10.0; source builds remain `dev`. The design draft with the pi/hermes research lives in `docs/plans/10-evals.md`.
 
 ## Implementation decisions
 
-- Keep configuration in `internal/config.go`, composition in `internal/app.go`, and budgeting/compaction in `internal/agent/compact.go`. Gateway renders existing events; SessionManager routes `/compact` and serializes it with other commands and turns.
-- Use serialized UTF-8 input, instructions, and tool-definition bytes as a conservative local token estimate, with framing allowance. This deliberately overcounts typical text and is not an exact tokenizer or a guarantee for arbitrary endpoints. Reserve one eighth of the window for output, capped at 8,192 tokens, and set `max_output_tokens` accordingly. Trigger automatic compaction at 80% of the remaining input budget; reject requests above that input budget.
-- Retain the latest two replayable turns and the complete active turn. Summarize the earlier prefix together with any previous summary through a tool-free Responses request. Both summary and normal requests must fit their budgets; unsupported or oversized work reports a bounded error. One summary request per trigger, at most one automatic compaction per user turn, included in the existing eight-request turn limit.
-- Append version 3 `context_compaction` records with summary text and the covered turn-end sequence. Continue reading versions 1 and 2; write version 3 records. Validate coverage against whole replayable turns, increasing coverage, settled tool results, and acknowledged recovery. Commit memory only after append and sync. Preserve original records and recover summaries on restart/resume; `/clear` also clears the summary.
-- Supply summaries as labeled assistant context, never system instructions or tool authorization. The summarizer must preserve goals, constraints, decisions, pending work, provenance, and uncertain outcomes. Empty, refused, malformed, oversized, or non-shrinking summaries leave old context intact. Failed storage stops chat.
+- `internal/eval` owns the case schema (`case.go`), the scripted loopback Responses server (`fake.go`), the per-run runner (`run.go`), graders (`grade.go`), and the report (`report.go`); `internal/eval_command.go` parses `mino eval` and dispatches from `runCLI` like `mino mcp`.
+- Replay mode drives `agent.Handle` against `FakeModel`, so the eval exercises the same loop, approval, policy, and history code as chat. The fake synthesizes token usage at four bytes per token and fails a run when the script runs out or a request lacks an expected substring.
+- Every run uses fresh temporary `workspace/`, `home/.mino/`, and `session/` directories, Bash and file tools confined to the workspace, `skill_view` over the seeded `.agents/skills`, `policy.Default()`, and no MCP. The user's `~/.mino` is never read in replay mode; `--live` reads config and SOUL only.
+- Graders read the run's session JSONL to rebuild requested calls, whether each started, and its result, so denied and unknown calls are visible without exposing Agent internals. The Agent's only change is a `response_completed` event carrying usage, which the gateway ignores.
+- Rates use k = runs: pass@k = 1 − C(n−c,k)/C(n,k); pass^k = C(c,k)/C(n,k). Report prints a table and optional `report.json` plus per-run logs under `--out`.
+- `scripts/check.sh` runs `bin/mino eval ./evals` after the build; the repository suite covers approved and denied Bash, a policy-protected `.env`, file creation, and an unknown tool.
 
 ## Build order and verification
 
-1. Configuration/default wiring and startup reporting; focused configuration tests.
-2. Durable whole-turn summary transitions and recovery; history tests with write/sync failures and invalid records.
-3. Manual command and summary request; mock HTTP tests for retained context, failures, no tool execution, isolation and restart.
-4. Automatic budget checks before every request, including after tools; mock tests for thresholds, limits and oversized input/results.
-5. Full `bash scripts/check.sh`, required `book_writer` documentation review, bilingual Chapter 05, README/SOUL/changelog and navigation updates; `npm run book:build` and browser inspection of changed diagrams.
+1. Agent usage event and gateway case; agent and gateway tests.
+2. Case schema and validation tests.
+3. Fake server and item-shape tests.
+4. Runner, graders, and replay tests (approval, denial, order, files, skills, timeout).
+5. Report math and output tests.
+6. Command, dispatch, help, banner, sample cases, command tests, and a smoke run of the built binary.
+7. Design draft, AGENTS/CLAUDE/CHANGELOG/README/sidebar updates, then `book_writer` for Chapter 10 in both languages, `npm run book:build`, and diagram review.
+8. `bash scripts/check.sh`.
 
-Tests live beside implementation, use Go's standard testing package, temporary homes/session files and local mock model servers. Use ordinary Go formatting and explicit errors, for example `if err := session.append(record); err != nil { return &StorageError{err} }`. Preserve existing user edits and published tags/assets; do not use real credentials or paid models. The user authorized implementation, then explicitly requested pushing the chapter, tagging it and creating its release. Use the existing release workflow and leave repository publishing settings unchanged.
+Tests use Go's standard testing package, temporary homes, local scripted servers, and no real credentials.

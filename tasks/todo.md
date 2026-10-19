@@ -1,10 +1,15 @@
-# Chapter 05 tasks
+# Chapter 10 tasks
 
-- [x] Configuration and startup: omitted/zero use 128,000; positive overrides; invalid values fail; no model lookup. Focused config/application tests passed.
-- [x] Summary storage: version 3 append/replay, complete-turn coverage, preserved logs and atomic memory, failure/recovery tests passed.
-- [x] Manual compaction: `/compact`, no tools, recent-turn retention, repeated summaries, session isolation and restart. Mock request tests passed.
-- [x] Automatic compaction: count every request, reserve output, early trigger, bounded oversized/failure behavior and combined request limit. Mock loop/tool tests passed.
-- [x] Review and verify: `GOCACHE=/tmp/mino-ch05-go-cache bash scripts/check.sh` passed formatting, syntax, vet, race tests and build; reviewed diff and failure boundaries.
-- [x] Book handoff: `book_writer` updated both languages; reviewed facts, translations and version scope, updated README/changelog/SOUL/navigation, and passed the final `npm run book:build`. Browser checks covered both diagrams, light/dark modes, horizontal scrolling, a narrow viewport and language switching. No diagram/runtime errors; the preview retains an existing favicon 404 and the build retains its large-bundle warning.
-- [x] CLI smoke: built executable with temporary HOME and a local mock service verified the 128,000 default, `/compact`, tool-free summary requests, retained recent context and summary restoration after restart. No live model was called.
-- [x] Release preparation: packaged `chapter-05` for both macOS architectures, verified the native executable reports `0.5.0`, checked package contents and SHA-256 checksums, and passed `npm audit --audit-level=moderate` with no vulnerabilities. Updated release metadata for the user-authorized tag and release.
+- [x] Agent `response_completed` event with usage; gateway ignores it. `go test -race ./internal/agent ./internal/gateway` passed.
+- [x] `internal/eval/case.go`: YAML schema, strict keys, bounds, grader parsing; `Load` over files and directories. Tests passed.
+- [x] `internal/eval/fake.go`: scripted loopback Responses server with synthetic usage, exhaustion and `expect_input_contains` reporting. Tests passed.
+- [x] `internal/eval/run.go` + `grade.go`: fresh directories per run, confined tools, approval from the case, calls rebuilt from the session JSONL, ten graders, `--out` logs. Replay tests passed, including denial, order, file, skill, and timeout cases.
+- [x] `internal/eval/report.go`: pass@k, pass^k, table, `report.json`. Tests passed.
+- [x] `mino eval` command, `runCLI` dispatch, help text, banner, `internal/eval/testdata`, command tests (replay, filter, out, invalid flags, live without config, live against httptest). Built binary smoke run in a temporary HOME: mixed suite exits 1, `evals/` suite passes, no `.mino` created.
+- [x] `evals/` repository suite and `scripts/check.sh` hook.
+- [x] Docs: `docs/plans/10-evals.md`, plans index, AGENTS.md, CLAUDE.md, CHANGELOG, READMEs, sidebar, tasks. `book_writer` wrote Chapter 10 en/zh and updated the roadmap, index, getting-started, and the Chapter 09 ending; reviewed facts and translation (one clarification: `--live` creates the bundled SOUL when absent). `npm run book:build` passed with the pre-existing large-bundle warning; Figure 10-1 rendered in Chromium in both languages, light and dark, and at a 390 px viewport without page-level horizontal overflow or console errors. SOUL.md unchanged: evals add no model-facing behavior.
+- [x] Check steps run individually (gofmt, bash -n, vet, race tests, build, `bin/mino eval ./evals`): all pass except the pre-existing Linux-only Bash process-group test noted below. Committed and pushed to `claude/epic-brown-gfpjwm`.
+
+- [ ] Release: flip docs to released (2026-10-19), squash to one chapter commit, open the PR, and after merge tag `chapter-10` on `main` (authorized by the user) and verify the Release workflow and assets.
+
+Known environment note: this Linux container fails the pre-existing `TestBashLimitsAndCancellation/background` process-group test in `internal/tools` with or without Chapter 10 changes; project CI runs on macOS.

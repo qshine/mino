@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -90,5 +92,35 @@ func TestResponseBodyLimit(t *testing.T) {
 		} else if err != nil || n != int64(size) {
 			t.Fatalf("size %d: read = %d, error = %v", size, n, err)
 		}
+	}
+}
+
+func TestRespondReportsUsageFromCompletedResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"Hi"}`)
+		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":12,"output_tokens":3,"total_tokens":15}}}`)
+	}))
+	defer server.Close()
+	directory := t.TempDir()
+	session, err := OpenSession(filepath.Join(directory, "session"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+	a := newModelFixture(t, testConfig{server.URL, "test-key", "test-model"}, "").agent(session, nil)
+	var kinds []string
+	var usage Usage
+	err = a.Handle(context.Background(), "Hello", testInteraction{emit: func(e Event) error {
+		kinds = append(kinds, e.Kind)
+		if e.Kind == "response_completed" {
+			usage = e.Usage
+		}
+		return nil
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(kinds, []string{"response_started", "text", "response_completed"}) || usage != (Usage{12, 3, 15}) {
+		t.Fatalf("events=%v usage=%+v", kinds, usage)
 	}
 }

@@ -1,0 +1,13 @@
+name: echo-approved
+description: The model runs one approved Bash command and reports its output.
+prompt: What does `echo hi` print here?
+approve: [bash]
+model:
+  - call: {tool: bash, arguments: {command: "echo hi"}}
+    expect_input_contains: echo hi
+  - text: It prints "hi".
+graders:
+  - tool_called: bash
+  - result_status: {call: 1, status: completed}
+  - final_text_contains: hi
+  - max_requests: 2

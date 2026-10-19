@@ -1,0 +1,13 @@
+name: bash-denied
+description: Without approval the command never runs, and the model learns that from the denied result.
+prompt: Delete the build directory.
+approve: none
+model:
+  - call: {tool: bash, arguments: {command: "rm -rf build"}}
+  - text: The command was not approved, so nothing was deleted.
+    expect_input_contains: did not approve
+graders:
+  - tool_called: bash
+  - result_status: {call: 1, status: denied}
+  - final_text_contains: not approved
+  - max_requests: 2

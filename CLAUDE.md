@@ -12,6 +12,7 @@ Beyond the commands listed in `AGENTS.md`:
 
 - `go test ./internal/agent -run TestName -v`: run a single test (add `-race` to match `scripts/check.sh`).
 - `go test -race -timeout 90s ./...`: the test step that `scripts/check.sh` runs.
+- `go run ./cmd/mino eval ./evals`: run the replay eval suite (`scripts/check.sh` runs the built binary against it; add `--live` only with a complete `~/.mino/config.json`).
 - `npm run book:dev` / `npm run book:build`: serve or build the VitePress book (Node >= 22; run `npm ci --ignore-scripts` first if `node_modules` is missing).
 - `bash book_review.sh`: install book dependencies if needed, build, and open a local preview.
 
@@ -27,6 +28,7 @@ Beyond the commands listed in `AGENTS.md`:
   - `compact.go`: context budget estimate and summary compaction.
 - `internal/tools/`: SDK-independent `Tool` interface (`Definition`, `Prepare`, `Execute`); the Agent translates it to and from Responses types.
 - `internal/skills/`: project `.agents/skills` discovery and confined reads used by `skill_view`.
+- `internal/eval/`: eval case schema (`case.go`), scripted loopback Responses server (`fake.go`), per-run runner (`run.go`), graders (`grade.go`), and report (`report.go`); `internal/eval_command.go` is the `mino eval` subcommand. Repository cases live in `evals/`.
 - Configuration and SOUL (`internal/config.go`, `internal/soul.go`) live in package `mino`; `assets.go` at the root embeds `install.sh` and the default `SOUL.md`.
 - Working notes for the current chapter live in `tasks/plan.md` and `tasks/todo.md`.
 

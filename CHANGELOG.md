@@ -13,6 +13,32 @@ is an exception; future fixes receive new patch tags.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-19
+
+### Added
+
+- Chapter 10 evals: `internal/eval` runs declared YAML cases through the real Agent
+  loop and grades them with deterministic checks (`final_text_contains`,
+  `final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`,
+  `result_status`, `file_exists`, `file_contains`, `max_requests`, `max_tool_calls`).
+- `mino eval [PATH]` runs every `*.yaml` case in a directory (default `./evals`). Replay
+  mode drives the loop with a scripted loopback Responses service: no key, no network,
+  a fresh temporary workspace and home per run, the default policy, and no MCP servers.
+  `--live` uses `~/.mino/config.json`, runs each case several times (`--runs`, default 3),
+  and reports pass rate, pass@k, pass^k, and token usage. `--filter`, `--out`
+  (`report.json` plus one session log per run), and `--timeout` refine a run; any
+  failing case exits with status 1.
+- A repository `evals/` suite covering approved and denied Bash, a policy-protected
+  `.env`, file creation, and an unknown tool. `scripts/check.sh` runs it after the build.
+- The Agent emits a `response_completed` event carrying the service's token usage after
+  each validated response. The terminal gateway ignores it; `mino eval` sums it.
+
+### Changed
+
+- The chat banner reads `Mino - Chapter 10: Evals`, and `mino help` lists `eval`.
+- The book's npm lockfile is refreshed with `npm audit fix` so the Tutorial book workflow's
+  `npm audit --audit-level=moderate` step passes again (`source-map-js`, `dompurify`).
+
 ## [0.9.0] - 2026-10-12
 
 ### Added
