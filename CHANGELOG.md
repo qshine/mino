@@ -24,6 +24,12 @@ now ignored.
 
 ## [Unreleased]
 
+### Fixed
+
+- Book build: override Vite with 6.4.5 and refresh the lockfile (`dompurify`, `source-map-js`)
+  so `npm audit --audit-level=moderate` passes again and the tutorial site can be rebuilt
+  and published. VitePress stays at 1.6.4; two low-severity KaTeX advisories remain.
+
 ## [0.10.0] - 2026-10-26
 
 ### Added
