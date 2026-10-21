@@ -43,4 +43,4 @@ Beyond the commands listed in `AGENTS.md`:
 
 ## Book writer in Claude Code
 
-Claude Code cannot select the Codex `book_writer` role directly. After code changes and checks pass, launch a dedicated subagent with the writing instructions from `.codex/agents/book_writer.toml`, plus the diff, behavior changes, verification evidence, and version, as `AGENTS.md` requires.
+The project subagent `book-writer` (`.claude/agents/book-writer.md`) is the Claude Code counterpart of the Codex `book_writer` role. After code changes and checks pass, launch it with the diff, behavior changes, verification evidence, and version, as `AGENTS.md` requires. It loads `.codex/agents/book_writer.toml` at startup, so that file stays the only writing contract: change writing rules there, not in the subagent file. The writer only edits `docs/books/`; the parent still updates README files and the changelog, reviews the result, and commits.
