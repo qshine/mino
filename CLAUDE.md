@@ -37,10 +37,15 @@ Beyond the commands listed in `AGENTS.md`:
 - `internal/policy/`: loads `policy.json` and returns the allow/ask/deny decision for each call.
 - `internal/mcp/`: `config.go` handles `mcp.json` (shared with `mino mcp`); `client.go` connects over HTTP or stdio, discovers tools, and adapts them to `tools.Tool`.
 - `internal/skills/`: project `.agents/skills` discovery and confined reads used by `skill_view`.
-- Configuration and SOUL (`internal/config.go`, `internal/soul.go`) live in package `mino`; `assets.go` at the root embeds `install.sh` and the default `SOUL.md`.
-- Tests in `internal/agent/` drive the real loop against local `httptest` Responses servers, building Agents and isolated Sessions with the helpers in `fixture_test.go`; per-feature suites follow the chapter names (`files_test.go`, `mcp_test.go`, `guardrails_test.go`, `compact_*_test.go`, ...).
+- Tests in `internal/agent/` drive the real loop against local `httptest` Responses servers, building Agents and isolated Sessions with the helpers in `fixture_test.go`; per-feature suites follow the chapter names (`files_test.go`, `mcp_test.go`, `guardrails_test.go`, `compact_*_test.go`, ...). To meet the HOME-isolation rule, use `isolateConfig(t)` (in `internal/agent/fixture_test.go` and `internal/config_setup_test.go`) or `t.Setenv("HOME", t.TempDir())`.
 - Working notes for a chapter go in `tasks/plan.md` and `tasks/todo.md`. They may still describe an older chapter, so check them against `AGENTS.md` before relying on them.
 
-## Book writer in Claude Code
+## Finishing a change in Claude Code
 
-The project subagent `book-writer` (`.claude/agents/book-writer.md`) is the Claude Code counterpart of the Codex `book_writer` role. After code changes and checks pass, launch it with the diff, behavior changes, verification evidence, and version, as `AGENTS.md` requires. It loads `.codex/agents/book_writer.toml` at startup, so that file stays the only writing contract: change writing rules there, not in the subagent file. The writer only edits `docs/books/`; the parent still updates README files and the changelog, reviews the result, and commits.
+`AGENTS.md` spreads the handoff steps across several sections. In Claude Code, do them in this order:
+
+1. Run `bash scripts/check.sh`. It fails on unformatted files, so run `gofmt -w` on them first.
+2. Launch the `book-writer` subagent (`.claude/agents/book-writer.md`) with the diff, behavior changes, verification evidence, and version. It is the Claude Code counterpart of the Codex `book_writer` role. It reads `.codex/agents/book_writer.toml` at startup, so change writing rules in that file, not in the subagent. Every code change needs this review; a no-impact result must give its reason.
+3. The writer edits only `docs/books/`. You update README files, `CHANGELOG.md`, and the default `SOUL.md` when the writer or the change requires it.
+4. Review the writer's facts and translation, run `npm run book:build`, and check changed Mermaid diagrams in a browser.
+5. Commit. Building the book does not authorize publishing, tagging, or releasing.
