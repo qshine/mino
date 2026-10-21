@@ -4,7 +4,7 @@
 
 Mino is a Go tutorial for implementing an Agent from scratch. Support only the OpenAI Responses API, with configurable `base_url`, `api_key`, and `model`.
 
-Deliver one runnable chapter at a time. Planned topics include terminal conversations, JSONL conversation history, tool execution, JSONL sessions, compaction, Skills, structured file tools, MCP, and guardrails (Chapters 07–09 are planned in that order). Chapter 02 introduces file persistence and startup recovery for one conversation; Chapter 04 adds management of multiple sessions with a separate JSONL file per session. Explain each chapter's motivating problem, implementation, and observable result. Introduce basic safety controls alongside tools; Chapter 09 consolidates them into one code-enforced policy.
+Deliver one runnable chapter at a time. The nine released chapters cover terminal conversations, JSONL conversation history, tool execution, JSONL sessions, compaction, Skills, structured file tools, MCP, and guardrails, in that order. Chapter 02 introduces file persistence and startup recovery for one conversation; Chapter 04 adds management of multiple sessions with a separate JSONL file per session. Explain each chapter's motivating problem, implementation, and observable result. Introduce basic safety controls alongside tools; Chapter 09 consolidates them into one code-enforced policy.
 
 ## Project Structure & Module Organization
 
@@ -66,7 +66,7 @@ For the primary coding agent: after completing code changes and relevant checks,
 
 Provide the writer with the relevant diff, behavior changes, verification evidence, and applicable version. It must update the affected English and Chinese chapters, examples, diagrams, setup instructions, and roadmap as needed in the same change. For a new feature, explain its purpose, principles, usage, limitations, and newly completed capabilities in the appropriate chapter; add a chapter when the chapter plan calls for one. The primary agent also updates README files and the changelog when the writer identifies changes outside its `docs/books/` edit scope.
 
-Codex discovers the standalone definition at `.codex/agents/book_writer.toml`; no explicit registration in `.codex/config.toml` is needed. If the current client cannot select custom roles, pass that file's writing instructions to a dedicated subagent. The writer itself must not recursively delegate.
+Codex discovers the standalone definition at `.codex/agents/book_writer.toml`; no explicit registration in `.codex/config.toml` is needed. Claude Code uses the project subagent `.claude/agents/book-writer.md`, which loads this same file at startup, so the TOML file remains the only writing contract. Any other client that cannot select custom roles must pass that file's writing instructions to a dedicated subagent. The writer itself must not recursively delegate.
 
 The book uses VitePress with Mermaid diagrams. English pages live under `docs/books/en/`, with complete Simplified Chinese counterparts at the same relative paths under `docs/books/zh/`. Do not place book pages directly under `docs/`. VitePress reads `docs/books/` and rewrites `en/` to the site root; Chinese URLs retain `zh/`. Update both languages and relevant diagrams together. Keep future chapters clearly marked as planned and source links tied to the version being taught.
 

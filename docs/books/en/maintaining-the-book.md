@@ -8,9 +8,11 @@ English remains the default website language. VitePress uses `docs/books` as its
 
 The project defines a Codex custom agent named **`book_writer`** in [`.codex/agents/book_writer.toml`](https://github.com/qshine/mino/blob/main/.codex/agents/book_writer.toml). Supported Codex clients discover this standalone definition in trusted projects; no explicit registration in `.codex/config.toml` is needed. It inherits the parent task's model and permissions. Open this repository as a trusted Codex project; start a new task if an existing session has not discovered the agent definition.
 
+Claude Code uses the project subagent **`book-writer`** in [`.claude/agents/book-writer.md`](https://github.com/qshine/mino/blob/main/.claude/agents/book-writer.md). Claude Code loads project subagents when a session starts. That file does not copy the writing instructions: the subagent reads `.codex/agents/book_writer.toml` first and follows it, so both clients use one contract. Change writing rules in the TOML file only.
+
 The [repository instructions](https://github.com/qshine/mino/blob/main/AGENTS.md) require the primary coding agent to invoke the writer after code changes and relevant checks, before final handoff and before committing the completed change. Every code change receives a documentation-impact review, including new features, changes to existing functionality, bug fixes, and refactors; no separate documentation request is needed. The writer reads the diff and implementation, updates affected English and Chinese chapters, examples, diagrams, setup instructions, and the roadmap in the same change, then returns its work for review.
 
-This is part of the **Codex development workflow**. It does not run as an independent background service or on every manual Git push. GitHub Actions builds the written pages; it does not call a model or generate prose. No additional cloud AI key or scheduled task is required.
+This is part of the **Codex and Claude Code development workflow**. It does not run as an independent background service or on every manual Git push. GitHub Actions builds the written pages; it does not call a model or generate prose. No additional cloud AI key or scheduled task is required.
 
 Wide diagrams can be scrolled horizontally to keep their labels readable.
 

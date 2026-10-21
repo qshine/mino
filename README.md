@@ -387,7 +387,8 @@ terminal open and press Ctrl+C to stop the preview. Run it again after edits to
 rebuild. For live preview while editing, use `npm run book:dev` instead.
 `npm run book:build` checks internal links and builds both languages.
 
-The project `book_writer` subagent maintains the book after Codex code changes.
+The project `book_writer` subagent (`book-writer` in Claude Code) maintains the
+book after Codex or Claude Code code changes.
 GitHub Actions checks and publishes the book to GitHub Pages after relevant
 updates to `main`. The online links above open the tutorial website.
 See [the writing and publishing workflow](docs/books/en/maintaining-the-book.md).

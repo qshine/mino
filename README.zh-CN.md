@@ -312,7 +312,8 @@ bash scripts/check.sh
 修改书稿后重新运行即可构建新版。边写边预览时，也可使用 `npm run book:dev`。
 `npm run book:build` 检查站内链接并构建两种语言。
 
-项目专用 `book_writer` subagent 会在 Codex 完成代码修改后维护教程。
+项目专用 `book_writer` subagent（Claude Code 中为 `book-writer`）会在 Codex 或 Claude Code
+完成代码修改后维护教程。
 GitHub Actions 会在 `main` 上的相关内容更新后检查书籍并发布到 GitHub Pages。
 上方在线链接直接打开教程网站。
 详见[写作与发布流程](docs/books/zh/maintaining-the-book.md)。
