@@ -34,7 +34,7 @@ export default withMermaid({
   rewrites: { 'en/:path*': ':path*' },
   lastUpdated: true,
   cleanUrls: false,
-  head: [['meta', { name: 'theme-color', content: '#176b58' }], ...analyticsHead],
+  head: [['meta', { name: 'theme-color', content: '#fdfdf7' }], ...analyticsHead],
   vite: {
     // The plugin injects Mermaid imports; pre-bundle its CommonJS dependencies for local preview.
     optimizeDeps: { include: ['mermaid'] }
@@ -46,9 +46,9 @@ export default withMermaid({
     flowchart: { useMaxWidth: false },
     sequence: { useMaxWidth: false },
     themeVariables: {
-      primaryColor: '#e8f3ee', primaryTextColor: '#17382d',
-      primaryBorderColor: '#4d8d79', lineColor: '#526c62',
-      secondaryColor: '#f4f1e7', tertiaryColor: '#eef3f5',
+      primaryColor: '#f4f4ec', primaryTextColor: '#0e0e0e',
+      primaryBorderColor: '#b9b6a6', lineColor: '#6b6b64',
+      secondaryColor: '#f1e7dc', tertiaryColor: '#ffffff',
       fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif'
     }
   },
@@ -60,15 +60,13 @@ export default withMermaid({
         nav: [
           { text: 'Read the book', link: '/chapters/01-terminal-chat' },
           { text: 'Roadmap', link: '/plan-todo-chapters' },
-          { text: 'Author', link: '/about-author' },
           { text: 'GitHub', link: repository }
         ],
         sidebar: [
           { text: 'Start here', items: [
             { text: 'About this book', link: '/' },
             { text: 'Setup and installation', link: '/getting-started' },
-            { text: 'Chapter roadmap', link: '/plan-todo-chapters' },
-            { text: 'About the author', link: '/about-author' }
+            { text: 'Chapter roadmap', link: '/plan-todo-chapters' }
           ] },
           { text: 'Part I · Connect to a model', items: [
             { text: '01 A terminal conversation', link: '/chapters/01-terminal-chat' },
@@ -110,15 +108,13 @@ export default withMermaid({
         nav: [
           { text: '阅读教程', link: '/zh/chapters/01-terminal-chat' },
           { text: '章节路线', link: '/zh/plan-todo-chapters' },
-          { text: '作者', link: '/zh/about-author' },
           { text: 'GitHub', link: repository }
         ],
         sidebar: [
           { text: '开始阅读', items: [
             { text: '关于这本书', link: '/zh/' },
             { text: '准备与安装', link: '/zh/getting-started' },
-            { text: '章节路线与进度', link: '/zh/plan-todo-chapters' },
-            { text: '关于作者', link: '/zh/about-author' }
+            { text: '章节路线与进度', link: '/zh/plan-todo-chapters' }
           ] },
           { text: '第一部分 · 搭通对话', items: [
             { text: '01 与模型对话', link: '/zh/chapters/01-terminal-chat' },

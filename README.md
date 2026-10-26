@@ -39,8 +39,8 @@ See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
 **By qqling | AI Builder.** I want to build an agent of my own from scratch and
 turn what I learn through ongoing research and practice into beginner tutorials.
-Read [about the author](docs/books/en/about-author.md) for the story behind Mino
-and links to follow or get in touch on X, GitHub, and Xiaohongshu.
+Read [about the author](docs/books/en/index.md#about-the-author) for the story behind Mino
+and links to follow or get in touch on GitHub, WeChat, and Xiaohongshu.
 
 ## Install
 

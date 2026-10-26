@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "book-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "book:dev"],
+      "port": 5173
+    }
+  ]
+}

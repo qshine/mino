@@ -1,6 +1,7 @@
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
 import mermaid from 'mermaid'
+import AuthorQr from './AuthorQr.vue'
 import './style.css'
 
 // Disable the global load handler before Vue mounts its diagram components.
@@ -10,7 +11,9 @@ if (typeof window !== 'undefined') {
 
 export default {
   extends: DefaultTheme,
-  enhanceApp({ router }) {
+  enhanceApp({ app, router }) {
+    app.component('AuthorQr', AuthorQr)
+
     if (typeof window === 'undefined' || !document.getElementById('mino-umami')) return
 
     let historyNavigation = false

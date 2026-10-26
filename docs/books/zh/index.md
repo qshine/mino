@@ -8,11 +8,23 @@ next:
 
 **从一次交互理解 Agent 的工作方式，用代码和实验验证原理。**
 
-作者：[qqling | AI Builder](./about-author.md)
-
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
 **当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md)。全部十一章均已发布，最后一章对应 `chapter-11`（版本 `0.11.0`）。
+
+## 关于作者
+
+<div class="author-card">
+
+**qqling | AI Builder**：资深开发者，做过大厂和 Startup；AI 资深玩家，专注大模型与 Agent 落地。我想从零构建一个属于自己的 Agent，Mino 就是这个想法的起点。每增加一种能力，书里就说明它解决什么问题、怎样工作，以及如何验证结果，让刚接触 Agent 的读者也能一步步跟上。
+
+- GitHub：[qshine](https://github.com/qshine)
+- 微信公众号：qqling的AI小院
+- 小红书：[AI_qqling](https://www.xiaohongshu.com/user/profile/67039740000000001d031479)
+
+<AuthorQr wechat="微信公众号：qqling的AI小院" wechat-alt="微信公众号“qqling的AI小院”二维码" xiaohongshu="小红书：AI_qqling" xiaohongshu-alt="小红书“AI_qqling”二维码" />
+
+</div>
 
 ## 适合谁读
 
@@ -55,5 +67,3 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 使用过早期 `0.1.0` 或 `0.2.0` 构建的读者，请按[更新说明](./getting-started.md#查看版本和更新)操作。
 
 从[准备与安装](./getting-started.md)开始，或直接阅读[第 01 章](./chapters/01-terminal-chat.md)。
-
-想了解我为什么做 Mino，或关注后续分享，可以查看[作者介绍与交流入口](./about-author.md)。

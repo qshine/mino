@@ -8,11 +8,23 @@ next:
 
 **Understand how an agent works through each interaction, then verify it with code and experiments.**
 
-By [qqling | AI Builder](./about-author.md)
-
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
 **Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md) · [Chapter 11: Evals](./chapters/11-evals.md). All eleven chapters are released; the final chapter is available in `chapter-11` (version `0.11.0`).
+
+## About the author
+
+<div class="author-card">
+
+**qqling | AI Builder** is a senior developer with time at large companies and startups, and a long-time AI practitioner focused on putting large models and agents to work. I want to build an agent of my own from scratch, and Mino is where that begins. For each new capability, the book explains the problem it solves, how it works, and how to verify the result, so readers new to agents can follow along one step at a time.
+
+- GitHub: [qshine](https://github.com/qshine)
+- WeChat official account: qqling的AI小院
+- Xiaohongshu: [AI_qqling](https://www.xiaohongshu.com/user/profile/67039740000000001d031479)
+
+<AuthorQr wechat="WeChat official account: qqling的AI小院" wechat-alt="QR code for the WeChat official account qqling的AI小院" xiaohongshu="Xiaohongshu: AI_qqling" xiaohongshu-alt="QR code for the Xiaohongshu account AI_qqling" />
+
+</div>
 
 ## Who this book is for
 
@@ -55,5 +67,3 @@ Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch
 Users of earlier `0.1.0` or `0.2.0` builds should follow the [update instructions](./getting-started.md#check-the-version-and-update).
 
 Start with [setup and installation](./getting-started.md), or go directly to [Chapter 01](./chapters/01-terminal-chat.md).
-
-To learn why I started Mino or follow future work, visit [about the author](./about-author.md).

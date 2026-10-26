@@ -27,7 +27,7 @@ Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
 **作者：qqling | AI Builder。**我想从零构建一个属于自己的 Agent，把持续研究和实践中的理解整理成入门教程。
-你可以在[作者介绍](docs/books/zh/about-author.md)中了解我的创作初衷，并通过 X、GitHub 或小红书关注和交流。
+你可以在[作者介绍](docs/books/zh/index.md#关于作者)中了解我的创作初衷，并通过 GitHub、微信公众号或小红书关注和交流。
 
 ## 安装
 
