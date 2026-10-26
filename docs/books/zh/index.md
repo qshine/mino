@@ -10,7 +10,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md)。全部十一章均已发布，最后一章对应 `chapter-11`（版本 `0.11.0`）。
+**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md)。第 01–11 章均已发布，最新一章对应 `chapter-11`（版本 `0.11.0`）。[第 12 章：沙箱](./chapters/12-sandbox.md)正在开发中，发布标签 `chapter-12`（版本 `0.12.0`）正在准备；第 13–15 章见[章节规划](./plan-todo-chapters.md)。
 
 ## 关于作者
 
@@ -42,7 +42,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-第 01–10 章于 **2026-10-21** 以 `chapter-01` 至 `chapter-10` 发布，程序版本为 `0.1.0` 至 `0.10.0`；`chapter-10` 于 **2026-10-26** 重新发布，第 11 章随后于 **2026-10-26** 以 `chapter-11`（版本 `0.11.0`）发布。第 10 章把此前的控制统一成一个安全防护决定，并提供由你选择的权限模式；最后一章第 11 章用声明好的评测用例衡量 Agent。各已发布章节注明了实验所需的源码标签。
+第 01–10 章于 **2026-10-21** 以 `chapter-01` 至 `chapter-10` 发布，程序版本为 `0.1.0` 至 `0.10.0`；`chapter-10` 于 **2026-10-26** 重新发布，第 11 章随后于 **2026-10-26** 以 `chapter-11`（版本 `0.11.0`）发布。第 10 章把此前的控制统一成一个安全防护决定，并提供由你选择的权限模式；第 11 章用声明好的评测用例衡量 Agent。各已发布章节注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
@@ -57,6 +57,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [09 MCP 工具](./chapters/09-mcp.md) | 远端服务或本地进程提供的工具怎样加入 Agent 循环？每次批准决定的是什么？ |
 | [10 安全防护](./chapters/10-guardrails.md) | 怎样把实际权限统一成一套由代码执行的策略？ |
 | [11 评测](./chapters/11-evals.md) | 怎样可重复地检查 SOUL、工具描述或循环的一处改动是否改变了 Agent 的行为？ |
+| [12 沙箱](./chapters/12-sandbox.md)（开发中） | 怎样让内核而不是你对命令的解读，去限定一条获批的 Bash 命令能触及什么？ |
 
 ## 如何配合代码阅读
 

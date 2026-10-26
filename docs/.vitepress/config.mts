@@ -91,6 +91,9 @@ export default withMermaid({
           { text: 'Part VI · Measure the agent', items: [
             { text: '11 Evals', link: '/chapters/11-evals' }
           ] },
+          { text: 'Part VII · Confine the process', items: [
+            { text: '12 Sandbox', link: '/chapters/12-sandbox' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -138,6 +141,9 @@ export default withMermaid({
           ] },
           { text: '第六部分 · 衡量 Agent', items: [
             { text: '11 评测', link: '/zh/chapters/11-evals' }
+          ] },
+          { text: '第七部分 · 限定进程', items: [
+            { text: '12 沙箱', link: '/zh/chapters/12-sandbox' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

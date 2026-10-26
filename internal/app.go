@@ -12,6 +12,7 @@ import (
 	"github.com/qshine/mino/internal/agent"
 	"github.com/qshine/mino/internal/gateway"
 	"github.com/qshine/mino/internal/mcp"
+	"github.com/qshine/mino/internal/sandbox"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -87,6 +88,17 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 	bash, err := tools.NewBash(cwd, home)
 	if err != nil {
 		return err
+	}
+	// The sandbox is not a mode: when the system has one, every Bash command
+	// uses it unless the model asks otherwise and you approve.
+	if sandbox.Available() {
+		confined, err := sandbox.New(bash.Directory(), home)
+		if err != nil {
+			return err
+		}
+		bash.SetSandbox(confined)
+	} else {
+		fmt.Fprintln(output, "Sandbox unavailable on this system: Bash commands run with your account permissions.")
 	}
 	files, err := tools.NewFiles(bash.Directory(), directory)
 	if err != nil {

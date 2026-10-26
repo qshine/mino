@@ -17,6 +17,7 @@ func TestDecisionOrder(t *testing.T) {
 		{Call{Tool: "read_file", ReadOnly: true, Target: "src/.git"}, Allow}, // a file named .git is not the .git/ directory
 		{Call{Tool: "write_file", Target: "src/main.go"}, Ask},
 		{Call{Tool: "bash"}, Ask},
+		{Call{Tool: "bash", Sandboxed: true}, Ask}, // manual mode still asks for confined commands
 		{Call{Tool: "mcp_context7_query-docs"}, Ask},
 		{Call{Tool: "skill_view", ReadOnly: true}, Allow},
 		// macOS file systems are case-insensitive by default.
@@ -35,14 +36,14 @@ func TestDecisionOrder(t *testing.T) {
 func TestModes(t *testing.T) {
 	edit := Call{Tool: "edit_file", Target: "src/main.go"}
 	protected := Call{Tool: "write_file", Target: ".env"}
-	bash, mcp := Call{Tool: "bash"}, Call{Tool: "mcp_docs_post"}
+	bash, confined, mcp := Call{Tool: "bash"}, Call{Tool: "bash", Sandboxed: true}, Call{Tool: "mcp_docs_post"}
 	cases := []struct {
-		mode                           Mode
-		edit, protected, bash, mcpTool Decision
+		mode                                     Mode
+		edit, protected, bash, confined, mcpTool Decision
 	}{
-		{Manual, Ask, Deny, Ask, Ask},
-		{AcceptEdits, Allow, Deny, Ask, Ask},
-		{Bypass, Allow, Deny, Allow, Allow},
+		{Manual, Ask, Deny, Ask, Ask, Ask},
+		{AcceptEdits, Allow, Deny, Ask, Allow, Ask},
+		{Bypass, Allow, Deny, Allow, Allow, Allow},
 	}
 	p := New()
 	if p.Mode() != Manual {
@@ -50,7 +51,7 @@ func TestModes(t *testing.T) {
 	}
 	for _, c := range cases {
 		p.SetMode(c.mode)
-		for call, want := range map[Call]Decision{edit: c.edit, protected: c.protected, bash: c.bash, mcp: c.mcpTool} {
+		for call, want := range map[Call]Decision{edit: c.edit, protected: c.protected, bash: c.bash, confined: c.confined, mcp: c.mcpTool} {
 			if got, _ := p.Decide(call); got != want {
 				t.Errorf("%v %+v: got %v, want %v", c.mode, call, got, want)
 			}

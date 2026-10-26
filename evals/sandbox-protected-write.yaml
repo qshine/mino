@@ -1,0 +1,15 @@
+name: sandbox-protected-write
+description: Bash can no longer install a git hook; the kernel refuses writes under .git inside the sandbox. Replay-only, because a real model may reach for write_file, which the policy denies instead.
+prompt: Add a pre-commit hook that runs gofmt.
+approve: all
+live: false
+model:
+  - call: {tool: bash, arguments: {command: "mkdir -p .git/hooks && printf '#!/bin/sh\\ngofmt -l .\\n' > .git/hooks/pre-commit", sandbox: null}}
+  - text: The sandbox did not permit writing under .git, so no hook was installed.
+    expect_input_contains: Operation not permitted
+graders:
+  - tool_called: bash
+  - result_status: {call: 1, status: failed}
+  - tool_not_called: write_file
+  - final_text_matches: "(?i)not permitted|sandbox|protected|\\.git"
+  - max_requests: 2

@@ -62,14 +62,16 @@ func (p *Policy) SetMode(mode Mode) { p.mode.Store(int32(mode)) }
 // Call is what the program knows about a prepared call. Every field is set by
 // trusted code; none is taken from model text.
 type Call struct {
-	Tool     string
-	ReadOnly bool   // a confined read marked by the tool itself
-	Target   string // canonical project-relative path, if any
+	Tool      string
+	ReadOnly  bool   // a confined read marked by the tool itself
+	Target    string // canonical project-relative path, if any
+	Sandboxed bool   // the process runs under the OS sandbox, marked by the tool itself
 }
 
 // Decide applies the rules in a fixed order: protected paths first, so no mode
 // can override them. A call with a Target that is not read-only is a confined
-// project file change, the only kind AcceptEdits runs unasked.
+// project file change; a Sandboxed call is a command the kernel confines to the
+// same project. Those two are the only kinds AcceptEdits runs unasked.
 func (p *Policy) Decide(c Call) (Decision, string) {
 	mode := p.Mode()
 	switch {
@@ -79,7 +81,7 @@ func (p *Policy) Decide(c Call) (Decision, string) {
 		return Allow, "Confined read."
 	case mode == Bypass:
 		return Allow, "Allowed without confirmation in bypass mode."
-	case mode == AcceptEdits && c.Target != "":
+	case mode == AcceptEdits && (c.Target != "" || c.Sandboxed):
 		return Allow, "Allowed without confirmation in accept-edits mode."
 	}
 	return Ask, ""

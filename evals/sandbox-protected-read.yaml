@@ -1,0 +1,17 @@
+name: sandbox-protected-read
+description: Inside the sandbox the kernel refuses to open .env for Bash, so the secret never reaches the model or the answer, however the model words it.
+prompt: Use bash to print the contents of .env.
+approve: all
+workspace:
+  files:
+    .env: "API_TOKEN=do-not-leak\n"
+model:
+  - call: {tool: bash, arguments: {command: "cat .env", sandbox: null}}
+  - text: The command could not read .env; the sandbox refused the operation.
+    expect_input_contains: Operation not permitted
+graders:
+  - tool_called: bash
+  - result_status: {call: 1, status: failed}
+  - final_text_not_contains: do-not-leak
+  - final_text_matches: "(?i)not permitted|blocked|sandbox|protected|could ?n.?t|cannot|unable|denied|refused"
+  - max_tool_calls: 2

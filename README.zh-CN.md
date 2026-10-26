@@ -11,7 +11,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
 **当前进度：**本快照包含第 01–11 章，对应发布版本 `chapter-11`（程序版本 `0.11.0`）。
-全部十一章均已发布，标签为 `chapter-01` 至 `chapter-11`，程序版本对应 `0.1.0` 至 `0.11.0`。
+第 01–11 章均已发布，标签为 `chapter-01` 至 `chapter-11`，程序版本对应 `0.1.0` 至 `0.11.0`；第 12–15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -109,7 +109,7 @@ Mino 把对话保存在 `~/.mino/sessions/` 中，启动时恢复成功完成的
 结果交回模型后，模型可以回答，也可以继续请求工具。
 
 工具统一放在 `internal/tools/` 目录，目前只有 Bash。单条命令最多执行 30 秒，stdout 与 stderr 合计最多 64 KiB；
-每轮问答最多 8 次模型请求、16 次工具调用。Bash 使用你的账户权限，可以访问文件和网络；批准与执行限额不构成操作系统沙箱。
+每轮问答最多 8 次模型请求、16 次工具调用。Bash 使用你的账户权限，可以访问文件和网络；批准与执行限额不构成操作系统沙箱（第 12 章在 macOS 上加入沙箱）。
 完整交互、保存节点与验证方法见[第 03 章](docs/books/zh/chapters/03-tools-and-bash.md)。
 
 每一步都先在同一个会话文件中保存并同步，再进行下一步。第 03 章写入 `v: 2` 格式，同时兼容第 02 章的 `v: 1` 记录。
@@ -251,7 +251,7 @@ mino mcp list
 | `/mode bypass` | 所有工具调用，包括 Bash 和 MCP |
 
 单独输入 `/mode` 显示当前模式。切换到更宽松的模式时，需要在交互式终端中确认；切换回更严格的模式从不询问。
-每个会话有自己的模式：`/new` 创建的会话从 manual 开始，`/resume` 回到该会话之前的模式，直到 Mino 退出。无需询问而运行的调用仍会显示出来。本章没有操作系统沙箱：Bash 命令和 MCP 服务以你的账户权限运行。
+每个会话有自己的模式：`/new` 创建的会话从 manual 开始，`/resume` 回到该会话之前的模式，直到 Mino 退出。无需询问而运行的调用仍会显示出来。第 10 章没有操作系统沙箱：Bash 命令和 MCP 服务以你的账户权限运行；第 12 章补上沙箱。
 详见[第 10 章](docs/books/zh/chapters/10-guardrails.md)。
 
 ## 评测（第 11 章）
@@ -281,8 +281,21 @@ mino eval --out results ./evals    # 另外写出 report.json 和每次运行的
 replay 模式检查 Mino 自己的行为（批准、拒绝、受保护路径、工具配对），并在 `scripts/check.sh` 中运行；
 live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用例只在 replay 模式运行。可用的 grader：`final_text_contains`、`final_text_not_contains`、`final_text_matches`、
 `tool_called`、`tool_not_called`、`tool_order`、`result_status`、`file_exists`、`file_contains`、
-`max_requests`、`max_tool_calls`。没有 LLM judge，也没有沙箱：用例里的 Bash 仍以你的账户权限运行。
+`max_requests`、`max_tool_calls`。没有 LLM judge；第 11 章也没有沙箱：用例里的 Bash 仍以你的账户权限运行（从第 12 章起，用例和聊天一样在沙箱内运行）。
 详见[第 11 章](docs/books/zh/chapters/11-evals.md)。
+
+## 操作系统沙箱（第 12 章，开发中）
+
+在 macOS 上，每条 Bash 命令现在都通过 `sandbox-exec` 在 Seatbelt 配置下运行，由内核而不是对命令的猜测来限定它能触及什么：
+可以读取你的账户能读的文件，但受保护路径（`.env`、密钥、`.ssh/` 等）除外；只能写入项目目录、临时目录和 `~/Library/Caches`、`~/.cache`；
+不能写入 `.git/`；不能建立网络连接。每次确认都会显示一行 `Sandbox`，Bash 工具定义也会把这些限制告诉模型。
+模型可以为需要网络或在别处写入的命令（例如要写 `.git/` 的 `git commit`）设置 `sandbox: false`；这样的命令在除 `bypass` 外的所有模式下都需要你批准。
+由于受限命令只能改动项目，`/mode accept-edits` 现在会像运行 `write_file`、`edit_file` 那样，不经询问运行沙箱内的 Bash；`manual` 仍对每条命令询问。
+
+`mino mcp add NAME --sandbox --cwd DIR -- COMMAND` 让 stdio MCP 服务在同一配置下运行，允许网络，写入限定在其 `cwd` 内；
+要求沙箱但无法受限的服务会被报告为不可用，而不是不受限地启动。没有 `sandbox-exec` 的系统（Linux，或将来移除它的 macOS）会在聊天启动时打印提示，
+确认界面显示 `Sandbox: unavailable`，Bash 的行为与第 11 章相同。评测用例同样在沙箱内运行；`evals/` 中的三个 `sandbox-*` 用例在没有沙箱时会失败。
+沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不是针对以 `sandbox: false` 运行的恶意命令的安全边界。
 
 ## 版本与升级
 

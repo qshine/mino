@@ -353,7 +353,7 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	}
 	// One policy decision covers every tool, before inspection reads anything:
 	// a protected file is never opened, even to build a confirmation.
-	decision, reason := a.options.Policy.Decide(policy.Call{Tool: call.Name, ReadOnly: prepared.ReadOnly, Target: prepared.Target})
+	decision, reason := a.options.Policy.Decide(policy.Call{Tool: call.Name, ReadOnly: prepared.ReadOnly, Target: prepared.Target, Sandboxed: prepared.Sandboxed})
 	if decision == policy.Deny {
 		return tools.Result{Status: "denied", Output: "Blocked by policy: " + reason + " Do not retry or work around this with another tool."}, nil
 	}

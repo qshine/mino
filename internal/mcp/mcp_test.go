@@ -13,6 +13,7 @@ import (
 	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/qshine/mino/internal/sandbox"
 )
 
 // A test binary started with MINO_MCP_TEST_SERVER=1 acts as a stdio MCP server,
@@ -93,6 +94,9 @@ func TestConfigValidationAndPrivateFile(t *testing.T) {
 		if ValidateURL(raw) == nil {
 			t.Errorf("accepted %s", raw)
 		}
+	}
+	if (Server{Type: "http", URL: "https://example.com/mcp", Sandbox: true}).Validate() == nil {
+		t.Error("accepted sandbox on an http server")
 	}
 	for _, name := range []string{"Host", "content-type", "Mcp-Session-Id", "bad header"} {
 		if ValidHeaderName(name) {
@@ -236,6 +240,9 @@ func TestStdioServerAndFailureIsolation(t *testing.T) {
 		"local":   {Type: "stdio", Command: executable, Dir: t.TempDir(), Env: map[string]string{"MINO_MCP_TEST_SERVER": "1"}},
 		"broken":  {Type: "stdio", Command: "/usr/bin/false", Dir: t.TempDir()},
 		"offline": {Type: "http", URL: "http://127.0.0.1:1/mcp"},
+		// A sandboxed stdio server connects when the system can confine it and is
+		// reported unavailable, never started unconfined, when it cannot.
+		"confined": {Type: "stdio", Command: executable, Dir: t.TempDir(), Env: map[string]string{"MINO_MCP_TEST_SERVER": "1"}, Sandbox: true},
 	}}
 	m, statuses := Connect(context.Background(), config, t.TempDir())
 	byName := map[string]Status{}
@@ -244,6 +251,14 @@ func TestStdioServerAndFailureIsolation(t *testing.T) {
 	}
 	if byName["local"].Err != nil || byName["local"].Tools != 3 || byName["broken"].Err == nil || byName["offline"].Err == nil {
 		t.Fatalf("statuses=%+v", statuses)
+	}
+	if confinedOK := byName["confined"].Err == nil && byName["confined"].Tools == 3; confinedOK != sandbox.Available() {
+		t.Fatalf("confined status=%+v available=%v", byName["confined"], sandbox.Available())
+	}
+	if sandbox.Available() {
+		if status, output := call(t, toolByName(t, m, "mcp_confined_query-docs"), context.Background(), `{"library":"go"}`); status != "completed" || !strings.Contains(output, "Docs for go") {
+			t.Fatalf("confined call: %s %q", status, output)
+		}
 	}
 	status, output := call(t, toolByName(t, m, "mcp_local_query-docs"), context.Background(), `{"library":"go"}`)
 	if status != "completed" || !strings.Contains(output, "Docs for go") {

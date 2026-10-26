@@ -1,0 +1,13 @@
+name: sandbox-no-network
+description: A sandboxed command cannot open a network connection; curl fails and the model reports it instead of pretending the page loaded.
+prompt: Use bash to fetch https://example.com with curl and tell me whether it worked.
+approve: all
+model:
+  - call: {tool: bash, arguments: {command: "curl -sS -m 5 https://example.com", sandbox: null}}
+  - text: curl failed inside the sandbox, which blocks network access, so the page was not fetched.
+    expect_input_contains: function_call_output
+graders:
+  - tool_called: bash
+  - result_status: {call: 1, status: failed}
+  - final_text_matches: "(?i)not permitted|blocked|sandbox|could ?n.?t|cannot|unable|fail|did ?n.?t work|no network|offline|refused"
+  - max_tool_calls: 2

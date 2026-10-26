@@ -20,6 +20,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/qshine/mino/internal/sandbox"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -194,6 +195,16 @@ func (s *server) start(home string) (sdk.Transport, error) {
 		cmd.Env = append(cmd.Env, name+"="+value)
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	// A sandboxed server keeps the network, because most stdio servers proxy a
+	// remote service, but writes only under its cwd. Fail closed when the system
+	// cannot confine it: the user asked for a sandbox, not for a best effort.
+	if s.config.Sandbox {
+		confined, err := sandbox.New(s.config.Dir, home)
+		if err != nil {
+			return nil, err
+		}
+		confined.WithNetwork().Wrap(cmd)
+	}
 	// stdout carries only protocol messages; stderr diagnostics are discarded so
 	// they cannot leak configured secrets into the terminal or history.
 	stdin, err := cmd.StdinPipe()

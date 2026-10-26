@@ -31,6 +31,8 @@ next:
 
 第十一章加入[评测](#从源码体验第十一章)：`mino eval` 让声明好的用例经过 Agent 循环并给结果评分。它沿用记录版本 4，见[历史兼容性说明](#第十一章的历史兼容性)。
 
+第十二章正在开发中，在 macOS 上为 Bash 加入[操作系统沙箱](#从源码体验第十二章)。它沿用记录版本 4；用旧版本打开第十二章的会话之前，请阅读[历史兼容性说明](#第十二章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -451,6 +453,32 @@ graders:
 ### 第十一章的历史兼容性
 
 第十一章沿用记录版本 4，没有新增记录类型或结果状态。运行时唯一的新增是一个只存在于内存中的 `response_completed` 事件，它把 token 用量交给 `mino eval`，从不写入会话日志。因此 `chapter-10` 可以打开第十一章写入的会话，第十一章也无需迁移即可打开第十章的会话；`chapter-10` 唯一缺少的是 `mino eval` 命令。评测运行只把日志写到临时目录，或写到你用 `--out` 指定的目录，从不写入 `~/.mino/sessions`。
+
+## 从源码体验第十二章
+
+第十二章正在开发中。它的发布标签 `chapter-12`（程序版本 `0.12.0`）正在准备，所以暂时没有可安装的发布包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-12` 选择的就是同一份代码。
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 12: Sandbox`，源码版本为 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP 和安全防护要求继续适用；正文见[第十二章](./chapters/12-sandbox.md)，免费的检查见[第 5 节](./chapters/12-sandbox.md#_5-用评测和测试检查它)。
+
+在带有 `/usr/bin/sandbox-exec` 的 macOS 上，每条 Bash 命令默认受限运行：可以读取受保护路径之外的文件，只能写入项目目录、系统临时目录、`~/Library/Caches` 和 `~/.cache`，不能写入 `.git/`，也不能建立网络连接。每次 Bash 确认，以及 `accept-edits` 或 `bypass` 下不经询问的 Bash 那一行，都会显示带有这段摘要的 `Sandbox` 字段。模型可以为需要网络或在别处写入的命令（例如 `git commit`）设置 `sandbox: false`；这时 Mino 显示 `Sandbox: "off: the model asked to run this command unconfined."`，并在除 `bypass` 外的每种模式下询问你。因为受限命令只能改动项目、临时和缓存目录，`/mode accept-edits` 现在会像运行 `write_file`、`edit_file` 那样不经询问运行沙箱内的 Bash；`manual` 仍对每条命令询问。沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不约束你以 `sandbox: false` 批准的命令。
+
+如果没有 `sandbox-exec`，启动时会打印 `Sandbox unavailable on this system: Bash commands run with your account permissions.`，确认界面显示 `Sandbox: "unavailable on this system."`，Bash 的行为与第十一章相同。没有关闭沙箱的参数，本章也没有 Linux 沙箱。
+
+本地 stdio MCP 服务可以用 `mino mcp add NAME --sandbox --cwd DIR -- COMMAND` 限定；`mino mcp list` 会在它那一行显示 `sandbox`。它运行时写入限定在自己的 `cwd`、临时和缓存目录内，受保护路径被阻止，网络允许。要求沙箱却无法受限的服务会在启动时被报告为不可用，而不是不受限地启动；`http` 服务和没有沙箱的系统都会拒绝 `--sandbox`。
+
+评测用例和聊天一样受限运行。`evals/` 中的三份 `sandbox-*` 用例需要沙箱，没有沙箱时会失败；因此 `bash scripts/check.sh` 只在 macOS 上通过。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 介绍了沙箱，并要求模型只在说明理由时才请求 `sandbox: false`。如果需要，请在自己的 SOUL 中补充类似说明，再重启；无论 SOUL 怎么写，沙箱都会执行。
+
+### 第十二章的历史兼容性
+
+第十二章沿用记录版本 4，没有新增记录类型或结果状态，沙箱的任何信息都不会写入会话。受限命令记录为 `{"command":"..."}`，与第三章到第十一章记录每条命令的方式完全相同，所以第十二章无需迁移即可打开它们的会话，`chapter-11` 也能打开只包含受限命令的第十二章会话。例外是获批的选择退出：它的启动记录保留 `"sandbox":false`，`chapter-11` 会把它当作未知的 Bash 参数而拒绝加载该会话。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
 
 ## 从源码学习
 

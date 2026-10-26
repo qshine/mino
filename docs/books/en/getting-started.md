@@ -31,6 +31,8 @@ Chapter 10 adds [guardrails](#try-chapter-10-from-source): one decision for ever
 
 Chapter 11 adds [evals](#try-chapter-11-from-source): `mino eval` runs declared cases through the Agent loop and grades the result. It keeps record version 4; see its [history compatibility notes](#chapter-11-history-compatibility).
 
+Chapter 12, in development, adds an [operating-system sandbox for Bash](#try-chapter-12-from-source) on macOS. It keeps record version 4; see its [history compatibility notes](#chapter-12-history-compatibility) before opening a Chapter 12 session with an older release.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -451,6 +453,32 @@ The tools a case can call are the chat tools without MCP: `bash`, `read_file`, `
 ### Chapter 11 history compatibility
 
 Chapter 11 keeps record version 4 and adds no record kinds or result statuses. The only runtime addition is an in-memory `response_completed` event that carries token usage to `mino eval` and is never written to a session log. `chapter-10` can therefore open sessions written by Chapter 11, and Chapter 11 opens Chapter 10 sessions without migration; the only thing `chapter-10` lacks is the `mino eval` command. Eval runs write their logs only to temporary directories, or to the `--out` directory you name, never under `~/.mino/sessions`.
+
+## Try Chapter 12 from source
+
+Chapter 12 is in development. Its release `chapter-12` (application version `0.12.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-12` selects the same code.
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 12: Sandbox` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, and guardrail requirements still apply; the lesson is [Chapter 12](./chapters/12-sandbox.md), and its no-cost checks are in [section 5](./chapters/12-sandbox.md#_5-check-it-with-evals-and-tests).
+
+On macOS with `/usr/bin/sandbox-exec`, every Bash command runs confined by default: it can read files except the protected paths, write only inside the project directory, the system temporary directories, `~/Library/Caches`, and `~/.cache`, cannot write under `.git/`, and cannot open network connections. Each Bash confirmation, and each unasked Bash line in `accept-edits` or `bypass`, shows a `Sandbox` field with that summary. The model may set `sandbox: false` for a command that needs the network or a write elsewhere, such as `git commit`; Mino then shows `Sandbox: "off: the model asked to run this command unconfined."` and asks you in every mode except `bypass`. Because a confined command can only change the project, temporary, and cache directories, `/mode accept-edits` now runs sandboxed Bash without asking, as it runs `write_file` and `edit_file`; `manual` still asks for every command. The sandbox does not limit reads of unprotected files, does not confine `http` MCP servers, and does not confine a command you approve with `sandbox: false`.
+
+If `sandbox-exec` is missing, startup prints `Sandbox unavailable on this system: Bash commands run with your account permissions.`, confirmations show `Sandbox: "unavailable on this system."`, and Bash behaves as in Chapter 11. There is no flag to turn the sandbox off, and no Linux sandbox in this chapter.
+
+A local stdio MCP server can be confined with `mino mcp add NAME --sandbox --cwd DIR -- COMMAND`; `mino mcp list` shows `sandbox` on its line. It runs with writes limited to its `cwd`, temporary, and cache directories, protected paths blocked, and the network allowed. A sandboxed server that cannot be confined is reported unavailable at startup rather than started unconfined, and `--sandbox` is refused for `http` servers and on systems without a sandbox.
+
+Eval cases run confined like chat. The three `sandbox-*` cases in `evals/` need a sandbox and fail without one; `bash scripts/check.sh` therefore passes only on macOS.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes the sandbox and tells the model to request `sandbox: false` only with a reason. Add similar guidance to your own SOUL if you want it, and restart; the sandbox is enforced either way.
+
+### Chapter 12 history compatibility
+
+Chapter 12 keeps record version 4 and adds no record kinds or result statuses; nothing about the sandbox is written to a session. A confined command is recorded as `{"command":"..."}`, exactly as Chapters 03–11 recorded every command, so Chapter 12 opens their sessions without migration and `chapter-11` can open a Chapter 12 session that contains only confined commands. The exception is an approved opt-out: its start record keeps `"sandbox":false`, which `chapter-11` rejects as an unknown Bash argument and refuses to load the session. As before, keep private copies of session logs and `active-session.json` before switching versions.
 
 ## Learn from the source
 
