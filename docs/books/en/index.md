@@ -10,7 +10,7 @@ next:
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md) · [Chapter 11: Evals](./chapters/11-evals.md). Chapters 01–11 are released; the latest is available in `chapter-11` (version `0.11.0`). [Chapter 12: Sandbox](./chapters/12-sandbox.md) is in development, with release `chapter-12` (version `0.12.0`) being prepared; Chapters 13–15 are planned in the [chapter roadmap](./plan-todo-chapters.md).
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md) · [Chapter 11: Evals](./chapters/11-evals.md) · [Chapter 12: Sandbox](./chapters/12-sandbox.md). Chapters 01–12 are released; the latest is available in `chapter-12` (version `0.12.0`). Chapters 13–15 are planned in the [chapter roadmap](./plan-todo-chapters.md).
 
 ## About the author
 
@@ -42,7 +42,7 @@ For example, Chapter 01 inspects requests to explain why two questions in the sa
 
 ## What is ready to read
 
-Chapters 01–10 were released on **2026-10-21** as `chapter-01` through `chapter-10`, with application versions `0.1.0` through `0.10.0`; `chapter-10` was republished on **2026-10-26**, and Chapter 11 followed on **2026-10-26** as `chapter-11` (version `0.11.0`). Chapter 10 consolidates the earlier controls into one guardrail decision with permission modes you choose; Chapter 11 measures the Agent with declared eval cases. Each released lesson identifies the source tag for its experiments.
+Chapters 01–10 were released on **2026-10-21** as `chapter-01` through `chapter-10`, with application versions `0.1.0` through `0.10.0`; `chapter-10` was republished on **2026-10-26**, and Chapters 11 and 12 followed on **2026-10-26** as `chapter-11` (version `0.11.0`) and `chapter-12` (version `0.12.0`). Chapter 10 consolidates the earlier controls into one guardrail decision with permission modes you choose; Chapter 11 measures the Agent with declared eval cases; Chapter 12 runs each approved Bash command inside an operating-system sandbox on macOS. Each released lesson identifies the source tag for its experiments.
 
 | Stage | The question you will explore |
 | --- | --- |
@@ -57,11 +57,11 @@ Chapters 01–10 were released on **2026-10-21** as `chapter-01` through `chapte
 | [09 MCP tools](./chapters/09-mcp.md) | How do tools hosted by remote services or local processes join the loop, and what does each approval decide? |
 | [10 Guardrails](./chapters/10-guardrails.md) | How are actual permissions enforced as one policy in code? |
 | [11 Evals](./chapters/11-evals.md) | How do you check repeatably whether a change to the SOUL, a tool description, or the loop changed what the Agent does? |
-| [12 Sandbox](./chapters/12-sandbox.md) (in development) | How can the kernel, rather than your reading of a command, bound what an approved Bash command may touch? |
+| [12 Sandbox](./chapters/12-sandbox.md) | How can the kernel, rather than your reading of a command, bound what an approved Bash command may touch? |
 
 ## Read alongside the code
 
-Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 11, follows [chapter-11](https://github.com/qshine/mino/tree/chapter-11); the [source setup](./getting-started.md#try-chapter-11-from-source) explains how to run the same snapshot locally.
+Each released chapter identifies its applicable version and uses its matching `chapter-NN` source tag. The newest chapter in this version of the book, Chapter 12, follows [chapter-12](https://github.com/qshine/mino/tree/chapter-12); the [source setup](./getting-started.md#try-chapter-12-from-source) explains how to run the same snapshot locally.
 
 Release tags follow `chapter-NN`; the application version is `0.<chapter>.<patch>`. A patch such as `chapter-05.1` produces version `0.5.1` and updates the relevant lesson without creating an extra chapter.
 

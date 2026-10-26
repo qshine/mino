@@ -1,6 +1,6 @@
 # Chapter 12: Run Bash inside an operating-system sandbox
 
-Applies to **0.12.x** · Source tag **[chapter-12](https://github.com/qshine/mino/tree/chapter-12)** · Application version **0.12.0**, release being prepared
+Applies to **0.12.x** · Source and release tag **[chapter-12](https://github.com/qshine/mino/tree/chapter-12)** · Application version **0.12.0**, released **2026-10-26**
 
 [Chapter 10](./10-guardrails.md) ended on a plain admission: there was no operating-system sandbox. The policy could refuse `read_file` on `.env`, but a Bash command that you approved, or that `bypass` let through, ran with everything your account can do. You could read the command before saying yes. You could not read what it would do. `make test` is a few characters on your screen and an unknown number of scripts underneath, any of which may open `.env`, post something with `curl`, or append a line to `~/.zshrc`.
 

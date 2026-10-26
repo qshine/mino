@@ -2,7 +2,7 @@
 
 本页说明应用发布。书籍网站见[写作与更新流程](./maintaining-the-book.md)。
 
-全部十个章节发布版 `chapter-01` 至 `chapter-10` 于 **2026-10-21** 发布，均提供 Apple Silicon 和 Intel 的 macOS 安装包；`chapter-10` 于 **2026-10-26** 重新发布，第 11 章于 **2026-10-26** 以 `chapter-11` 发布。最新章节发布版为 [chapter-11](https://github.com/qshine/mino/releases/tag/chapter-11)，程序版本 **0.11.0**；各章使用对应的源码标签。构建当前工作区不会创建发布版，也不会改变已发布标签。
+全部十个章节发布版 `chapter-01` 至 `chapter-10` 于 **2026-10-21** 发布，均提供 Apple Silicon 和 Intel 的 macOS 安装包；`chapter-10` 于 **2026-10-26** 重新发布，第 11、12 章于 **2026-10-26** 以 `chapter-11` 和 `chapter-12` 发布。最新章节发布版为 [chapter-12](https://github.com/qshine/mino/releases/tag/chapter-12)，程序版本 **0.12.0**；各章使用对应的源码标签。构建当前工作区不会创建发布版，也不会改变已发布标签。
 
 ## 重新发布的版本
 
@@ -34,6 +34,8 @@
 
 第 11 章沿用记录版本 4，没有新增记录类型；`chapter-10` 仍能打开它的会话，但不包含 `mino eval`。见[第 11 章兼容性说明](./getting-started.md#第十一章的历史兼容性)。
 
+第 12 章沿用记录版本 4，没有新增记录类型；`chapter-11` 仍能打开它的会话，但会不受限地运行 Bash，并且拒绝记录过获批 `sandbox: false` 选择退出的会话。见[第 12 章兼容性说明](./getting-started.md#第十二章的历史兼容性)。
+
 ## 版本规则
 
 发布标签标识章节，可执行文件和压缩包名称保留数字版本：
@@ -51,6 +53,7 @@
 | `chapter-09` | `0.9.0` |
 | `chapter-10` | `0.10.0` |
 | `chapter-11` | `0.11.0` |
+| `chapter-12` | `0.12.0` |
 
 章节初版使用 `chapter-NN`，后续修复使用 `chapter-NN.PATCH`。例如，`chapter-05.1` 生成版本 `0.5.1`。后续修复创建新标签，不移动已发布标签或替换附件；[2026-10-21 和 2026-10-26 的重新发布](#重新发布的版本)是经所有者授权的例外。每章尽量保留一次完整提交，包含代码、测试和双语书稿。
 
@@ -60,17 +63,17 @@
 
 **章节标签迁移前安装的更新器无法解析 `chapter-*` 标签。** 请先把[当前安装命令](./getting-started.md#一行安装)重新运行一次，即使程序显示的数字版本没有变化。这会获取新版安装器并替换程序，保留配置、自定义 `~/.mino/SOUL.md` 和已有历史。修改标签或 `main` 上的脚本不会改变已安装的程序。
 
-完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-11` 选择本章。安装器也接受 `0.11.0` 或 `v0.11.0`，两者都指向 `chapter-11`；这些是版本选择别名，不是额外的 Git 标签。
+完成这次安装后，`mino update` 选择最新发布版，`mino update chapter-12` 选择本章。安装器也接受 `0.12.0` 或 `v0.12.0`，两者都指向 `chapter-12`；这些是版本选择别名，不是额外的 Git 标签。
 
 ## 发布一个版本
 
 1. 完成改动，在 `CHANGELOG.md` 添加数字版本条目，并提交。
 2. 运行 `bash scripts/check.sh`，审核代码和双语书稿，再把已审核的改动推送到 `main`。
-3. 创建并推送新的章节或补丁标签。以下以第 11 章未来的一个补丁为例：
+3. 创建并推送新的章节或补丁标签。以下以第 12 章未来的一个补丁为例：
 
    ```bash
-   git tag -a chapter-11.1 -m 'Mino chapter-11.1'
-   git push origin chapter-11.1
+   git tag -a chapter-12.1 -m 'Mino chapter-12.1'
+   git push origin chapter-12.1
    ```
 
 [Release 工作流](https://github.com/qshine/mino/blob/main/.github/workflows/release.yml) 由 `chapter-*` 标签触发，重新运行检查，并在关闭 CGO 的情况下构建 `darwin/arm64` 和 `darwin/amd64`。在 macOS 上打包时，还会运行当前主机架构对应的程序，验证数字版本。
@@ -78,8 +81,8 @@
 每个压缩包包含 `mino`、`LICENSE` 和 `THIRD_PARTY_NOTICES.txt`。上面的补丁示例会提供：
 
 ```text
-mino_0.11.1_darwin_arm64.tar.gz
-mino_0.11.1_darwin_amd64.tar.gz
+mino_0.12.1_darwin_arm64.tar.gz
+mino_0.12.1_darwin_amd64.tar.gz
 checksums.txt
 ```
 
@@ -87,10 +90,10 @@ checksums.txt
 
 ## 本地打包与恢复
 
-在 `chapter-11` 的仓库根目录检查本章安装包：
+在 `chapter-12` 的仓库根目录检查本章安装包：
 
 ```bash
-bash scripts/package.sh chapter-11
+bash scripts/package.sh chapter-12
 ```
 
 打包接受规范的章节标签，使用当前工作区源码，不会检出标签。结果写入被 Git 忽略的 `dist/`，不创建 Git 标签或 Release。发布失败时，检查日志及可能残留的未完成草稿，再重新运行任务。

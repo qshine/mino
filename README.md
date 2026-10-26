@@ -14,10 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–11, release
-`chapter-11` (application version `0.11.0`).
-Chapters 01–11 are released, tagged `chapter-01` through `chapter-11` with
-application versions `0.1.0` through `0.11.0`; Chapters 12–15 are planned.
+**Current progress:** This snapshot contains Chapters 01–12, release
+`chapter-12` (application version `0.12.0`).
+Chapters 01–12 are released, tagged `chapter-01` through `chapter-12` with
+application versions `0.1.0` through `0.12.0`; Chapters 13–15 are planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -34,6 +34,8 @@ Chapter 10 adds guardrails: one code-enforced tool policy with protected paths a
 permission modes selected with `/mode`.
 Chapter 11 adds evals: `mino eval` runs declared cases through the Agent loop and grades
 them with deterministic checks.
+Chapter 12 adds an OS sandbox: on macOS, Bash commands run under a Seatbelt profile that
+confines writes and blocks the network and protected paths.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -373,9 +375,9 @@ and, in Chapter 11, no sandbox: Bash in a case still runs with your account perm
 (from Chapter 12, cases run confined like chat). See
 [Chapter 11](docs/books/en/chapters/11-evals.md).
 
-## OS sandbox (Chapter 12, in development)
+## OS sandbox (Chapter 12)
 
-On macOS, every Bash command now runs under a Seatbelt profile through
+Install `chapter-12` with `mino update chapter-12`. On macOS, every Bash command now runs under a Seatbelt profile through
 `sandbox-exec`, so the kernel, not a guess about the command, bounds what it may
 touch: it reads what your account can read except the protected paths (`.env`,
 keys, `.ssh/`, ...), writes only inside the project directory, temporary
@@ -403,7 +405,7 @@ run with `sandbox: false`.
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-11   # Install the latest published chapter
+mino update chapter-12   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -433,6 +435,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 09 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 | Chapter 10 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 | Chapter 11 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
+| Chapter 12 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21

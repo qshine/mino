@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-11` release (application version `0.11.0`), published on 2026-10-26, the same day `chapter-10` was republished. It covers the book up to Chapter 11; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-12` release (application version `0.12.0`), published on 2026-10-26, the same day `chapter-11` was published and `chapter-10` was republished. It covers the book up to Chapter 12; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -31,7 +31,7 @@ Chapter 10 adds [guardrails](#try-chapter-10-from-source): one decision for ever
 
 Chapter 11 adds [evals](#try-chapter-11-from-source): `mino eval` runs declared cases through the Agent loop and grades the result. It keeps record version 4; see its [history compatibility notes](#chapter-11-history-compatibility).
 
-Chapter 12, in development, adds an [operating-system sandbox for Bash](#try-chapter-12-from-source) on macOS. It keeps record version 4; see its [history compatibility notes](#chapter-12-history-compatibility) before opening a Chapter 12 session with an older release.
+Chapter 12 adds an [operating-system sandbox for Bash](#try-chapter-12-from-source) on macOS. It keeps record version 4; see its [history compatibility notes](#chapter-12-history-compatibility) before opening a Chapter 12 session with an older release.
 
 ## Prepare your Mac
 
@@ -44,10 +44,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-11 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-12 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-11`. Omit `-- chapter-11` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-12`. Omit `-- chapter-12` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -87,10 +87,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-11
+mino update chapter-12
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.11.0` or `v0.11.0` as aliases for `chapter-11`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.12.0` or `v0.12.0` as aliases for `chapter-12`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -456,15 +456,16 @@ Chapter 11 keeps record version 4 and adds no record kinds or result statuses. T
 
 ## Try Chapter 12 from source
 
-Chapter 12 is in development. Its release `chapter-12` (application version `0.12.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-12` selects the same code.
+Chapter 12 is available as the [chapter-12 release](https://github.com/qshine/mino/releases/tag/chapter-12), with application version `0.12.0`, published on 2026-10-26; an installed `mino` already runs Bash sandboxed. To run the matching source, select its tag from the repository root, build, and start the executable in a project directory:
 
 ```bash
+git checkout chapter-12
 go build -o bin/mino ./cmd/mino
 cd /path/to/your/project
 /path/to/mino/bin/mino
 ```
 
-Replace both paths with your own directories. The banner reads `Mino - Chapter 12: Sandbox` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, and guardrail requirements still apply; the lesson is [Chapter 12](./chapters/12-sandbox.md), and its no-cost checks are in [section 5](./chapters/12-sandbox.md#_5-check-it-with-evals-and-tests).
+Replace both paths with your own directories. The banner reads `Mino - Chapter 12: Sandbox`; an installed release reports version `0.12.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, and guardrail requirements still apply; the lesson is [Chapter 12](./chapters/12-sandbox.md), and its no-cost checks are in [section 5](./chapters/12-sandbox.md#_5-check-it-with-evals-and-tests).
 
 On macOS with `/usr/bin/sandbox-exec`, every Bash command runs confined by default: it can read files except the protected paths, write only inside the project directory, the system temporary directories, `~/Library/Caches`, and `~/.cache`, cannot write under `.git/`, and cannot open network connections. Each Bash confirmation, and each unasked Bash line in `accept-edits` or `bypass`, shows a `Sandbox` field with that summary. The model may set `sandbox: false` for a command that needs the network or a write elsewhere, such as `git commit`; Mino then shows `Sandbox: "off: the model asked to run this command unconfined."` and asks you in every mode except `bypass`. Because a confined command can only change the project, temporary, and cache directories, `/mode accept-edits` now runs sandboxed Bash without asking, as it runs `write_file` and `edit_file`; `manual` still asks for every command. The sandbox does not limit reads of unprotected files, does not confine `http` MCP servers, and does not confine a command you approve with `sandbox: false`.
 
@@ -482,12 +483,12 @@ Chapter 12 keeps record version 4 and adds no record kinds or result statuses; n
 
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-11`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-12`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-11
+git checkout chapter-12
 go run ./cmd/mino
 ```
 

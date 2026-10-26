@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–11 章，对应发布版本 `chapter-11`（程序版本 `0.11.0`）。
-第 01–11 章均已发布，标签为 `chapter-01` 至 `chapter-11`，程序版本对应 `0.1.0` 至 `0.11.0`；第 12–15 章规划中。
+**当前进度：**本快照包含第 01–12 章，对应发布版本 `chapter-12`（程序版本 `0.12.0`）。
+第 01–12 章均已发布，标签为 `chapter-01` 至 `chapter-12`，程序版本对应 `0.1.0` 至 `0.12.0`；第 13–15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -23,6 +23,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 09 章加入 MCP 工具：用 `mino mcp` 管理 Context7 等远端和本地 MCP 服务。
 第 10 章加入安全防护：由代码执行的统一工具策略、受保护路径，以及用 `/mode` 选择的三种权限模式。
 第 11 章加入评测：`mino eval` 用声明式用例驱动 Agent 循环，并用确定性检查评分。
+第 12 章加入操作系统沙箱：在 macOS 上，Bash 命令在 Seatbelt 配置下运行，写入受限，网络和受保护路径被阻断。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -284,9 +285,9 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 `max_requests`、`max_tool_calls`。没有 LLM judge；第 11 章也没有沙箱：用例里的 Bash 仍以你的账户权限运行（从第 12 章起，用例和聊天一样在沙箱内运行）。
 详见[第 11 章](docs/books/zh/chapters/11-evals.md)。
 
-## 操作系统沙箱（第 12 章，开发中）
+## 操作系统沙箱（第 12 章）
 
-在 macOS 上，每条 Bash 命令现在都通过 `sandbox-exec` 在 Seatbelt 配置下运行，由内核而不是对命令的猜测来限定它能触及什么：
+执行 `mino update chapter-12` 安装第 12 章。在 macOS 上，每条 Bash 命令现在都通过 `sandbox-exec` 在 Seatbelt 配置下运行，由内核而不是对命令的猜测来限定它能触及什么：
 可以读取你的账户能读的文件，但受保护路径（`.env`、密钥、`.ssh/` 等）除外；只能写入项目目录、临时目录和 `~/Library/Caches`、`~/.cache`；
 不能写入 `.git/`；不能建立网络连接。每次确认都会显示一行 `Sandbox`，Bash 工具定义也会把这些限制告诉模型。
 模型可以为需要网络或在别处写入的命令（例如要写 `.git/` 的 `git commit`）设置 `sandbox: false`；这样的命令在除 `bypass` 外的所有模式下都需要你批准。
@@ -302,7 +303,7 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-11   # 安装最新已发布章节
+mino update chapter-12   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -328,6 +329,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 09 章 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 | 第 10 章 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 | 第 11 章 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
+| 第 12 章 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。

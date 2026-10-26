@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-26 发布的 `chapter-11`（程序版本 `0.11.0`），同日 `chapter-10` 重新发布；覆盖本书到第 11 章为止的内容，各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-26 发布的 `chapter-12`（程序版本 `0.12.0`），同日 `chapter-11` 发布、`chapter-10` 重新发布；覆盖本书到第 12 章为止的内容，各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -31,7 +31,7 @@ next:
 
 第十一章加入[评测](#从源码体验第十一章)：`mino eval` 让声明好的用例经过 Agent 循环并给结果评分。它沿用记录版本 4，见[历史兼容性说明](#第十一章的历史兼容性)。
 
-第十二章正在开发中，在 macOS 上为 Bash 加入[操作系统沙箱](#从源码体验第十二章)。它沿用记录版本 4；用旧版本打开第十二章的会话之前，请阅读[历史兼容性说明](#第十二章的历史兼容性)。
+第十二章在 macOS 上为 Bash 加入[操作系统沙箱](#从源码体验第十二章)。它沿用记录版本 4；用旧版本打开第十二章的会话之前，请阅读[历史兼容性说明](#第十二章的历史兼容性)。
 
 ## 准备一台 Mac
 
@@ -44,10 +44,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-11 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-12 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-11`。省略 `-- chapter-11` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-12`。省略 `-- chapter-12` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -87,10 +87,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-11
+mino update chapter-12
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.11.0` 或 `v0.11.0`，两者都指向 `chapter-11`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.12.0` 或 `v0.12.0`，两者都指向 `chapter-12`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -456,15 +456,16 @@ graders:
 
 ## 从源码体验第十二章
 
-第十二章正在开发中。它的发布标签 `chapter-12`（程序版本 `0.12.0`）正在准备，所以暂时没有可安装的发布包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-12` 选择的就是同一份代码。
+第十二章已随 [chapter-12](https://github.com/qshine/mino/releases/tag/chapter-12) 发布，程序版本为 `0.12.0`，发布于 2026-10-26；已安装的 `mino` 已经在沙箱内运行 Bash。若要运行对应源码，请在仓库根目录选择该标签并构建，再到一个项目目录里启动它：
 
 ```bash
+git checkout chapter-12
 go build -o bin/mino ./cmd/mino
 cd /path/to/your/project
 /path/to/mino/bin/mino
 ```
 
-把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 12: Sandbox`，源码版本为 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP 和安全防护要求继续适用；正文见[第十二章](./chapters/12-sandbox.md)，免费的检查见[第 5 节](./chapters/12-sandbox.md#_5-用评测和测试检查它)。
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 12: Sandbox`；安装的发布版显示版本 `0.12.0`，源码构建显示 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP 和安全防护要求继续适用；正文见[第十二章](./chapters/12-sandbox.md)，免费的检查见[第 5 节](./chapters/12-sandbox.md#_5-用评测和测试检查它)。
 
 在带有 `/usr/bin/sandbox-exec` 的 macOS 上，每条 Bash 命令默认受限运行：可以读取受保护路径之外的文件，只能写入项目目录、系统临时目录、`~/Library/Caches` 和 `~/.cache`，不能写入 `.git/`，也不能建立网络连接。每次 Bash 确认，以及 `accept-edits` 或 `bypass` 下不经询问的 Bash 那一行，都会显示带有这段摘要的 `Sandbox` 字段。模型可以为需要网络或在别处写入的命令（例如 `git commit`）设置 `sandbox: false`；这时 Mino 显示 `Sandbox: "off: the model asked to run this command unconfined."`，并在除 `bypass` 外的每种模式下询问你。因为受限命令只能改动项目、临时和缓存目录，`/mode accept-edits` 现在会像运行 `write_file`、`edit_file` 那样不经询问运行沙箱内的 Bash；`manual` 仍对每条命令询问。沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不约束你以 `sandbox: false` 批准的命令。
 
@@ -482,12 +483,12 @@ cd /path/to/your/project
 
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-11`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-12`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-11
+git checkout chapter-12
 go run ./cmd/mino
 ```
 
