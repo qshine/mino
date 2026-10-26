@@ -12,6 +12,7 @@ Beyond the commands listed in `AGENTS.md`:
 
 - `go test ./internal/agent -run TestName -v`: run a single test (add `-race` to match `scripts/check.sh`).
 - `go test -race -timeout 90s ./...`: the test step that `scripts/check.sh` runs.
+- `go run ./cmd/mino eval ./evals`: run the replay eval suite (`scripts/check.sh` runs the built binary against it; add `--live` only with a complete `~/.mino/config.json`).
 - `npm run book:dev` / `npm run book:build`: serve or build the VitePress book (Node >= 22; run `npm ci --ignore-scripts` first if `node_modules` is missing).
 - `bash book_review.sh`: install book dependencies if needed, build, and open a local preview.
 - In Linux containers whose PID 1 does not reap orphaned processes (such as Claude Code cloud sessions), `TestBashLimitsAndCancellation/background` reports `child … survived` because the killed child stays a zombie. macOS and CI are unaffected; run the checks under a process that sets `PR_SET_CHILD_SUBREAPER` and reaps children.
@@ -38,6 +39,7 @@ Beyond the commands listed in `AGENTS.md`:
 - `internal/policy/`: holds one session's permission mode (`manual`, `accept-edits`, `bypass`; `SessionManager` keeps one `Policy` per session ID and `/mode` in `session_commands.go` changes the current one) and the built-in protected paths, and returns the allow/ask/deny decision for each call.
 - `internal/mcp/`: `config.go` handles `mcp.json` (shared with `mino mcp`); `client.go` connects over HTTP or stdio, discovers tools, and adapts them to `tools.Tool`.
 - `internal/skills/`: project `.agents/skills` discovery and confined reads used by `skill_view`.
+- `internal/eval/`: eval case schema (`case.go`), scripted loopback Responses server (`fake.go`), per-run runner (`run.go`), graders (`grade.go`), and report (`report.go`); `internal/eval_command.go` is the `mino eval` subcommand, routed from `runCLI` like `mino mcp`. Repository cases live in `evals/`.
 - Tests in `internal/agent/` drive the real loop against local `httptest` Responses servers, building Agents and isolated Sessions with the helpers in `fixture_test.go`; per-feature suites follow the chapter names (`files_test.go`, `mcp_test.go`, `guardrails_test.go`, `compact_*_test.go`, ...). To meet the HOME-isolation rule, use `isolateConfig(t)` (in `internal/agent/fixture_test.go` and `internal/config_setup_test.go`) or `t.Setenv("HOME", t.TempDir())`.
 
 ## Finishing a change in Claude Code

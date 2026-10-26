@@ -248,6 +248,7 @@ func TestInstallerResolvesChapterReleases(t *testing.T) {
 		{"0.4.1", "chapter-04.1", "0.4.1"},
 		{"chapter-09", "chapter-09", "0.9.0"},
 		{"chapter-10", "chapter-10", "0.10.0"},
+		{"chapter-11", "chapter-11", "0.11.0"},
 	} {
 		t.Run(tc.input, func(t *testing.T) {
 			script, home, assets := installerFixture(t)

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/qshine/mino/internal/agent"
 )
 
 func TestTerminalReadsQuestionsAndExits(t *testing.T) {
@@ -121,5 +123,19 @@ func TestTerminalKeepsPartialAnswerAndContinuesAfterStreamFailure(t *testing.T) 
 		})
 	if err != nil || strings.Contains(output.String(), "\x1b") || !strings.Contains(output.String(), "Assistant> partial\n") || !strings.Contains(output.String(), "Assistant> recovered\n") || !strings.Contains(errorOutput.String(), "incomplete") {
 		t.Fatalf("output = %q, stderr = %q, error = %v", output.String(), errorOutput.String(), err)
+	}
+}
+
+func TestTerminalIgnoresUsageEvents(t *testing.T) {
+	var out, errOut bytes.Buffer
+	cli := NewCLI(strings.NewReader(""), &out, &errOut)
+	if err := cli.Emit(agent.Event{Kind: "response_completed", Usage: agent.Usage{InputTokens: 1, OutputTokens: 2, TotalTokens: 3}}); err != nil {
+		t.Fatal(err)
+	}
+	if out.Len() != 0 || errOut.Len() != 0 {
+		t.Fatalf("usage was rendered: %q %q", out.String(), errOut.String())
+	}
+	if err := cli.Emit(agent.Event{Kind: "mystery"}); err == nil {
+		t.Fatal("unknown event accepted")
 	}
 }

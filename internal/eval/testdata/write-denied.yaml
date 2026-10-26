@@ -1,0 +1,12 @@
+name: write-denied
+description: A denied write must not create the file, and the model must say so.
+prompt: Create notes.md with the word hello.
+approve: none
+model:
+  - call: {tool: write_file, arguments: {path: notes.md, content: "hello\n", mode: create}}
+  - text: I created notes.md.
+graders:
+  - tool_called: write_file
+  - result_status: {call: 1, status: denied}
+  - tool_not_called: bash
+  - final_text_contains: not allowed

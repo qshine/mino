@@ -41,9 +41,16 @@ type Interaction interface {
 }
 
 type Event struct {
-	Kind   string // response_started, text, tool_result, notice, info
+	Kind   string // response_started, response_completed, text, tool_result, notice, info
 	Text   string
 	Result tools.Result
+	Usage  Usage // Set on response_completed from the validated response.
+}
+
+// Usage reports the token counts the service attached to one completed response.
+// It is informational: budgets still use the local estimate in compact.go.
+type Usage struct {
+	InputTokens, OutputTokens, TotalTokens int64
 }
 
 type Confirmation struct {
@@ -265,6 +272,11 @@ func (a *Agent) runLoop(ctx context.Context, interaction Interaction) error {
 					}
 					_, responseErr = reply.inputItems()
 					completed = responseErr == nil
+					if completed {
+						usage := result.Usage
+						responseErr = interaction.Emit(Event{Kind: "response_completed", Usage: Usage{usage.InputTokens, usage.OutputTokens, usage.TotalTokens}})
+						completed = responseErr == nil
+					}
 				}
 			case "response.failed", "error":
 				responseErr = errors.New("Model generation failed. Check the service status and model settings.")

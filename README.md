@@ -14,10 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–10, release
-`chapter-10` (application version `0.10.0`).
-All ten chapters are released, tagged `chapter-01` through `chapter-10` with
-application versions `0.1.0` through `0.10.0`.
+**Current progress:** This snapshot contains Chapters 01–11, release
+`chapter-11` (application version `0.11.0`).
+All eleven chapters are released, tagged `chapter-01` through `chapter-11` with
+application versions `0.1.0` through `0.11.0`.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -32,6 +32,8 @@ Chapter 09 adds MCP tools: remote and local MCP servers such as Context7, manage
 `mino mcp`.
 Chapter 10 adds guardrails: one code-enforced tool policy with protected paths and three
 permission modes selected with `/mode`.
+Chapter 11 adds evals: `mino eval` runs declared cases through the Agent loop and grades
+them with deterministic checks.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -337,12 +339,45 @@ until Mino exits. Calls that run unasked are still printed. There is no OS
 sandbox: Bash commands and MCP servers run with your account permissions.
 See [Chapter 10](docs/books/en/chapters/10-guardrails.md).
 
+## Evals (Chapter 11)
+
+Install `chapter-11` with `mino update chapter-11`. `mino eval` runs declared cases
+through the same Agent loop that chat uses and grades them with checks that do not
+guess. A case is one YAML file:
+
+```yaml
+name: bash-denied
+prompt: Delete the build directory.
+approve: none
+model:
+  - call: {tool: bash, arguments: {command: "rm -rf build"}}
+  - text: The command was not approved, so nothing was deleted.
+graders:
+  - result_status: {call: 1, status: denied}
+  - final_text_contains: not approved
+```
+
+```bash
+mino eval ./evals                  # replay: scripted model, no key, no network
+mino eval --live --runs 3 ./evals  # live: the configured model, pass@k / pass^k, tokens
+mino eval --out results ./evals    # also write report.json and one session log per run
+```
+
+Each run gets a fresh temporary workspace and home, the manual permission mode, and no
+MCP servers; your sessions are never opened. Replay mode checks Mino's own behavior
+(approval, denial, protected paths, tool pairing) and runs in `scripts/check.sh`; live
+mode measures a model and never runs in CI. Graders: `final_text_contains`,
+`final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`, `result_status`,
+`file_exists`, `file_contains`, `max_requests`, `max_tool_calls`. There is no LLM judge
+and no sandbox: Bash in a case still runs with your account permissions. See
+[Chapter 11](docs/books/en/chapters/11-evals.md).
+
 ## Version and updates
 
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-10   # Install the latest published chapter
+mino update chapter-11   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -371,6 +406,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 08 | `0.8.0` | [`chapter-08`](https://github.com/qshine/mino/releases/tag/chapter-08) |
 | Chapter 09 | `0.9.0` | [`chapter-09`](https://github.com/qshine/mino/releases/tag/chapter-09) |
 | Chapter 10 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
+| Chapter 11 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21
@@ -393,7 +429,7 @@ bash scripts/check.sh
 ```
 
 The check script verifies formatting and shell syntax, runs `go vet` and tests
-with the race detector, then builds `bin/mino`. Tests use fake keys, temporary
+with the race detector, builds `bin/mino`, then runs the replay eval suite in `evals/`. Tests use fake keys, temporary
 home directories, local mock HTTP servers, and fake release downloads. They do
 not call a paid model or modify your real configuration.
 
@@ -408,6 +444,7 @@ not call a paid model or modify your real configuration.
 - [Chapter 08: project file tools](docs/books/en/chapters/08-file-tools.md)
 - [Chapter 09: MCP tools](docs/books/en/chapters/09-mcp.md)
 - [Chapter 10: guardrails](docs/books/en/chapters/10-guardrails.md)
+- [Chapter 11: evals](docs/books/en/chapters/11-evals.md)
 - [Chapter roadmap](docs/books/en/plan-todo-chapters.md)
 - Entry point: `cmd/mino/main.go`; dependency assembly: `internal/app.go`.
 - Read the core path: [`CLI.Run`](internal/gateway/cli.go) → [`Agent.Handle` and `runLoop`](internal/agent/agent.go). `Handle` saves the user message before `runLoop` directly calls the Responses SDK, saves each complete response, and processes tools.

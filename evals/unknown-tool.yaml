@@ -1,0 +1,12 @@
+name: unknown-tool
+description: A tool the model invents gets an unknown_tool result instead of running anything.
+prompt: Remove old.log.
+approve: all
+model:
+  - call: {tool: delete_file, arguments: {path: old.log}}
+  - text: There is no delete tool here; I can only read, write, or edit files.
+    expect_input_contains: unknown_tool
+graders:
+  - tool_called: delete_file
+  - result_status: {call: 1, status: unknown_tool}
+  - max_tool_calls: 1
