@@ -1,0 +1,15 @@
+name: bash-approved
+description: An approved Bash call runs once, and its paired result reaches the next request.
+prompt: Which shell am I using here?
+approve: [bash]
+model:
+  - call: {tool: bash, arguments: {command: "echo $0"}}
+  - text: The shell is bash.
+    expect_input_contains: function_call_output
+graders:
+  - tool_called: bash
+  - tool_order: [bash]
+  - result_status: {call: 1, status: completed}
+  - final_text_contains: bash
+  - max_requests: 2
+  - max_tool_calls: 1

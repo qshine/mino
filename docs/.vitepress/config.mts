@@ -90,6 +90,9 @@ export default withMermaid({
           { text: 'Part V · Stay within bounds', items: [
             { text: '10 Guardrails', link: '/chapters/10-guardrails' }
           ] },
+          { text: 'Part VI · Measure the agent', items: [
+            { text: '11 Evals', link: '/chapters/11-evals' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -136,6 +139,9 @@ export default withMermaid({
           ] },
           { text: '第五部分 · 守住边界', items: [
             { text: '10 安全防护', link: '/zh/chapters/10-guardrails' }
+          ] },
+          { text: '第六部分 · 衡量 Agent', items: [
+            { text: '11 评测', link: '/zh/chapters/11-evals' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

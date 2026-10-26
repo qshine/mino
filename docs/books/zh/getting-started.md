@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-26 重新发布的 `chapter-10`（程序版本 `0.10.0`），覆盖本书到第 10 章为止的内容；各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-26 发布的 `chapter-11`（程序版本 `0.11.0`），同日 `chapter-10` 重新发布；覆盖本书到第 11 章为止的内容，各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -29,6 +29,8 @@ next:
 
 第十章加入[安全防护](#从源码体验第十章)：每次工具调用都经过同一个决定，内置受保护路径，并可用 `/mode` 选择[权限模式](#第十章的权限模式)。
 
+第十一章加入[评测](#从源码体验第十一章)：`mino eval` 让声明好的用例经过 Agent 循环并给结果评分。它沿用记录版本 4，见[历史兼容性说明](#第十一章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -40,10 +42,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-10 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-11 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-10`。省略 `-- chapter-10` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-11`。省略 `-- chapter-11` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -83,10 +85,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-10
+mino update chapter-11
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.10.0` 或 `v0.10.0`，两者都指向 `chapter-10`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.11.0` 或 `v0.11.0`，两者都指向 `chapter-11`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -398,14 +400,66 @@ cd /path/to/your/project
 
 第十章沿用记录版本 4，没有新增记录类型或结果状态，权限模式也从不写入会话。被这个决定拒绝的调用，和你拒绝的调用保存方式相同：模型的请求，后面跟着一个 `denied` 结果。它无需迁移即可打开第九章的会话，`chapter-09` 也仍能打开第十章写入的会话。不过回退会让安全防护失效：`chapter-09` 没有受保护路径，它的 `read_file` 会不经询问读取 `.env`。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
 
+## 从源码体验第十一章
+
+第十一章已随 [chapter-11](https://github.com/qshine/mino/releases/tag/chapter-11) 发布，程序版本为 `0.11.0`，发布于 2026-10-26；已安装的 `mino` 已经包含 `mino eval`。若要运行对应源码，请在仓库根目录选择该标签并构建，再在同一位置运行仓库自带的用例：
+
+```bash
+git checkout chapter-11
+go build -o bin/mino ./cmd/mino
+bin/mino eval ./evals
+```
+
+聊天横幅显示 `Mino - Chapter 11: Evals`，`mino help` 列出 `eval`，`mino eval help` 打印用法。默认的回放模式用脚本化的本机模型驱动 Agent 循环：不需要 API 密钥和网络，也从不读取 `~/.mino`，因此碰不到你的配置和会话。每份用例在全新的临时工作区和主目录中运行，结束后删除。既有的 Go 要求继续适用；正文见[第十一章](./chapters/11-evals.md)。
+
+| 参数 | 含义 |
+| --- | --- |
+| `PATH` | 一个用例文件，或一个目录，其中的 `*.yaml` 与 `*.yml` 文件按文件名顺序读取，不递归。默认 `./evals`。 |
+| `--live` | 使用 `~/.mino/config.json` 中的模型，并以 `~/.mino/SOUL.md` 作为默认指令；文件缺失时像聊天一样先用内嵌默认身份创建它。配置必须完整，命令不会提示输入。实时运行会产生真实请求费用。 |
+| `--runs N` | 每份用例的运行次数，1 到 32。默认 1，带 `--live` 时默认 3。用例自己的 `runs` 字段会覆盖它。 |
+| `--filter NAME` | 只运行指定名称的用例。 |
+| `--out DIR` | 写出 `report.json`，并把每次运行的会话日志保存为 `DIR/<case>/run-N.jsonl`。该目录不能位于 `~/.mino` 之内。 |
+| `--timeout DURATION` | 单次运行的时限，1s 到 30m。默认 2m。 |
+
+只要有任何用例的任何一次运行失败，退出状态就是 1。每次运行都从 `manual` 权限模式开始，且不连接任何 MCP 服务，无论你的 `~/.mino/mcp.json` 怎么写；`/mode` 是聊天命令，从不作用于评测运行，`.env` 等受保护路径也和聊天中一样被拒绝。用例批准 Bash 时，它在临时工作区里以你的账户权限运行；这个框架不是沙箱。
+
+### 编写评测用例
+
+在项目中创建 `evals/hello-file.yaml`。文件名去掉扩展名后必须等于 `name`：
+
+```yaml
+name: hello-file
+description: An approved write creates the file the user asked for.
+prompt: Create hello.txt containing hi.
+approve: [write_file]
+model:
+  - call: {tool: write_file, arguments: {path: hello.txt, content: "hi\n", mode: create}}
+  - text: hello.txt now contains hi.
+graders:
+  - tool_order: [write_file]
+  - result_status: {call: 1, status: completed}
+  - file_contains: {path: hello.txt, text: hi}
+  - max_requests: 2
+```
+
+它的结构仿照仓库中的 `write-then-read.yaml`。用 `bin/mino eval --filter hello-file ./evals` 单独运行它；在第十一章源码上使用临时主目录观察到的结果是一行通过的记录，两次请求、一次工具调用，运行后临时主目录中仍然没有 `.mino` 目录。
+
+`name` 和 `prompt` 必填，`prompt` 最大 16 KiB。`name` 由小写 ASCII 字母和数字组成，可用单个连字符分隔，最多 64 字节。`approve` 为 `all`（默认）、`none`，或一个要批准的工具名列表。`instructions` 替换这份用例的默认指令。`workspace.files` 在每次运行前预置相对路径的文件，最多 64 个、每个最多 64 KiB。`model` 是最多 16 步的回放脚本，每步是 `call: {tool, arguments}` 或 `text`，可附带 `expect_input_contains`，即该步模型收到的请求体中必须出现的子串；只有使用 `--live` 运行时才能省略它。`graders` 包含 1 到 32 项检查，必须全部通过：`final_text_contains`、`final_text_matches`（不超过 1 KiB 的 RE2 正则）、`tool_called`、`tool_not_called`、`tool_order`、`result_status`（`call` 从 1 开始，按模型请求的全部调用计数）、`file_exists`、`file_contains`、`max_requests` 和 `max_tool_calls`。未知字段导致加载失败，一个目录最多 256 份用例，一份用例文件最大 64 KiB。
+
+用例可以调用的工具就是聊天工具去掉 MCP：`bash`、`read_file`、`write_file`、`edit_file`，以及读取工作区 `.agents/skills` 下预置技能的 `skill_view`。用例文件和项目技能一样，是你主动运行的项目数据，从不从 `~/.mino` 加载。
+
+### 第十一章的历史兼容性
+
+第十一章沿用记录版本 4，没有新增记录类型或结果状态。运行时唯一的新增是一个只存在于内存中的 `response_completed` 事件，它把 token 用量交给 `mino eval`，从不写入会话日志。因此 `chapter-10` 可以打开第十一章写入的会话，第十一章也无需迁移即可打开第十章的会话；`chapter-10` 唯一缺少的是 `mino eval` 命令。评测运行只把日志写到临时目录，或写到你用 `--out` 指定的目录，从不写入 `~/.mino/sessions`。
+
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-10`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-11`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-10
+git checkout chapter-11
 go run ./cmd/mino
 ```
 

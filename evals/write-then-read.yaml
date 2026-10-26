@@ -1,0 +1,16 @@
+name: write-then-read
+description: A created file is visible to the next read and to the file graders.
+prompt: Create greeting.txt containing hello, then show it to me.
+approve: [write_file]
+model:
+  - call: {tool: write_file, arguments: {path: greeting.txt, content: "hello\n", mode: create}}
+  - call: {tool: read_file, arguments: {path: greeting.txt}}
+  - text: greeting.txt now contains hello.
+graders:
+  - tool_order: [write_file, read_file]
+  - result_status: {call: 1, status: completed}
+  - result_status: {call: 2, status: completed}
+  - file_exists: greeting.txt
+  - file_contains: {path: greeting.txt, text: hello}
+  - tool_not_called: bash
+  - max_requests: 3

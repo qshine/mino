@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-10` release (application version `0.10.0`), republished on 2026-10-26. It covers the book up to Chapter 10; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-11` release (application version `0.11.0`), published on 2026-10-26, the same day `chapter-10` was republished. It covers the book up to Chapter 11; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -29,6 +29,8 @@ Chapter 09 adds [MCP tools](#try-chapter-09-from-source). Before using it on exi
 
 Chapter 10 adds [guardrails](#try-chapter-10-from-source): one decision for every tool call, built-in protected paths, and [permission modes](#chapter-10-permission-modes) chosen with `/mode`.
 
+Chapter 11 adds [evals](#try-chapter-11-from-source): `mino eval` runs declared cases through the Agent loop and grades the result. It keeps record version 4; see its [history compatibility notes](#chapter-11-history-compatibility).
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -40,10 +42,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-10 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-11 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-10`. Omit `-- chapter-10` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-11`. Omit `-- chapter-11` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -83,10 +85,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-10
+mino update chapter-11
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.10.0` or `v0.10.0` as aliases for `chapter-10`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.11.0` or `v0.11.0` as aliases for `chapter-11`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -398,14 +400,66 @@ The modes decide which calls need your answer, and protected paths limit the fil
 
 Chapter 10 keeps record version 4 and adds no record kinds or result statuses. The permission mode is never written to a session. A call refused by the decision is saved like a call you declined: the model's request followed by a `denied` result. It opens Chapter 09 sessions without migration, and `chapter-09` can still open sessions written by Chapter 10. Rolling back removes the guardrails, though: `chapter-09` has no protected paths, so its `read_file` reads `.env` without asking. As before, keep private copies of session logs and `active-session.json` before switching versions.
 
+## Try Chapter 11 from source
+
+Chapter 11 is available as the [chapter-11 release](https://github.com/qshine/mino/releases/tag/chapter-11), with application version `0.11.0`, published on 2026-10-26; an installed `mino` already includes `mino eval`. To run the matching source, select its tag from the repository root, build, and run the repository's own cases from there:
+
+```bash
+git checkout chapter-11
+go build -o bin/mino ./cmd/mino
+bin/mino eval ./evals
+```
+
+The chat banner reads `Mino - Chapter 11: Evals`, `mino help` lists `eval`, and `mino eval help` prints the usage. The default replay mode drives the Agent loop with a scripted local model: it needs no API key or network, and it never reads `~/.mino`, so it cannot touch your settings or sessions. Each case runs in a fresh temporary workspace and home directory that are deleted afterwards. The existing Go requirement still applies; the lesson is [Chapter 11](./chapters/11-evals.md).
+
+| Flag | Meaning |
+| --- | --- |
+| `PATH` | One case file, or a directory whose `*.yaml` and `*.yml` files are read in name order, not recursively. Default `./evals`. |
+| `--live` | Use the model from `~/.mino/config.json`, with `~/.mino/SOUL.md` as the default instructions, creating the bundled SOUL first if it is missing, as chat does. The configuration must be complete; the command does not prompt. Live runs cost real requests. |
+| `--runs N` | Runs per case, 1 to 32. Default 1, or 3 with `--live`. A case's own `runs` field overrides it. |
+| `--filter NAME` | Run only the named case. |
+| `--out DIR` | Write `report.json` and each run's session log as `DIR/<case>/run-N.jsonl`. The directory may not be inside `~/.mino`. |
+| `--timeout DURATION` | Limit for one run, 1s to 30m. Default 2m. |
+
+The exit status is 1 when any case fails any run. Every run starts in the `manual` permission mode and connects no MCP servers, whatever your `~/.mino/mcp.json` says; `/mode` is a chat command and never applies to an eval run, and protected paths such as `.env` are refused exactly as in chat. Bash, when a case approves it, runs in the temporary workspace with your account's permissions; the harness is not a sandbox.
+
+### Write an eval case
+
+Create `evals/hello-file.yaml` in your project. The file name without its extension must equal `name`:
+
+```yaml
+name: hello-file
+description: An approved write creates the file the user asked for.
+prompt: Create hello.txt containing hi.
+approve: [write_file]
+model:
+  - call: {tool: write_file, arguments: {path: hello.txt, content: "hi\n", mode: create}}
+  - text: hello.txt now contains hi.
+graders:
+  - tool_order: [write_file]
+  - result_status: {call: 1, status: completed}
+  - file_contains: {path: hello.txt, text: hi}
+  - max_requests: 2
+```
+
+It mirrors the repository's `write-then-read.yaml`. Run it alone with `bin/mino eval --filter hello-file ./evals`; observed on the Chapter 11 source under a temporary home directory, it prints one passing row with two requests and one tool call, and the temporary home still contains no `.mino` directory afterwards.
+
+`name` and `prompt` are required; `prompt` is at most 16 KiB. `name` uses lowercase ASCII letters and digits with single hyphens, at most 64 bytes. `approve` is `all` (the default), `none`, or a list of tool names to approve. `instructions` replaces the default instructions for this case. `workspace.files` seeds relative paths before every run, at most 64 files of 64 KiB each. `model` is the replay script of at most 16 steps, each either `call: {tool, arguments}` or `text`, optionally with `expect_input_contains`, a substring that must appear in the request body the model receives at that step; it may be omitted only when you run with `--live`. `graders` holds 1 to 32 checks, all of which must pass: `final_text_contains`, `final_text_matches` (an RE2 pattern of at most 1 KiB), `tool_called`, `tool_not_called`, `tool_order`, `result_status` (`call` is 1-based over every call the model requested), `file_exists`, `file_contains`, `max_requests`, and `max_tool_calls`. Unknown fields fail loading, a directory holds at most 256 cases, and a case file is at most 64 KiB.
+
+The tools a case can call are the chat tools without MCP: `bash`, `read_file`, `write_file`, `edit_file`, and `skill_view`, which reads skills seeded under `.agents/skills` in the workspace. Case files are project data that you run deliberately, like project skills; they are never loaded from `~/.mino`.
+
+### Chapter 11 history compatibility
+
+Chapter 11 keeps record version 4 and adds no record kinds or result statuses. The only runtime addition is an in-memory `response_completed` event that carries token usage to `mino eval` and is never written to a session log. `chapter-10` can therefore open sessions written by Chapter 11, and Chapter 11 opens Chapter 10 sessions without migration; the only thing `chapter-10` lacks is the `mino eval` command. Eval runs write their logs only to temporary directories, or to the `--out` directory you name, never under `~/.mino/sessions`.
+
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-10`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-11`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-10
+git checkout chapter-11
 go run ./cmd/mino
 ```
 

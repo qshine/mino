@@ -32,6 +32,9 @@ func runCLI(ctx context.Context, version string, args []string, input io.Reader,
 	if len(args) > 0 && args[0] == "mcp" {
 		return runMCP(ctx, cli, args[1:], output)
 	}
+	if len(args) > 0 && args[0] == "eval" {
+		return runEval(ctx, cli, args[1:], output)
+	}
 	if handled, err := cli.Command(ctx, version, args); handled {
 		return err
 	}
