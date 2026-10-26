@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/qshine/mino/internal/mcp"
+	"github.com/qshine/mino/internal/sandbox"
 )
 
 func mcpCommand(t *testing.T, args ...string) (string, error) {
@@ -34,8 +35,21 @@ func TestMCPCommandManagesPrivateConfig(t *testing.T) {
 		t.Fatalf("stdio add: %v", err)
 	}
 	config, err := mcp.Load(path)
-	if err != nil || config.Servers["local"].Command == "true" || !filepath.IsAbs(config.Servers["local"].Command) || config.Servers["local"].Args[0] != "--flag" {
+	if err != nil || config.Servers["local"].Command == "true" || !filepath.IsAbs(config.Servers["local"].Command) || config.Servers["local"].Args[0] != "--flag" || config.Servers["local"].Sandbox {
 		t.Fatalf("stdio config: %+v %v", config.Servers["local"], err)
+	}
+	if sandbox.Available() {
+		if _, err := mcpCommand(t, "add", "confined", "--sandbox", "--cwd", t.TempDir(), "--", "true"); err != nil {
+			t.Fatalf("sandboxed stdio add: %v", err)
+		}
+		if config, _ := mcp.Load(path); !config.Servers["confined"].Sandbox {
+			t.Fatalf("sandbox flag not saved: %+v", config.Servers["confined"])
+		}
+		if out, err := mcpCommand(t, "list"); err != nil || !strings.Contains(out, "confined  stdio") || !strings.Contains(out, "  sandbox") {
+			t.Fatalf("list: %q %v", out, err)
+		}
+	} else if _, err := mcpCommand(t, "add", "confined", "--sandbox", "--", "true"); err == nil {
+		t.Fatal("accepted --sandbox where no sandbox exists")
 	}
 	for _, args := range [][]string{
 		{"add", "context7", "https://other.example/mcp"},      // duplicate
@@ -44,6 +58,7 @@ func TestMCPCommandManagesPrivateConfig(t *testing.T) {
 		{"add", "key", "https://example.com/mcp", "--bearer"}, // secrets need a terminal
 		{"add", "hdr", "https://example.com/mcp", "--header", "Host"},
 		{"add", "mixed", "--env", "TOKEN", "https://example.com/mcp"},
+		{"add", "boxed", "--sandbox", "https://example.com/mcp"}, // sandbox is for stdio only
 		{"add", "nocmd", "--", "definitely-not-a-command-xyz"},
 		{"remove", "missing"},
 	} {

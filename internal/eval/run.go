@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/qshine/mino/internal/agent"
+	"github.com/qshine/mino/internal/sandbox"
 	"github.com/qshine/mino/internal/tools"
 )
 
@@ -94,6 +95,14 @@ func RunCase(ctx context.Context, c Case, o Options, run int) (RunResult, error)
 			return err
 		}
 		transcript.Workspace = bash.Directory()
+		// Cases run as chat does: confined when the system can confine.
+		if sandbox.Available() {
+			confined, err := sandbox.New(bash.Directory(), home)
+			if err != nil {
+				return err
+			}
+			bash.SetSandbox(confined)
+		}
 		files, err := tools.NewFiles(bash.Directory(), filepath.Join(home, ".mino"))
 		if err != nil {
 			return err

@@ -13,17 +13,20 @@ import (
 
 	"github.com/qshine/mino/internal/gateway"
 	"github.com/qshine/mino/internal/mcp"
+	"github.com/qshine/mino/internal/sandbox"
 )
 
 const mcpUsage = `Usage:
   mino mcp add NAME URL [--bearer] [--header NAME]...
-  mino mcp add NAME [--env NAME]... [--cwd DIR] -- COMMAND [ARG]...
+  mino mcp add NAME [--env NAME]... [--cwd DIR] [--sandbox] -- COMMAND [ARG]...
   mino mcp list
   mino mcp remove NAME
 
 Servers are saved in ~/.mino/mcp.json (mode 0600) and connect when chat starts.
 Header and environment values are entered without echo and never shown again.
---bearer stores an Authorization: Bearer header from a hidden token prompt.`
+--bearer stores an Authorization: Bearer header from a hidden token prompt.
+--sandbox runs a stdio server in the OS sandbox: writes only under its cwd,
+temporary and cache directories, protected paths blocked, network allowed.`
 
 // runMCP manages ~/.mino/mcp.json. It never connects to a server: connection
 // status is reported when chat starts.
@@ -78,11 +81,13 @@ func runMCP(ctx context.Context, cli *gateway.CLI, args []string, output io.Writ
 
 func parseAdd(ctx context.Context, cli *gateway.CLI, args []string) (mcp.Server, error) {
 	var headers, env []string
-	bearer, cwd, rest := false, "", []string(nil)
+	bearer, sandboxed, cwd, rest := false, false, "", []string(nil)
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--bearer":
 			bearer = true
+		case "--sandbox":
+			sandboxed = true
 		case "--header", "--env", "--cwd":
 			if i+1 == len(args) {
 				return mcp.Server{}, fmt.Errorf("%s requires a value", args[i])
@@ -126,10 +131,13 @@ func parseAdd(ctx context.Context, cli *gateway.CLI, args []string) (mcp.Server,
 		if info, err := os.Stat(cwd); err != nil || !info.IsDir() {
 			return mcp.Server{}, errors.New("--cwd must be an existing directory")
 		}
-		server = mcp.Server{Type: "stdio", Command: filepath.Clean(command), Args: rest[2:], Dir: filepath.Clean(cwd)}
+		if sandboxed && !sandbox.Available() {
+			return mcp.Server{}, errors.New("--sandbox is unavailable on this system")
+		}
+		server = mcp.Server{Type: "stdio", Command: filepath.Clean(command), Args: rest[2:], Dir: filepath.Clean(cwd), Sandbox: sandboxed}
 	} else {
-		if len(rest) != 1 || len(env) > 0 || cwd != "" {
-			return mcp.Server{}, errors.New("A remote server takes one URL and accepts --bearer and --header")
+		if len(rest) != 1 || len(env) > 0 || cwd != "" || sandboxed {
+			return mcp.Server{}, errors.New("A remote server takes one URL and accepts --bearer and --header, not --sandbox")
 		}
 		if err := mcp.ValidateURL(rest[0]); err != nil {
 			return mcp.Server{}, err
@@ -206,6 +214,9 @@ func listMCP(config mcp.Config, output io.Writer) error {
 		line := fmt.Sprintf("%s  %s  %s", name, s.Type, s.Destination())
 		if s.Type == "stdio" {
 			line += "  " + strings.Join(s.Args, " ") + "  cwd=" + s.Dir
+			if s.Sandbox {
+				line += "  sandbox"
+			}
 		}
 		if keys := sortedKeys(s.Headers); len(keys) > 0 {
 			line += "  headers=" + strings.Join(keys, ",") + " (values hidden)"

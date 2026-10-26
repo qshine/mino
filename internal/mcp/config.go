@@ -37,6 +37,7 @@ type Server struct {
 	Args    []string          `json:"args,omitempty"`
 	Dir     string            `json:"cwd,omitempty"`
 	Env     map[string]string `json:"env,omitempty"`
+	Sandbox bool              `json:"sandbox,omitempty"` // stdio only: confine the process with network allowed
 }
 
 var serverName = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
@@ -87,7 +88,7 @@ func ValidEnvName(name string) bool {
 func (s Server) Validate() error {
 	switch s.Type {
 	case "http":
-		if s.Command != "" || len(s.Args) != 0 || s.Dir != "" || len(s.Env) != 0 {
+		if s.Command != "" || len(s.Args) != 0 || s.Dir != "" || len(s.Env) != 0 || s.Sandbox {
 			return errors.New("An http server uses only url and headers")
 		}
 		if err := ValidateURL(s.URL); err != nil {

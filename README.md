@@ -16,8 +16,8 @@ model API experience is needed.
 
 **Current progress:** This snapshot contains Chapters 01–11, release
 `chapter-11` (application version `0.11.0`).
-All eleven chapters are released, tagged `chapter-01` through `chapter-11` with
-application versions `0.1.0` through `0.11.0`.
+Chapters 01–11 are released, tagged `chapter-01` through `chapter-11` with
+application versions `0.1.0` through `0.11.0`; Chapters 12–15 are planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -149,7 +149,7 @@ Tools live in the `internal/tools/` directory, starting with Bash. Commands have
 30 second timeout and a combined 64 KiB stdout/stderr limit; each turn allows
 at most 8 model requests and 16 tool calls. Bash runs with your account
 permissions. It can access files and networks; approval and process limits do
-not provide an OS sandbox. See [Chapter 03](docs/books/en/chapters/03-tools-and-bash.md)
+not provide an OS sandbox (Chapter 12 adds one on macOS). See [Chapter 03](docs/books/en/chapters/03-tools-and-bash.md)
 for the interaction, save points, and verification.
 
 Every step is saved and synced in the same session file before the next one starts.
@@ -335,9 +335,9 @@ chat:
 `/mode` alone shows the current mode. Switching to a looser mode asks for confirmation
 in an interactive terminal; switching back never asks. Each session has its own
 mode: `/new` starts in `manual`, and `/resume` returns to the mode that session had
-until Mino exits. Calls that run unasked are still printed. There is no OS
-sandbox: Bash commands and MCP servers run with your account permissions.
-See [Chapter 10](docs/books/en/chapters/10-guardrails.md).
+until Mino exits. Calls that run unasked are still printed. Chapter 10 has no OS
+sandbox: Bash commands and MCP servers run with your account permissions; Chapter 12
+adds one. See [Chapter 10](docs/books/en/chapters/10-guardrails.md).
 
 ## Evals (Chapter 11)
 
@@ -369,8 +369,34 @@ MCP servers; your sessions are never opened. Replay mode checks Mino's own behav
 mode measures a model and never runs in CI; a case with `live: false` only runs in replay.
 Graders: `final_text_contains`, `final_text_not_contains`, `final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`, `result_status`,
 `file_exists`, `file_contains`, `max_requests`, `max_tool_calls`. There is no LLM judge
-and no sandbox: Bash in a case still runs with your account permissions. See
+and, in Chapter 11, no sandbox: Bash in a case still runs with your account permissions
+(from Chapter 12, cases run confined like chat). See
 [Chapter 11](docs/books/en/chapters/11-evals.md).
+
+## OS sandbox (Chapter 12, in development)
+
+On macOS, every Bash command now runs under a Seatbelt profile through
+`sandbox-exec`, so the kernel, not a guess about the command, bounds what it may
+touch: it reads what your account can read except the protected paths (`.env`,
+keys, `.ssh/`, ...), writes only inside the project directory, temporary
+directories, and `~/Library/Caches` or `~/.cache`, cannot write under `.git/`, and
+cannot open network connections. Each confirmation shows a `Sandbox` line; the Bash
+tool definition tells the model about the limits. The model may set `sandbox: false`
+for a command that needs the network or a write elsewhere (for example `git commit`,
+which writes `.git/`); such a command always asks for your approval, in every mode
+except `bypass`. Because a confined command can only change the project, `/mode
+accept-edits` now runs sandboxed Bash without asking, the same way it runs
+`write_file` and `edit_file`; `manual` still asks for every command.
+
+`mino mcp add NAME --sandbox --cwd DIR -- COMMAND` runs a stdio MCP server under the
+same profile with the network allowed and writes confined to its `cwd`; a sandboxed
+server that cannot be confined is reported unavailable rather than started unconfined.
+Where `sandbox-exec` does not exist (Linux, or a future macOS without it), chat prints a
+notice at startup, confirmations show `Sandbox: unavailable`, and Bash behaves as in
+Chapter 11. Eval cases run confined too; the three `sandbox-*` cases in `evals/` fail
+without a sandbox. The sandbox does not limit reads of unprotected files, does not
+confine `http` MCP servers, and is not a security boundary against a hostile command
+run with `sandbox: false`.
 
 ## Version and updates
 

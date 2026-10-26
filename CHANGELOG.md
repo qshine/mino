@@ -24,6 +24,32 @@ now ignored.
 
 ## [Unreleased]
 
+### Added
+
+- Chapter 12 OS sandbox: `internal/sandbox` renders a macOS Seatbelt profile and runs
+  a child process under `/usr/bin/sandbox-exec`. Reads are allowed except for the
+  built-in protected paths; writes are confined to the project directory, temporary
+  directories, and the per-user cache directories; `.git/` is readable but not
+  writable; the network is denied.
+- Bash runs every command in the sandbox when the system has one. The tool schema
+  gains a `sandbox` field (`null` or `true` confines, `false` opts out); confirmations
+  show a `Sandbox` line; the tool description and the default `SOUL.md` explain the
+  limits. `tools.Call` and `policy.Call` gain `Sandboxed`, and `accept-edits` runs a
+  sandboxed command without asking, as it runs confined file writes. An opt-out
+  command asks in every mode except `bypass`.
+- `mino mcp add --sandbox` confines a stdio MCP server with the network allowed and
+  writes under its `cwd`; `mcp.json` stores `"sandbox": true`, and `mino mcp list`
+  shows it. A sandboxed server that cannot be confined is reported unavailable.
+- Eval runs confine Bash like chat. Three `sandbox-*` cases cover a protected read, a
+  blocked network call, and a refused write under `.git/`.
+
+### Changed
+
+- The chat banner reads `Mino - Chapter 12: Sandbox`.
+- Where `sandbox-exec` is missing, chat prints a startup notice and confirmations show
+  `Sandbox: unavailable`; Bash then behaves as before. History stays at version 4:
+  recorded arguments without a `sandbox` field mean the default.
+
 ## [0.11.0] - 2026-10-26
 
 ### Added
