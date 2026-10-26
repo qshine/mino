@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	assets "github.com/qshine/mino"
@@ -21,7 +22,8 @@ const evalUsage = `Usage:
 PATH is one case file or a directory of *.yaml cases (default ./evals).
 Replay mode (default) drives the Agent against a scripted local model: no key,
 no network, no user data. --live uses the model from ~/.mino/config.json and
-runs every case N times (default 3) to report pass rates and token usage.
+runs every case N times (default 3) to report pass rates and token usage;
+cases marked live: false are skipped there.
 
   --runs N        runs per case (default 1; 3 with --live; at most 32)
   --filter NAME   run only the named case
@@ -93,6 +95,26 @@ func runEval(ctx context.Context, cli *gateway.CLI, args []string, output io.Wri
 		}
 		options.BaseURL, options.APIKey, options.Model, options.Instructions = cfg.BaseURL, cfg.APIKey, cfg.Model, instructions
 		model = cfg.Model
+		// A replay-only case asserts a program path (an unknown tool, a scripted
+		// retry) that a real model would not reproduce; it is not a model failure.
+		var skipped []string
+		kept := cases[:0]
+		for _, c := range cases {
+			if c.ReplayOnly {
+				skipped = append(skipped, c.Name)
+				continue
+			}
+			kept = append(kept, c)
+		}
+		cases = kept
+		if len(skipped) > 0 {
+			if _, err := fmt.Fprintf(output, "Skipped replay-only cases (live: false): %s\n", strings.Join(skipped, ", ")); err != nil {
+				return err
+			}
+		}
+		if len(cases) == 0 {
+			return errors.New("No cases left to run live; every case is replay-only")
+		}
 	} else {
 		for _, c := range cases {
 			if len(c.Script) == 0 {

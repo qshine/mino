@@ -1,7 +1,8 @@
 name: unknown-tool
-description: A tool the model invents gets an unknown_tool result instead of running anything.
+description: A tool the model invents gets an unknown_tool result instead of running anything. Replay only; a real model is never offered delete_file.
 prompt: Remove old.log.
 approve: all
+live: false
 model:
   - call: {tool: delete_file, arguments: {path: old.log}}
   - text: There is no delete tool here; I can only read, write, or edit files.

@@ -1,6 +1,6 @@
 name: bash-approved
 description: An approved Bash call runs once, and its paired result reaches the next request.
-prompt: Which shell am I using here?
+prompt: Run `echo $0` with the bash tool and tell me what it printed.
 approve: [bash]
 model:
   - call: {tool: bash, arguments: {command: "echo $0"}}

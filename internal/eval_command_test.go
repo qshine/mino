@@ -137,4 +137,16 @@ func TestEvalCommandLiveUsesConfiguredModel(t *testing.T) {
 	if _, err := evalCommand(t, "--live", dir); err != nil || requests != 3 {
 		t.Fatalf("default runs: %v requests=%d", err, requests)
 	}
+	// A replay-only case is skipped live and named; a suite of only such cases is an error.
+	if err := os.WriteFile(filepath.Join(dir, "only.yaml"), []byte("name: only\nprompt: Say hello.\nlive: false\nmodel:\n  - text: hi\ngraders:\n  - max_requests: 1\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	requests = 0
+	out, err = evalCommand(t, "--live", "--runs", "1", dir)
+	if err != nil || requests != 1 || !strings.Contains(out, "Skipped replay-only cases (live: false): only") || strings.Contains(out, "\nonly ") {
+		t.Fatalf("skip: %v requests=%d\n%s", err, requests, out)
+	}
+	if _, err := evalCommand(t, "--live", "--filter", "only", dir); err == nil || !strings.Contains(err.Error(), "replay-only") {
+		t.Fatalf("all skipped: %v", err)
+	}
 }

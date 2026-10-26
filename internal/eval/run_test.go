@@ -51,6 +51,7 @@ func TestReplayApprovedBashPasses(t *testing.T) {
   - max_requests: 2
   - max_tool_calls: 1
   - tool_not_called: write_file
+  - final_text_not_contains: secret
 `)}
 	result, err := RunCase(context.Background(), c, Options{}, 1)
 	if err != nil {
@@ -105,6 +106,7 @@ func TestReplayToolOrderAndScriptErrors(t *testing.T) {
   - file_contains: {path: out.txt, text: ok}
   - result_status: {call: 2, status: completed}
   - result_status: {call: 3, status: completed}
+  - final_text_not_contains: done
 `)}
 	result, err := RunCase(context.Background(), c, Options{}, 1)
 	if err != nil {
@@ -114,6 +116,7 @@ func TestReplayToolOrderAndScriptErrors(t *testing.T) {
 		t.Fatal("expected failures")
 	}
 	want := map[string]string{
+		`final_text_not_contains "done"`:   `final text "done"`,
 		"tool_order [bash write_file]":     "calls: [write_file bash]",
 		"tool_order [write_file bash]":     "",
 		"file_exists out.txt":              "",

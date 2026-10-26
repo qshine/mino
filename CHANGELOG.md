@@ -30,8 +30,10 @@ now ignored.
 
 - Chapter 11 evals: `internal/eval` runs declared YAML cases through the real Agent
   loop and grades them with deterministic checks (`final_text_contains`,
-  `final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`,
-  `result_status`, `file_exists`, `file_contains`, `max_requests`, `max_tool_calls`).
+  `final_text_not_contains`, `final_text_matches`, `tool_called`, `tool_not_called`,
+  `tool_order`, `result_status`, `file_exists`, `file_contains`, `max_requests`,
+  `max_tool_calls`). A case marked `live: false` asserts a scripted program path and
+  is skipped by `--live`.
 - `mino eval [PATH]` runs every `*.yaml` case in a directory (default `./evals`). Replay
   mode drives the loop with a scripted loopback Responses service: no key, no network,
   a fresh temporary workspace and home per run, the manual permission mode, and no MCP

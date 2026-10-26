@@ -415,7 +415,7 @@ bin/mino eval ./evals
 | 参数 | 含义 |
 | --- | --- |
 | `PATH` | 一个用例文件，或一个目录，其中的 `*.yaml` 与 `*.yml` 文件按文件名顺序读取，不递归。默认 `./evals`。 |
-| `--live` | 使用 `~/.mino/config.json` 中的模型，并以 `~/.mino/SOUL.md` 作为默认指令；文件缺失时像聊天一样先用内嵌默认身份创建它。配置必须完整，命令不会提示输入。实时运行会产生真实请求费用。 |
+| `--live` | 使用 `~/.mino/config.json` 中的模型，并以 `~/.mino/SOUL.md` 作为默认指令；文件缺失时像聊天一样先用内嵌默认身份创建它。配置必须完整，命令不会提示输入。标记为 `live: false` 的用例会被跳过，并在表格之前用一行列出名称。实时运行会产生真实请求费用。 |
 | `--runs N` | 每份用例的运行次数，1 到 32。默认 1，带 `--live` 时默认 3。用例自己的 `runs` 字段会覆盖它。 |
 | `--filter NAME` | 只运行指定名称的用例。 |
 | `--out DIR` | 写出 `report.json`，并把每次运行的会话日志保存为 `DIR/<case>/run-N.jsonl`。该目录不能位于 `~/.mino` 之内。 |
@@ -444,7 +444,7 @@ graders:
 
 它的结构仿照仓库中的 `write-then-read.yaml`。用 `bin/mino eval --filter hello-file ./evals` 单独运行它；在第十一章源码上使用临时主目录观察到的结果是一行通过的记录，两次请求、一次工具调用，运行后临时主目录中仍然没有 `.mino` 目录。
 
-`name` 和 `prompt` 必填，`prompt` 最大 16 KiB。`name` 由小写 ASCII 字母和数字组成，可用单个连字符分隔，最多 64 字节。`approve` 为 `all`（默认）、`none`，或一个要批准的工具名列表。`instructions` 替换这份用例的默认指令。`workspace.files` 在每次运行前预置相对路径的文件，最多 64 个、每个最多 64 KiB。`model` 是最多 16 步的回放脚本，每步是 `call: {tool, arguments}` 或 `text`，可附带 `expect_input_contains`，即该步模型收到的请求体中必须出现的子串；只有使用 `--live` 运行时才能省略它。`graders` 包含 1 到 32 项检查，必须全部通过：`final_text_contains`、`final_text_matches`（不超过 1 KiB 的 RE2 正则）、`tool_called`、`tool_not_called`、`tool_order`、`result_status`（`call` 从 1 开始，按模型请求的全部调用计数）、`file_exists`、`file_contains`、`max_requests` 和 `max_tool_calls`。未知字段导致加载失败，一个目录最多 256 份用例，一份用例文件最大 64 KiB。
+`name` 和 `prompt` 必填，`prompt` 最大 16 KiB。`name` 由小写 ASCII 字母和数字组成，可用单个连字符分隔，最多 64 字节。`approve` 为 `all`（默认）、`none`，或一个要批准的工具名列表。`instructions` 替换这份用例的默认指令。`workspace.files` 在每次运行前预置相对路径的文件，最多 64 个、每个最多 64 KiB。`model` 是最多 16 步的回放脚本，每步是 `call: {tool, arguments}` 或 `text`，可附带 `expect_input_contains`，即该步模型收到的请求体中必须出现的子串；只有使用 `--live` 运行时才能省略它。`live: false` 把用例标记为仅回放，即它断言的是真实模型不会走的脚本路径；`--live` 会跳过它，而且它必须带有 `model` 脚本。省略这个字段表示用例也参与实时运行。`graders` 包含 1 到 32 项检查，必须全部通过：`final_text_contains`、`final_text_not_contains`、`final_text_matches`（不超过 1 KiB 的 RE2 正则）、`tool_called`、`tool_not_called`、`tool_order`、`result_status`（`call` 从 1 开始，按模型请求的全部调用计数）、`file_exists`、`file_contains`、`max_requests` 和 `max_tool_calls`。打算实时运行的用例应当评判真实模型能够到达的结果，例如已写入的文件或没有出现的密钥，而不是某一个短语。未知字段导致加载失败，一个目录最多 256 份用例，一份用例文件最大 64 KiB。
 
 用例可以调用的工具就是聊天工具去掉 MCP：`bash`、`read_file`、`write_file`、`edit_file`，以及读取工作区 `.agents/skills` 下预置技能的 `skill_view`。用例文件和项目技能一样，是你主动运行的项目数据，从不从 `~/.mino` 加载。
 

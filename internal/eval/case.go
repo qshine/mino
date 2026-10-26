@@ -36,6 +36,7 @@ type Case struct {
 	Name, Description, Prompt, Instructions string
 	Approve                                 Approval
 	Runs                                    int
+	ReplayOnly                              bool // live: false; the case asserts a program path a real model would not take
 	Workspace                               Workspace
 	Script                                  []Step
 	Graders                                 []Grader
@@ -139,7 +140,7 @@ type Grader struct {
 
 func (g Grader) String() string {
 	switch g.Kind {
-	case "final_text_contains", "final_text_matches":
+	case "final_text_contains", "final_text_not_contains", "final_text_matches":
 		return g.Kind + " " + fmt.Sprintf("%q", g.Text)
 	case "tool_called", "tool_not_called":
 		return g.Kind + " " + g.Tool
@@ -164,7 +165,7 @@ func (g *Grader) UnmarshalYAML(node *yaml.Node) error {
 	kind, value := node.Content[0].Value, node.Content[1]
 	*g = Grader{Kind: kind}
 	switch kind {
-	case "final_text_contains":
+	case "final_text_contains", "final_text_not_contains":
 		return value.Decode(&g.Text)
 	case "final_text_matches":
 		if err := value.Decode(&g.Text); err != nil {
@@ -293,6 +294,7 @@ func Parse(name string, data []byte) (Case, error) {
 		Instructions string    `yaml:"instructions"`
 		Approve      *Approval `yaml:"approve"`
 		Runs         int       `yaml:"runs"`
+		Live         *bool     `yaml:"live"`
 		Workspace    Workspace `yaml:"workspace"`
 		Model        []Step    `yaml:"model"`
 		Graders      []Grader  `yaml:"graders"`
@@ -306,6 +308,7 @@ func Parse(name string, data []byte) (Case, error) {
 	if raw.Approve != nil {
 		c.Approve = *raw.Approve
 	}
+	c.ReplayOnly = raw.Live != nil && !*raw.Live
 	if err := c.validate(name); err != nil {
 		return Case{}, err
 	}
@@ -347,6 +350,9 @@ func (c Case) validate(stem string) error {
 			return fmt.Errorf("workspace file %q must be UTF-8 text of at most 64 KiB", path)
 		}
 	}
+	if c.ReplayOnly && len(c.Script) == 0 {
+		return errors.New("a replay-only case (live: false) needs a model script")
+	}
 	if len(c.Script) > maxSteps {
 		return fmt.Errorf("model script has at most %d steps", maxSteps)
 	}
@@ -374,9 +380,9 @@ func (c Case) validate(stem string) error {
 
 func (g Grader) validate() error {
 	switch g.Kind {
-	case "final_text_contains":
+	case "final_text_contains", "final_text_not_contains":
 		if g.Text == "" || !validText(g.Text, maxTextBytes) {
-			return errors.New("final_text_contains needs non-empty text")
+			return errors.New(g.Kind + " needs non-empty text")
 		}
 	case "final_text_matches":
 		if g.Pattern == nil {

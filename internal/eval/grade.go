@@ -48,6 +48,10 @@ func grade(g Grader, t Transcript) string {
 		if !strings.Contains(t.FinalText, g.Text) {
 			return fmt.Sprintf("final text %q", truncate(t.FinalText))
 		}
+	case "final_text_not_contains":
+		if strings.Contains(t.FinalText, g.Text) {
+			return fmt.Sprintf("final text %q", truncate(t.FinalText))
+		}
 	case "final_text_matches":
 		if !g.Pattern.MatchString(t.FinalText) {
 			return fmt.Sprintf("final text %q", truncate(t.FinalText))

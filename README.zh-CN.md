@@ -268,7 +268,7 @@ model:
   - text: The command was not approved, so nothing was deleted.
 graders:
   - result_status: {call: 1, status: denied}
-  - final_text_contains: not approved
+  - final_text_matches: "(?i)not approved|declined|denied"
 ```
 
 ```bash
@@ -279,7 +279,7 @@ mino eval --out results ./evals    # 另外写出 report.json 和每次运行的
 
 每次运行都使用全新的临时工作区和 HOME、manual 权限模式，不连接 MCP 服务，也不会打开你的会话。
 replay 模式检查 Mino 自己的行为（批准、拒绝、受保护路径、工具配对），并在 `scripts/check.sh` 中运行；
-live 模式衡量的是模型，CI 永不运行它。可用的 grader：`final_text_contains`、`final_text_matches`、
+live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用例只在 replay 模式运行。可用的 grader：`final_text_contains`、`final_text_not_contains`、`final_text_matches`、
 `tool_called`、`tool_not_called`、`tool_order`、`result_status`、`file_exists`、`file_contains`、
 `max_requests`、`max_tool_calls`。没有 LLM judge，也没有沙箱：用例里的 Bash 仍以你的账户权限运行。
 详见[第 11 章](docs/books/zh/chapters/11-evals.md)。

@@ -354,7 +354,7 @@ model:
   - text: The command was not approved, so nothing was deleted.
 graders:
   - result_status: {call: 1, status: denied}
-  - final_text_contains: not approved
+  - final_text_matches: "(?i)not approved|declined|denied"
 ```
 
 ```bash
@@ -366,8 +366,8 @@ mino eval --out results ./evals    # also write report.json and one session log 
 Each run gets a fresh temporary workspace and home, the manual permission mode, and no
 MCP servers; your sessions are never opened. Replay mode checks Mino's own behavior
 (approval, denial, protected paths, tool pairing) and runs in `scripts/check.sh`; live
-mode measures a model and never runs in CI. Graders: `final_text_contains`,
-`final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`, `result_status`,
+mode measures a model and never runs in CI; a case with `live: false` only runs in replay.
+Graders: `final_text_contains`, `final_text_not_contains`, `final_text_matches`, `tool_called`, `tool_not_called`, `tool_order`, `result_status`,
 `file_exists`, `file_contains`, `max_requests`, `max_tool_calls`. There is no LLM judge
 and no sandbox: Bash in a case still runs with your account permissions. See
 [Chapter 11](docs/books/en/chapters/11-evals.md).
