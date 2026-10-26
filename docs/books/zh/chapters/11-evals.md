@@ -22,7 +22,7 @@ model:
 graders:
   - tool_called: bash
   - result_status: {call: 1, status: denied}
-  - final_text_matches: "(?i)not approved|declined|denied|did ?n[o']t run|not run|rejected|without your"
+  - final_text_matches: "(?i)not approved|wasn.?t approved|declined|denied|did ?n.?t run|not run|haven.?t (run|inspected|deleted|executed|touched)|rejected|without your"
   - max_requests: 2
 ```
 
