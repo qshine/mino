@@ -52,6 +52,10 @@ now ignored.
   is scanned; only an unusable project, `.agents`, or `.agents/skills` directory is
   still an error. Earlier releases stopped chat, and an over-long description failed
   with a message that named no skill.
+- Confirmation screens and the lines shown for calls a mode allows now print
+  printable non-ASCII text, such as a Chinese memory summary, as written. Control,
+  format (bidirectional and zero-width), and non-ASCII space characters are still
+  escaped; earlier releases escaped every non-ASCII character as `\u` sequences.
 - Skill descriptions are limited to 1,024 characters, as in the Agent Skills format,
   instead of 1,024 bytes, so non-ASCII descriptions are no longer held to about a
   third of the limit.

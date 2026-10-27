@@ -23,12 +23,17 @@ func TestApprovalDefaultsAndExactDisplay(t *testing.T) {
 		lines <- inputLine{text: "next question"}
 		close(lines)
 		terminal := CLI{lines: lines, output: &output, interactive: tc.interactive}
-		call, _ := bash.Prepare(`{"command":"printf '\u001b[2J'\n#\u202e"}`)
+		call, _ := bash.Prepare(`{"command":"printf '\u001b[2J'\n#\u202e\u200b\u00a0 中文"}`)
 		approved, err := terminal.Confirm(context.Background(), agent.Confirmation{Kind: "tool", ToolName: "bash", Fields: call.Fields, Warning: call.Warning})
 		if err != nil || approved != tc.want {
 			t.Fatalf("answer=%q approved=%v err=%v", tc.answer, approved, err)
 		}
-		if strings.Contains(output.String(), "\x1b") || strings.Contains(output.String(), "\u202e") || !strings.Contains(output.String(), `\x1b`) {
+		shown := output.String()
+		if strings.Contains(shown, "\x1b") || strings.Contains(shown, "\u202e") || strings.Contains(shown, "\u200b") || strings.Contains(shown, "\u00a0") {
+			t.Fatalf("unsafe display=%q", shown)
+		}
+		// Invisible characters are escaped; printable non-ASCII text stays readable.
+		if !strings.Contains(shown, `\x1b`) || !strings.Contains(shown, `\u202e\u200b\u00a0 中文`) {
 			t.Fatalf("unsafe display=%q", output.String())
 		}
 		next := <-lines

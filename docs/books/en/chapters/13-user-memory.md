@@ -39,7 +39,7 @@ Assistant> Use pnpm: run pnpm install.
 
 The new session has an empty log, yet the answer is right, and the model called no tool to get there. Whether the model offers to save at all, which `type` it picks, and how it words the summary are model-dependent. What the program guarantees is the rest: the save asked you first, a file appeared in `~/.mino/memory/`, and from the next turn on, every request in every session and project starts with that summary.
 
-Confirmation fields are printed with non-ASCII characters escaped, so a summary written in Chinese appears as `\u` escapes on that screen. The file stores the text as written.
+The confirmation prints each field value in double quotes. Printable text appears as written, a summary in Chinese included; line breaks appear as `\n`, and characters you could not see on screen, such as control codes, zero-width and direction-changing characters, and non-ASCII spaces, appear as escapes, so no part of a value is invisible. Look-alike letters from other scripts, such as a Cyrillic `а`, are still shown as letters. The file stores the text as written.
 
 ## 2. What the model receives
 

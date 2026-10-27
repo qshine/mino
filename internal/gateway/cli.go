@@ -198,8 +198,11 @@ func (c *CLI) Confirm(ctx context.Context, request agent.Confirmation) (bool, er
 		if _, err := fmt.Fprintf(c.output, "\n[Tool: %s]\n", Text(request.ToolName)); err != nil {
 			return false, errTerminalOutput
 		}
+		// Quote escapes control, format (bidi, zero-width), and non-ASCII space
+		// characters, which could hide what runs, but keeps printable text such
+		// as Chinese readable.
 		for _, field := range request.Fields {
-			if _, err := fmt.Fprintf(c.output, "%s: %s\n", Text(field.Label), strconv.QuoteToASCII(field.Value)); err != nil {
+			if _, err := fmt.Fprintf(c.output, "%s: %s\n", Text(field.Label), strconv.Quote(field.Value)); err != nil {
 				return false, errTerminalOutput
 			}
 		}

@@ -431,7 +431,8 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 		var text strings.Builder
 		fmt.Fprintf(&text, "\n[Tool: %s, allowed without confirmation in %s mode]\n", call.Name, a.options.Policy.Mode())
 		for _, field := range prepared.Fields {
-			fmt.Fprintf(&text, "%s: %s\n", field.Label, strconv.QuoteToASCII(field.Value))
+			// Escaped like the gateway's confirmation: invisible characters, not text.
+			fmt.Fprintf(&text, "%s: %s\n", field.Label, strconv.Quote(field.Value))
 		}
 		if err := interaction.Emit(Event{Kind: "info", Text: text.String()}); err != nil {
 			return tools.Result{}, err

@@ -20,6 +20,7 @@ type memoryRun struct {
 	inputs  [][]map[string]any // request inputs in order
 	asked   []string
 	notices []string
+	infos   []string
 	session string // session log text
 }
 
@@ -57,6 +58,9 @@ func runMemoryTurns(t *testing.T, mode policy.Mode, store *memory.Store, script 
 	interaction := testInteraction{emit: func(e Event) error {
 		if e.Kind == "notice" {
 			run.notices = append(run.notices, e.Text)
+		}
+		if e.Kind == "info" {
+			run.infos = append(run.infos, e.Text)
 		}
 		return nil
 	}, confirm: func(_ context.Context, c Confirmation) (bool, error) {
@@ -126,10 +130,14 @@ func TestMemorySaveAsksUnlessBypass(t *testing.T) {
 		asked string
 	}{{policy.AcceptEdits, "memory_save"}, {policy.Bypass, ""}} {
 		store := openTestStore(t)
-		script := []string{functionCall("memory_save", "c1", map[string]string{"name": "fact", "type": "user", "summary": "s", "details": "", "mode": "create"})}
+		script := []string{functionCall("memory_save", "c1", map[string]string{"name": "fact", "type": "user", "summary": "始终用中文回答", "details": "", "mode": "create"})}
 		run := runMemoryTurns(t, tc.mode, store, script, false, "Remember this")
 		if strings.Join(run.asked, ",") != tc.asked {
 			t.Fatalf("%s asked %v", tc.mode, run.asked)
+		}
+		// An unasked save is still shown, with its summary readable.
+		if tc.mode == policy.Bypass && !strings.Contains(strings.Join(run.infos, ""), `Summary: "始终用中文回答"`) {
+			t.Fatalf("bypass display = %q", run.infos)
 		}
 		_, err := os.Stat(filepath.Join(store.Dir(), "fact.md"))
 		if saved := err == nil; saved != (tc.mode == policy.Bypass) {
