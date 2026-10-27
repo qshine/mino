@@ -27,7 +27,7 @@ Beyond the commands listed in `AGENTS.md`:
   4. Open `agent.OpenSessions(~/.mino, tools)`, wrap it in `agent.NewSessionManager` (its `Options.Memory` is the same store), then hand control to `gateway.CLI.Run`.
 
   The same tool list goes to both the Session (for replay validation) and the Agent.
-- `internal/gateway/` depends on `agent` through the `Handler`/`Interaction`/`Event`/`Confirmation` contract in `internal/agent/agent.go`; the reverse import is forbidden.
+- `internal/gateway/` depends on `agent` through the `Handler`/`Interaction`/`Event`/`Confirmation` contract in `internal/agent/agent.go`; the reverse import is forbidden. In an interactive terminal `CLI.Run` switches the tty to `-icanon -echo` (keeping `isig`) and reads lines through the width-aware editor in `editor.go`; piped input and tests keep `scanLines`.
 - `internal/agent/`:
   - `agent.go`: `Handle` persists the user message, then `runLoop` streams Responses API calls and enforces request/tool limits. `runCall` runs each call in this order: `Prepare`, then `Policy.Decide`, then `Inspect` (live only), then confirmation, then `Execute`.
   - `session.go`: `Session` and the history record state machine (`historyState.apply`), which validates every record on load and on append; memory changes only after write and sync succeed. Replay calls `Prepare` on recorded arguments; an `mcp_` tool that is no longer configured is replaced with `mcp.Unavailable`, which never executes.

@@ -535,6 +535,19 @@ The `description` limit is now 1,024 characters, as in the Agent Skills format, 
 
 The notice appears only when a session gets its catalog: at startup for a session without one, and after each `/new`. The catalog stays frozen per session, so a restart or `/resume` neither rescans nor repeats the notice. After you fix a skill, use `/new` to load it.
 
+### Chat input editing
+
+Version 0.13.0 edits the chat line in Mino instead of leaving it to the terminal driver. Earlier releases let the macOS driver handle Delete, and it erases one screen column per character. A Chinese character takes two columns, so deleting one left half of it on screen, and what you saw no longer matched what would be sent. With the terminal's UTF-8 input mode (`iutf8`) off, Delete even removed a single byte and left a broken character.
+
+In an interactive terminal, chat now turns off the driver's line editing and echo while it runs and restores your terminal settings when it exits, including after Ctrl+C. At `You>` and at every question asked during chat (tool approvals, `/mode`, `/clear`, and recovery acknowledgement):
+
+- Delete or Backspace erases the last character by its display width, also across wrapped rows; Ctrl+U erases the line, and Ctrl+W the previous word.
+- Enter submits, Ctrl+D on an empty line ends input, and Ctrl+C still quits.
+- Arrow keys and other escape sequences are discarded instead of entering the line as text such as `^[[D`. There is still no cursor movement or input history.
+- Text typed while an answer streams appears where you typed it and again after the next prompt, where you can edit it.
+
+Widths are approximate for some emoji sequences, and resizing the window while you type a line takes effect only at the next prompt. Piped or redirected input and the configuration prompts, including the hidden API key, still use the driver's line reading.
+
 ### Chapter 13 history compatibility
 
 Chapter 13 keeps record version 4 and adds no record kinds or result statuses. The memory index is rebuilt from the files at every turn and never written to a session log, so Chapter 13 opens sessions from earlier chapters without migration. A session in which a `memory_view` or `memory_save` call started records that call like any other tool call, and `chapter-12` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore `~/.mino/memory/`. Because skill descriptions are now counted in characters, a session whose saved catalog holds a description longer than 1,024 bytes is also rejected by `chapter-12` and earlier, which still count bytes. As before, keep private copies of session logs and `active-session.json` before switching versions.

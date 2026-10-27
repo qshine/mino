@@ -56,6 +56,12 @@ now ignored.
   printable non-ASCII text, such as a Chinese memory summary, as written. Control,
   format (bidirectional and zero-width), and non-ASCII space characters are still
   escaped; earlier releases escaped every non-ASCII character as `\u` sequences.
+- Chat input is edited by Mino instead of the terminal driver. Delete, Ctrl+U, and
+  Ctrl+W now erase Chinese and other wide characters by their full two columns,
+  including across wrapped rows, so the screen keeps matching the input; text typed
+  while an answer streams is shown again after the next prompt, and arrow-key escape
+  sequences are discarded instead of entering the line. Ctrl+C, Ctrl+D, and Enter
+  behave as before, and the terminal settings are restored on exit.
 - Skill descriptions are limited to 1,024 characters, as in the Agent Skills format,
   instead of 1,024 bytes, so non-ASCII descriptions are no longer held to about a
   third of the limit.

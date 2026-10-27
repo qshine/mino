@@ -26,6 +26,7 @@ type CLI struct {
 	output, errorOutput io.Writer
 	lines               <-chan inputLine
 	interactive         bool
+	edit                *editor // nil unless Run edits lines itself
 }
 
 func NewCLI(input io.Reader, output, errorOutput io.Writer) *CLI {
@@ -74,8 +75,27 @@ func (c *CLI) Interactive() bool { return c.interactive }
 func (c *CLI) Run(ctx context.Context, handler agent.Handler) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	if file, ok := c.input.(*os.File); ok && c.interactive {
+		// Keep isig so Ctrl+C still cancels; restore even after cancellation.
+		if state, err := stty(file, "-g"); err == nil {
+			if _, err := stty(file, "-icanon", "-echo", "min", "1", "time", "0"); err == nil {
+				defer stty(file, state)
+				c.edit = newEditor(c.output, terminalColumns(func(args ...string) (string, error) { return stty(file, args...) }))
+				c.lines = editLines(ctx, c.reader, c.edit)
+				return c.runLines(ctx, handler)
+			}
+		}
+	}
 	c.lines = scanLines(ctx, c.reader)
 	return c.runLines(ctx, handler)
+}
+
+func (c *CLI) prompt(text string) error {
+	if c.edit != nil {
+		return c.edit.prompt(text)
+	}
+	_, err := fmt.Fprint(c.output, text)
+	return err
 }
 
 func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
@@ -88,7 +108,7 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 	fmt.Fprintln(c.output, "Mino - Chapter 13: User Memory")
 	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval in manual mode; /mode accept-edits skips it for file writes and /mode bypass for every call. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
-		fmt.Fprint(c.output, "\nYou> ")
+		c.prompt("\nYou> ")
 		select {
 		case <-ctx.Done():
 			fmt.Fprintln(c.output)
@@ -227,7 +247,7 @@ func (c *CLI) confirmAnswer(ctx context.Context, prompt, expected string) (bool,
 	if !c.interactive {
 		return false, nil
 	}
-	if _, err := fmt.Fprint(c.output, prompt); err != nil {
+	if err := c.prompt(prompt); err != nil {
 		return false, errTerminalOutput
 	}
 	select {
