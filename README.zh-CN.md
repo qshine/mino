@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–12 章，对应发布版本 `chapter-12`（程序版本 `0.12.0`）。
-第 01–12 章均已发布，标签为 `chapter-01` 至 `chapter-12`，程序版本对应 `0.1.0` 至 `0.12.0`；第 13 章开发中，第 14–15 章规划中。
+**当前进度：**本快照包含第 01–13 章，对应发布版本 `chapter-13`（程序版本 `0.13.0`）。
+第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14–15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -24,7 +24,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 10 章加入安全防护：由代码执行的统一工具策略、受保护路径，以及用 `/mode` 选择的三种权限模式。
 第 11 章加入评测：`mino eval` 用声明式用例驱动 Agent 循环，并用确定性检查评分。
 第 12 章加入操作系统沙箱：在 macOS 上，Bash 命令在 Seatbelt 配置下运行，写入受限，网络和受保护路径被阻断。
-第 13 章（开发中）加入用户记忆：每条记忆是 `~/.mino/memory/` 下的一个文件，每轮都会把所有记忆的一行摘要交给模型。
+第 13 章加入用户记忆：每条记忆是 `~/.mino/memory/` 下的一个文件，每轮都会把所有记忆的一行摘要交给模型。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -299,9 +299,9 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 确认界面显示 `Sandbox: unavailable`，Bash 的行为与第 11 章相同。评测用例同样在沙箱内运行；`evals/` 中的三个 `sandbox-*` 用例在没有沙箱时会失败。
 沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不是针对以 `sandbox: false` 运行的恶意命令的安全边界。
 
-## 用户记忆（第 13 章，开发中）
+## 用户记忆（第 13 章）
 
-Mino 会跨会话、跨项目记住长期有效的事实和偏好。每条记忆是 `~/.mino/memory/` 下的一个 Markdown 文件：
+执行 `mino update chapter-13` 安装第 13 章。Mino 会跨会话、跨项目记住长期有效的事实和偏好。每条记忆是 `~/.mino/memory/` 下的一个 Markdown 文件：
 文件头写 `name`、`type`（`user`、`feedback`、`project` 或 `reference`）和一行不超过 200 字节的 `summary`，后面是可选的详细内容。
 每轮开始时，Mino 用所有摘要生成一份索引，作为一条标明“是数据不是指令”的 assistant 消息放在对话前面，所以大多数记忆不需要额外请求；
 标有 `(+details)` 的记忆，模型用 `memory_view` 读取，无需批准。让 Mino 记住某件事时，它会调用 `memory_save`，展示名称、摘要和详细内容，
@@ -314,7 +314,7 @@ Mino 会跨会话、跨项目记住长期有效的事实和偏好。每条记忆
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-12   # 安装最新已发布章节
+mino update chapter-13   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -341,6 +341,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 10 章 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 | 第 11 章 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
 | 第 12 章 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
+| 第 13 章 | `0.13.0` | [`chapter-13`](https://github.com/qshine/mino/releases/tag/chapter-13) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。

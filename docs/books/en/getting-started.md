@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-12` release (application version `0.12.0`), published on 2026-10-26, the same day `chapter-11` was published and `chapter-10` was republished. It covers the book up to Chapter 12; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-13` release (application version `0.13.0`), published on 2026-10-27. It covers the book up to Chapter 13; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -33,7 +33,7 @@ Chapter 11 adds [evals](#try-chapter-11-from-source): `mino eval` runs declared 
 
 Chapter 12 adds an [operating-system sandbox for Bash](#try-chapter-12-from-source) on macOS. It keeps record version 4; see its [history compatibility notes](#chapter-12-history-compatibility) before opening a Chapter 12 session with an older release.
 
-Chapter 13, in development, adds [user memory](#try-chapter-13-from-source) across sessions and projects. It keeps record version 4; see its [history compatibility notes](#chapter-13-history-compatibility) before opening a Chapter 13 session with an older release.
+Chapter 13 adds [user memory](#try-chapter-13-from-source) across sessions and projects. It keeps record version 4; see its [history compatibility notes](#chapter-13-history-compatibility) before opening a Chapter 13 session with an older release.
 
 ## Prepare your Mac
 
@@ -46,10 +46,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-12 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-13 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-12`. Omit `-- chapter-12` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-13`. Omit `-- chapter-13` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -89,10 +89,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-12
+mino update chapter-13
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.12.0` or `v0.12.0` as aliases for `chapter-12`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.13.0` or `v0.13.0` as aliases for `chapter-13`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -485,15 +485,16 @@ Chapter 12 keeps record version 4 and adds no record kinds or result statuses; n
 
 ## Try Chapter 13 from source
 
-Chapter 13 is in development. Its release `chapter-13` (application version `0.13.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-13` selects the same code.
+Chapter 13 is available as the [chapter-13 release](https://github.com/qshine/mino/releases/tag/chapter-13), with application version `0.13.0`, published on 2026-10-27; an installed `mino` already remembers across sessions. To run the matching source, select its tag from the repository root, build, and start the executable in a project directory:
 
 ```bash
+git checkout chapter-13
 go build -o bin/mino ./cmd/mino
 cd /path/to/your/project
 /path/to/mino/bin/mino
 ```
 
-Replace both paths with your own directories. The banner reads `Mino - Chapter 13: User Memory` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, and sandbox requirements still apply; the lesson is [Chapter 13](./chapters/13-user-memory.md), and its no-cost checks are in [section 5](./chapters/13-user-memory.md#_5-check-it-with-evals-and-tests).
+Replace both paths with your own directories. The banner reads `Mino - Chapter 13: User Memory`; an installed release reports version `0.13.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, and sandbox requirements still apply; the lesson is [Chapter 13](./chapters/13-user-memory.md), and its no-cost checks are in [section 5](./chapters/13-user-memory.md#_5-check-it-with-evals-and-tests).
 
 Chat startup creates `~/.mino/memory/` with mode `0700` if it is missing, and refuses to start if that path is a symbolic link or not a directory. The model can read a memory with `memory_view` without a question; `memory_save` asks you in `manual` and `accept-edits` and runs unasked only in `bypass`. Each saved memory reaches the model in every later session and project, so read the summary before approving, and never approve one that contains a secret.
 
@@ -554,12 +555,12 @@ Chapter 13 keeps record version 4 and adds no record kinds or result statuses. T
 
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-12`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-13`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-12
+git checkout chapter-13
 go run ./cmd/mino
 ```
 

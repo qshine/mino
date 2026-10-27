@@ -14,11 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–12, release
-`chapter-12` (application version `0.12.0`).
-Chapters 01–12 are released, tagged `chapter-01` through `chapter-12` with
-application versions `0.1.0` through `0.12.0`; Chapter 13 is in development and
-Chapters 14–15 are planned.
+**Current progress:** This snapshot contains Chapters 01–13, release
+`chapter-13` (application version `0.13.0`).
+Chapters 01–13 are released, tagged `chapter-01` through `chapter-13` with
+application versions `0.1.0` through `0.13.0`; Chapters 14–15 are planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -37,7 +36,7 @@ Chapter 11 adds evals: `mino eval` runs declared cases through the Agent loop an
 them with deterministic checks.
 Chapter 12 adds an OS sandbox: on macOS, Bash commands run under a Seatbelt profile that
 confines writes and blocks the network and protected paths.
-Chapter 13 (in development) adds user memory: one file per memory in `~/.mino/memory/`,
+Chapter 13 adds user memory: one file per memory in `~/.mino/memory/`,
 with every memory's one-line summary shown to the model each turn.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
@@ -404,9 +403,9 @@ without a sandbox. The sandbox does not limit reads of unprotected files, does n
 confine `http` MCP servers, and is not a security boundary against a hostile command
 run with `sandbox: false`.
 
-## User memory (Chapter 13, in development)
+## User memory (Chapter 13)
 
-Mino remembers lasting facts and preferences across sessions and projects. Each memory
+Install `chapter-13` with `mino update chapter-13`. Mino remembers lasting facts and preferences across sessions and projects. Each memory
 is one Markdown file in `~/.mino/memory/`: front matter with `name`, `type` (`user`,
 `feedback`, `project`, or `reference`), and a one-line `summary` of at most 200 bytes,
 then optional details. At the start of every turn Mino builds an index of all summaries
@@ -426,7 +425,7 @@ index holds at most 200 memories and 16 KiB. See
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-12   # Install the latest published chapter
+mino update chapter-13   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -457,6 +456,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 10 | `0.10.0` | [`chapter-10`](https://github.com/qshine/mino/releases/tag/chapter-10) |
 | Chapter 11 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
 | Chapter 12 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
+| Chapter 13 | `0.13.0` | [`chapter-13`](https://github.com/qshine/mino/releases/tag/chapter-13) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21

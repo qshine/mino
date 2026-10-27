@@ -1,6 +1,6 @@
 # Chapter 13: Remember the user across sessions
 
-Applies to **0.13.x** · Source tag **[chapter-13](https://github.com/qshine/mino/tree/chapter-13)** · Application version **0.13.0**, in development and not yet released
+Applies to **0.13.x** · Source and release tag **[chapter-13](https://github.com/qshine/mino/tree/chapter-13)** · Application version **0.13.0**, released **2026-10-27**
 
 In one session you tell Mino that your projects install dependencies with pnpm. A few days later you run `/new`, ask how to install a project's dependencies, and the model suggests `npm install`. Nothing is broken. Since [Chapter 01](./01-terminal-chat.md), memory has only ever been a consequence of supplied context, and the new session's log says nothing about pnpm. You could write the preference into `~/.mino/SOUL.md`, but that file is your description of who Mino is. The model should not be editing it.
 
