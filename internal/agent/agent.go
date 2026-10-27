@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -81,6 +82,7 @@ type Agent struct {
 	definitions []responses.ToolUnionParam
 	memory      string // index rendered at the start of the current turn
 	problems    string // last memory problems shown, to avoid repeating them every turn
+	skipped     string // skills this Agent's scan left out, shown once
 }
 
 func New(options Options, session *Session, available []tools.Tool) (*Agent, error) {
@@ -100,6 +102,7 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	if err != nil {
 		return nil, err
 	}
+	skipped := ""
 	if options.ProjectDirectory != "" || session.state.skillCatalog != nil {
 		// Bind the injected reader to this session's durable metadata, never to
 		// a fresh scan while restoring or continuing an existing session.
@@ -114,10 +117,11 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 			return nil, errors.New("Project skills require the skill_view tool")
 		}
 		if session.state.skillCatalog == nil {
-			catalog, err := skills.Scan(options.ProjectDirectory)
+			catalog, problems, err := skills.Scan(options.ProjectDirectory)
 			if err != nil {
 				return nil, err
 			}
+			skipped = skillNotice(options.ProjectDirectory, problems)
 			if err := session.append(historyRecord{TurnID: newHistoryID(), Kind: "session_skills", Skills: catalog}); err != nil {
 				return nil, &StorageError{err}
 			}
@@ -126,7 +130,7 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 		registry["skill_view"] = available[viewIndex]
 		options.Instructions += session.state.skillCatalog.Prompt()
 	}
-	a := &Agent{session: session, options: options, tools: registry, httpClient: &http.Client{
+	a := &Agent{session: session, options: options, tools: registry, skipped: skipped, httpClient: &http.Client{
 		Timeout:       2 * time.Minute,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}}
@@ -169,6 +173,9 @@ func (a *Agent) Start(ctx context.Context, interaction Interaction) error {
 			return err
 		}
 	}
+	if err := a.showSkipped(interaction); err != nil {
+		return err
+	}
 	approved, err := a.acknowledge(ctx, interaction)
 	if err == nil && !approved {
 		return io.EOF
@@ -206,6 +213,9 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	if !validHistoryText(message) {
 		return errors.New("Input must be non-empty UTF-8 text")
 	}
+	if err := a.showSkipped(interaction); err != nil {
+		return err
+	}
 	if approved, err := a.acknowledge(ctx, interaction); err != nil {
 		return err
 	} else if !approved {
@@ -224,6 +234,24 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 // shares one prefix and a memory saved now appears from the next turn, including
 // after compaction. The index is never written to history. A file Mino cannot
 // use is reported to the user and skipped; it never stops the conversation.
+// skillNotice lists the skills a scan left out. The catalog is frozen per
+// session, so the scan, and this notice, happen once per session.
+func skillNotice(project string, problems []string) string {
+	if len(problems) == 0 {
+		return ""
+	}
+	return "Some skills in " + filepath.Join(project, ".agents", "skills") + " were not loaded:\n  " + strings.Join(problems, "\n  ") + "\n"
+}
+
+func (a *Agent) showSkipped(interaction Interaction) error {
+	if a.skipped == "" {
+		return nil
+	}
+	text := a.skipped
+	a.skipped = ""
+	return interaction.Emit(Event{Kind: "notice", Text: text})
+}
+
 func (a *Agent) refreshMemory(interaction Interaction) error {
 	if a.options.Memory == nil {
 		return nil

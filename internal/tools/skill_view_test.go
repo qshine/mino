@@ -19,7 +19,7 @@ func TestSkillViewArgumentsAndResult(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: review\ndescription: Review code\n---\nRead tests first."), 0600); err != nil {
 		t.Fatal(err)
 	}
-	catalog, err := skills.Scan(root)
+	catalog, _, err := skills.Scan(root)
 	if err != nil {
 		t.Fatal(err)
 	}

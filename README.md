@@ -277,7 +277,8 @@ The read needs no confirmation and returns the current complete file as a saved
 tool result. Editing a file's body can therefore affect later reads, while its
 catalog description remains fixed. Bash still requires separate approval.
 No user-home skills are scanned. A missing directory means no skills; invalid
-metadata fails discovery. See [Chapter 07](docs/books/en/chapters/07-skills.md) for
+metadata fails discovery in Chapter 07, and from 0.13.0 the skill is skipped and
+named in a notice. See [Chapter 07](docs/books/en/chapters/07-skills.md) for
 file limits, the observable interaction, and mock-service checks.
 
 Chapter 07 writes `v: 4` session records and reads versions 1–4.

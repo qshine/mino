@@ -273,7 +273,7 @@ At `You>`, ask “Use the review skill to review this change” and supply a sma
 
 Use direct child directories only; discovery is not recursive. The YAML header must start and end with `---`, with its closing delimiter within 16 KiB. `name` must match the directory, use lowercase ASCII letters or digits separated by single hyphens, and contain at most 64 characters. `description` must be a non-empty YAML string of at most 1,024 UTF-8 bytes; quoted and block strings are accepted. Other metadata is not included in the catalog.
 
-Each `SKILL.md` must be a regular file of at most 64 KiB. A read requires non-empty UTF-8 text without NUL. The serialized catalog, including its project path, is limited to 32 KiB. An absent skills directory gives an empty catalog; direct directories without `SKILL.md` and symbolic-link child directories are ignored. Malformed candidates, symbolic-link files, special files, and symbolic links in the `.agents/skills` directory path are rejected. A discovery error prevents initialization; a failed `/new` leaves the selected session unchanged.
+Each `SKILL.md` must be a regular file of at most 64 KiB. A read requires non-empty UTF-8 text without NUL. The serialized catalog, including its project path, is limited to 32 KiB. An absent skills directory gives an empty catalog; direct directories without `SKILL.md` and symbolic-link child directories are ignored. Malformed candidates, symbolic-link files, special files, and symbolic links in the `.agents/skills` directory path are rejected. A discovery error prevents initialization; a failed `/new` leaves the selected session unchanged. These are the Chapter 07 rules: version 0.13.0 counts the description limit in characters and skips an unusable skill with a notice instead of failing, as described in [skill discovery changes](#skill-discovery-changes).
 
 Names and descriptions stay fixed for the session, including after `/resume`, restart, and confirmed `/clear`; only `/new` discovers a fresh catalog. `skill_view` reads the current body from the saved project location. It accepts only catalog names, not arbitrary paths, and does not automatically read referenced files or execute scripts. Existing `~/.mino/SOUL.md` content remains untouched and is loaded once per process startup; update obsolete capability statements yourself and restart if needed.
 
@@ -518,9 +518,26 @@ Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new inst
 
 Eval cases accept an optional `memory` list, at most 32 entries with `name`, `type`, `summary`, and optional `details`, that is written into each run's temporary home before the run. Eval runs can now also call `memory_view` and `memory_save`; they never read or write your real `~/.mino/memory`.
 
+### Skill discovery changes
+
+Version 0.13.0 also changes how [Chapter 07](./chapters/07-skills.md) project skills are discovered. Before, one unusable `SKILL.md` failed discovery and kept chat from starting; a description over the limit even failed with a message that named no skill. This shows up most easily when you start Mino in your home directory: the project is then `~`, so `~/.agents/skills` is scanned as the project's skill directory, including any skills other tools installed there.
+
+Discovery now takes candidates in name order, skips each one it cannot use, and keeps the rest. When it skips any, it prints one notice on standard error, for example:
+
+```text
+Some skills in /path/to/project/.agents/skills were not loaded:
+  review: description has 1100 characters; the limit is 1,024
+```
+
+A skill is skipped, with its reason, for malformed metadata, for an unsafe `SKILL.md` (a symbolic link, a special file, or over 64 KiB), or because its skill directory is a symbolic link, which earlier releases ignored silently. When adding a skill would push the catalog past 32 KiB, that skill and every later one in name order are skipped instead of failing discovery. Plain files and directories without `SKILL.md` are still ignored silently, and an unusable project directory, or a `.agents` or `.agents/skills` path that is a symbolic link or not a directory, still fails discovery.
+
+The `description` limit is now 1,024 characters, as in the Agent Skills format, instead of 1,024 UTF-8 bytes, so a Chinese description is no longer held to about 341 characters.
+
+The notice appears only when a session gets its catalog: at startup for a session without one, and after each `/new`. The catalog stays frozen per session, so a restart or `/resume` neither rescans nor repeats the notice. After you fix a skill, use `/new` to load it.
+
 ### Chapter 13 history compatibility
 
-Chapter 13 keeps record version 4 and adds no record kinds or result statuses. The memory index is rebuilt from the files at every turn and never written to a session log, so Chapter 13 opens sessions from earlier chapters without migration. A session in which a `memory_view` or `memory_save` call started records that call like any other tool call, and `chapter-12` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore `~/.mino/memory/`. As before, keep private copies of session logs and `active-session.json` before switching versions.
+Chapter 13 keeps record version 4 and adds no record kinds or result statuses. The memory index is rebuilt from the files at every turn and never written to a session log, so Chapter 13 opens sessions from earlier chapters without migration. A session in which a `memory_view` or `memory_save` call started records that call like any other tool call, and `chapter-12` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore `~/.mino/memory/`. Because skill descriptions are now counted in characters, a session whose saved catalog holds a description longer than 1,024 bytes is also rejected by `chapter-12` and earlier, which still count bytes. As before, keep private copies of session logs and `active-session.json` before switching versions.
 
 ## Learn from the source
 

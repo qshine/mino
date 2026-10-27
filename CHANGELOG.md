@@ -44,11 +44,25 @@ now ignored.
 - The default `SOUL.md` explains memory; existing `~/.mino/SOUL.md` files are not
   changed, so the tool descriptions carry the same rules.
 
+### Changed
+
+- A bad project skill no longer stops chat. Discovery skips each unusable skill
+  (malformed metadata, unsafe file, symbolic-link skill directory, or one past the
+  32 KiB catalog limit) and names it with its reason in one notice when the catalog
+  is scanned; only an unusable project, `.agents`, or `.agents/skills` directory is
+  still an error. Earlier releases stopped chat, and an over-long description failed
+  with a message that named no skill.
+- Skill descriptions are limited to 1,024 characters, as in the Agent Skills format,
+  instead of 1,024 bytes, so non-ASCII descriptions are no longer held to about a
+  third of the limit.
+
 ### Compatibility
 
 - History stays v4, but `chapter-12` and earlier cannot open a session in which a
   `memory_view` or `memory_save` call started; they report a started call for an
   unavailable tool.
+- `chapter-12` and earlier also cannot open a session whose skill catalog holds a
+  description longer than 1,024 bytes.
 
 ## [0.12.0] - 2026-10-26
 

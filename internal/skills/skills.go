@@ -21,6 +21,7 @@ import (
 const maxFileBytes = 64 << 10
 const maxHeaderBytes = 16 << 10
 const maxCatalogBytes = 32 << 10
+const maxDescriptionChars = 1024
 
 var skillName = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
@@ -44,8 +45,11 @@ func (c *Catalog) Validate() error {
 	}
 	previous := ""
 	for _, e := range c.Entries {
-		if !ValidName(e.Name) || e.Name <= previous || strings.TrimSpace(e.Description) == "" || len(e.Description) > 1024 || !utf8.ValidString(e.Description) || strings.ContainsRune(e.Description, 0) {
-			return errors.New("Skill names must be unique and sorted; descriptions must be non-empty UTF-8 text of at most 1,024 bytes")
+		if err := checkEntry(e); err != nil {
+			return fmt.Errorf("Invalid skill %q: %w", e.Name, err)
+		}
+		if e.Name <= previous {
+			return errors.New("Skill names must be unique and sorted")
 		}
 		previous = e.Name
 	}
@@ -56,68 +60,109 @@ func (c *Catalog) Validate() error {
 	return nil
 }
 
-func Scan(project string) (*Catalog, error) {
+// checkEntry says why one entry is unusable, so a scan can name the skill and
+// the reason. The description limit counts characters, as the Agent Skills
+// format does, so non-ASCII descriptions are not held to a third of it.
+func checkEntry(e Entry) error {
+	switch {
+	case !ValidName(e.Name):
+		return errors.New("name must use lowercase letters, digits, and single hyphens, at most 64 bytes")
+	case !utf8.ValidString(e.Description) || strings.ContainsRune(e.Description, 0):
+		return errors.New("description must be UTF-8 text without NUL")
+	case strings.TrimSpace(e.Description) == "":
+		return errors.New("description must not be empty")
+	case utf8.RuneCountInString(e.Description) > maxDescriptionChars:
+		return fmt.Errorf("description has %d characters; the limit is 1,024", utf8.RuneCountInString(e.Description))
+	}
+	return nil
+}
+
+// Scan returns the usable project skills and one line for each skill it left
+// out. Only an unusable project or skills directory is an error: one bad
+// SKILL.md never keeps the others, or the chat, from loading.
+func Scan(project string) (*Catalog, []string, error) {
 	c := &Catalog{Root: project, Entries: []Entry{}}
 	if err := c.Validate(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	root, err := os.OpenRoot(project)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot open skill project: %w", err)
+		return nil, nil, fmt.Errorf("Cannot open skill project: %w", err)
 	}
 	defer root.Close()
 	if err := checkDirectories(root, ".agents", ".agents/skills"); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return c, nil
+			return c, nil, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	dir, err := root.Open(".agents/skills")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	entries, err := dir.ReadDir(-1)
 	dir.Close()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	// ReadDir on File does not sort entries; stable order keeps the prompt fixed.
+	// ReadDir on File does not sort entries. Name order keeps the prompt fixed
+	// and decides which skills are left out once the catalog is full.
+	slices.SortFunc(entries, func(a, b os.DirEntry) int { return strings.Compare(a.Name(), b.Name()) })
+	var problems []string
+	full := false
 	for _, entry := range entries {
+		name := entry.Name()
 		if !entry.IsDir() {
+			// Reads never follow links, so say why a linked skill is missing.
+			if entry.Type()&os.ModeSymlink != 0 {
+				problems = append(problems, name+": skipped because the skill directory is a symbolic link")
+			}
 			continue
 		}
-		name := entry.Name()
 		// Ignore supporting directories before validating a candidate skill name.
 		if _, err := root.Lstat(".agents/skills/" + name + "/SKILL.md"); errors.Is(err, os.ErrNotExist) {
 			continue
 		}
-		f, err := openSkill(root, name)
+		if full {
+			problems = append(problems, name+": skipped because the skill catalog is full (32 KiB)")
+			continue
+		}
+		e, err := scanSkill(root, name)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Cannot scan skill %q: %w", name, err)
+			problems = append(problems, fmt.Sprintf("%s: %v", name, err))
+			continue
 		}
-		metadata, err := readMetadata(f)
-		f.Close()
-		if err != nil {
-			return nil, fmt.Errorf("Invalid skill %q: %w", name, err)
-		}
-		if metadata.Name != name {
-			return nil, fmt.Errorf("Invalid skill %q: YAML name must match the directory name", name)
-		}
-		c.Entries = append(c.Entries, metadata)
-		// Bound discovery before visiting an arbitrarily large catalog.
-		encoded, _ := json.Marshal(c)
-		if len(encoded) > maxCatalogBytes {
-			return nil, errors.New("Skill catalog exceeds the 32 KiB limit")
+		c.Entries = append(c.Entries, e)
+		// Bound the catalog before visiting an arbitrarily large directory.
+		if encoded, _ := json.Marshal(c); len(encoded) > maxCatalogBytes {
+			c.Entries = c.Entries[:len(c.Entries)-1]
+			full = true
+			problems = append(problems, name+": skipped because the skill catalog is full (32 KiB)")
 		}
 	}
-	slices.SortFunc(c.Entries, func(a, b Entry) int { return strings.Compare(a.Name, b.Name) })
 	if err := c.Validate(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return c, nil
+	return c, problems, nil
+}
+
+func scanSkill(root *os.Root, name string) (Entry, error) {
+	f, err := openSkill(root, name)
+	if err != nil {
+		return Entry{}, err
+	}
+	e, err := readMetadata(f)
+	f.Close()
+	if err != nil {
+		return e, err
+	}
+	if e.Name != name {
+		return e, errors.New("YAML name must match the directory name")
+	}
+	return e, checkEntry(e)
 }
 
 func readMetadata(f io.Reader) (Entry, error) {
@@ -129,8 +174,11 @@ func readMetadata(f io.Reader) (Entry, error) {
 	var header strings.Builder
 	for scanner.Scan() {
 		if scanner.Text() == "---" {
-			if header.Len() > maxHeaderBytes || !utf8.ValidString(header.String()) {
+			if header.Len() > maxHeaderBytes {
 				break
+			}
+			if !utf8.ValidString(header.String()) {
+				return e, errors.New("front matter must be UTF-8 text")
 			}
 			var metadata struct{ Name, Description yaml.Node }
 			decoder := yaml.NewDecoder(strings.NewReader(header.String()))

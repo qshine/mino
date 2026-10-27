@@ -58,7 +58,7 @@ Table 07-1. Session operations preserve or replace discovery metadata at explici
 
 A restarted process can have a different working directory. An existing session still points to its recorded project, while `/new` discovers skills under the new process's startup directory. This does not change Bash's directory: Bash continues using its own captured startup directory for every session. If a resumed skill's original project has disappeared, the catalog still restores, but a later read fails.
 
-This snapshot covers skills. SOUL remains loaded once per process startup; editing it and restarting can change the overall instructions even when the skill catalog stays identical. A failed snapshot write or sync stops chat before the new catalog is used. Invalid metadata during `/new` reports an error and leaves the selected session unchanged; see the [skill file rules](../getting-started.md#write-a-project-skill) for what discovery accepts.
+This snapshot covers skills. SOUL remains loaded once per process startup; editing it and restarting can change the overall instructions even when the skill catalog stays identical. A failed snapshot write or sync stops chat before the new catalog is used. Invalid metadata during `/new` reports an error and leaves the selected session unchanged; see the [skill file rules](../getting-started.md#write-a-project-skill) for what discovery accepts. Since version 0.13.0, a bad skill no longer fails discovery: Mino skips it and names it in a notice, as described in [skill discovery changes](../getting-started.md#skill-discovery-changes).
 
 ## 3. Read the body without granting new authority
 

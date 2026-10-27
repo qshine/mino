@@ -167,8 +167,9 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 			break
 		}
 		var catalog *skills.Catalog
+		var problems []string
 		if m.options.ProjectDirectory != "" {
-			catalog, err = skills.Scan(m.options.ProjectDirectory)
+			catalog, problems, err = skills.Scan(m.options.ProjectDirectory)
 			if err != nil {
 				return err
 			}
@@ -180,7 +181,11 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if err != nil {
 			return err
 		}
-		return m.showCurrent(i)
+		m.runner.skipped = skillNotice(m.options.ProjectDirectory, problems)
+		if err := m.showCurrent(i); err != nil {
+			return err
+		}
+		return m.runner.showSkipped(i)
 	case "/resume":
 		if len(fields) != 2 {
 			break

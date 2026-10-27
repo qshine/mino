@@ -201,14 +201,69 @@ func TestSkillEmptySnapshotAndInvalidNewKeepSelection(t *testing.T) {
 	if err != nil || m.runner.options.Instructions != prompt {
 		t.Fatalf("empty catalog rescanned: %v", err)
 	}
-	if err := os.WriteFile(path, []byte("broken metadata"), 0600); err != nil {
+	// A bad skill is only skipped; an unusable skills directory fails /new.
+	skillsDir := filepath.Dir(filepath.Dir(path))
+	if err := os.RemoveAll(skillsDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(t.TempDir(), skillsDir); err != nil {
 		t.Fatal(err)
 	}
 	if err := m.Handle(context.Background(), "/new", testInteraction{}); err == nil {
-		t.Fatal("invalid skill accepted")
+		t.Fatal("symbolic link skills directory accepted")
 	}
 	if store.id != first || m.runner.session != store.current || m.runner.options.Instructions != prompt {
 		t.Fatal("failed /new changed selection")
+	}
+}
+
+func TestBadSkillsAreSkippedWithOneNotice(t *testing.T) {
+	project := t.TempDir()
+	path := projectSkill(t, project, "Review code")
+	os.WriteFile(path, []byte("---\nname: review\ndescription: "+strings.Repeat("x", 1100)+"\n---\nBody"), 0600)
+	good := filepath.Join(project, ".agents", "skills", "alpha")
+	os.MkdirAll(good, 0700)
+	os.WriteFile(filepath.Join(good, "SKILL.md"), []byte("---\nname: alpha\ndescription: Works\n---\nBody"), 0600)
+	var notices []string
+	interaction := testInteraction{emit: func(e Event) error {
+		if e.Kind == "notice" {
+			notices = append(notices, e.Text)
+		}
+		return nil
+	}}
+	available := []tools.Tool{tools.NewSkillView(nil)}
+	store, err := OpenSessions(t.TempDir(), available)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	m, err := NewSessionManager(Options{ProjectDirectory: project}, store, available)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Start(context.Background(), interaction); err != nil {
+		t.Fatal(err)
+	}
+	prompt := m.runner.options.Instructions
+	if !strings.Contains(prompt, `"name":"alpha"`) || strings.Contains(prompt, `"name":"review"`) {
+		t.Fatalf("catalog = %s", prompt)
+	}
+	want := "Some skills in " + filepath.Join(project, ".agents", "skills") + " were not loaded:\n  review: description has 1100 characters; the limit is 1,024\n"
+	if len(notices) != 1 || notices[0] != want {
+		t.Fatalf("startup notices = %q", notices)
+	}
+	// The catalog is frozen, so later turns and restarts do not repeat it.
+	if err := m.runner.showSkipped(interaction); err != nil || len(notices) != 1 {
+		t.Fatalf("notice repeated: %q", notices)
+	}
+	if again, err := NewSessionManager(Options{ProjectDirectory: project}, store, available); err != nil || again.runner.skipped != "" {
+		t.Fatalf("restart rescanned: %v", err)
+	}
+	if err := m.Handle(context.Background(), "/new", interaction); err != nil {
+		t.Fatal(err)
+	}
+	if len(notices) != 2 || notices[1] != want {
+		t.Fatalf("/new notices = %q", notices)
 	}
 }
 
