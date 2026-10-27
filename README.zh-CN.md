@@ -11,7 +11,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
 **当前进度：**本快照包含第 01–12 章，对应发布版本 `chapter-12`（程序版本 `0.12.0`）。
-第 01–12 章均已发布，标签为 `chapter-01` 至 `chapter-12`，程序版本对应 `0.1.0` 至 `0.12.0`；第 13–15 章规划中。
+第 01–12 章均已发布，标签为 `chapter-01` 至 `chapter-12`，程序版本对应 `0.1.0` 至 `0.12.0`；第 13 章开发中，第 14–15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -24,6 +24,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 10 章加入安全防护：由代码执行的统一工具策略、受保护路径，以及用 `/mode` 选择的三种权限模式。
 第 11 章加入评测：`mino eval` 用声明式用例驱动 Agent 循环，并用确定性检查评分。
 第 12 章加入操作系统沙箱：在 macOS 上，Bash 命令在 Seatbelt 配置下运行，写入受限，网络和受保护路径被阻断。
+第 13 章（开发中）加入用户记忆：每条记忆是 `~/.mino/memory/` 下的一个文件，每轮都会把所有记忆的一行摘要交给模型。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -297,6 +298,16 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 要求沙箱但无法受限的服务会被报告为不可用，而不是不受限地启动。没有 `sandbox-exec` 的系统（Linux，或将来移除它的 macOS）会在聊天启动时打印提示，
 确认界面显示 `Sandbox: unavailable`，Bash 的行为与第 11 章相同。评测用例同样在沙箱内运行；`evals/` 中的三个 `sandbox-*` 用例在没有沙箱时会失败。
 沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不是针对以 `sandbox: false` 运行的恶意命令的安全边界。
+
+## 用户记忆（第 13 章，开发中）
+
+Mino 会跨会话、跨项目记住长期有效的事实和偏好。每条记忆是 `~/.mino/memory/` 下的一个 Markdown 文件：
+文件头写 `name`、`type`（`user`、`feedback`、`project` 或 `reference`）和一行不超过 200 字节的 `summary`，后面是可选的详细内容。
+每轮开始时，Mino 用所有摘要生成一份索引，作为一条标明“是数据不是指令”的 assistant 消息放在对话前面，所以大多数记忆不需要额外请求；
+标有 `(+details)` 的记忆，模型用 `memory_view` 读取，无需批准。让 Mino 记住某件事时，它会调用 `memory_save`，展示名称、摘要和详细内容，
+在 `manual` 和 `accept-edits` 模式下都要你批准（只有 `bypass` 不询问），因为保存的记忆会进入以后每个项目的每个会话。
+索引从不写入会话历史；现在保存的记忆从下一轮开始出现。要修改或忘掉一条记忆，直接编辑或删除对应文件。无法使用的文件会被跳过并给出提示。
+索引最多容纳 200 条记忆、16 KiB。详见[第 13 章](docs/books/zh/chapters/13-user-memory.md)。
 
 ## 版本与升级
 

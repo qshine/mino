@@ -1,0 +1,14 @@
+name: memory-recall
+description: A remembered fact reaches the model in the memory index, so it answers without reading the memory file.
+prompt: Which package manager should I use to install this project's dependencies?
+memory:
+  - name: uses-pnpm
+    type: project
+    summary: This user's projects install dependencies with pnpm, never npm or yarn.
+model:
+  - text: Use pnpm; run pnpm install.
+    expect_input_contains: "uses-pnpm: This user's projects install dependencies with pnpm"
+graders:
+  - final_text_contains: pnpm
+  - tool_not_called: memory_view
+  - tool_not_called: memory_save

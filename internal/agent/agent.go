@@ -17,6 +17,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/qshine/mino/internal/memory"
 	"github.com/qshine/mino/internal/policy"
 	"github.com/qshine/mino/internal/skills"
 	"github.com/qshine/mino/internal/tools"
@@ -68,6 +69,7 @@ type Options struct {
 	ProjectDirectory                     string
 	ContextWindow                        int
 	Policy                               *policy.Policy // nil uses a new manual-mode policy
+	Memory                               *memory.Store  // nil sends no memory index
 }
 
 type Agent struct {
@@ -77,6 +79,8 @@ type Agent struct {
 	httpClient  *http.Client
 	tools       map[string]tools.Tool
 	definitions []responses.ToolUnionParam
+	memory      string // index rendered at the start of the current turn
+	problems    string // last memory problems shown, to avoid repeating them every turn
 }
 
 func New(options Options, session *Session, available []tools.Tool) (*Agent, error) {
@@ -210,7 +214,37 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	if err := a.session.append(historyRecord{TurnID: newHistoryID(), Kind: "user_message", Text: message}); err != nil {
 		return &StorageError{err}
 	}
+	if err := a.refreshMemory(interaction); err != nil {
+		return a.stopTurn(err)
+	}
 	return a.runLoop(ctx, interaction)
+}
+
+// refreshMemory rebuilds the index once per turn, so every request in the turn
+// shares one prefix and a memory saved now appears from the next turn, including
+// after compaction. The index is never written to history. A file Mino cannot
+// use is reported to the user and skipped; it never stops the conversation.
+func (a *Agent) refreshMemory(interaction Interaction) error {
+	if a.options.Memory == nil {
+		return nil
+	}
+	entries, problems, err := a.options.Memory.Scan()
+	if err != nil {
+		problems = []string{err.Error()}
+	}
+	a.memory = memory.Render(entries)
+	text := ""
+	if len(problems) > 0 {
+		text = "Some memories in " + a.options.Memory.Dir() + " were not loaded:\n  " + strings.Join(problems, "\n  ") + "\n"
+	}
+	if text == a.problems {
+		return nil
+	}
+	a.problems = text
+	if text == "" {
+		return nil
+	}
+	return interaction.Emit(Event{Kind: "notice", Text: text})
 }
 
 // runLoop keeps each model request, completed response, and tool step in one place.
@@ -232,7 +266,7 @@ func (a *Agent) runLoop(ctx context.Context, interaction Interaction) error {
 		if err := interaction.Emit(Event{Kind: "response_started"}); err != nil {
 			return a.stopTurn(err)
 		}
-		input := s.state.contextInput()
+		input := s.state.contextInput(a.memory)
 
 		var response *http.Response
 		requests++

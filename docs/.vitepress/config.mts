@@ -94,6 +94,9 @@ export default withMermaid({
           { text: 'Part VII · Confine the process', items: [
             { text: '12 Sandbox', link: '/chapters/12-sandbox' }
           ] },
+          { text: 'Part VIII · Remember the user', items: [
+            { text: '13 User memory', link: '/chapters/13-user-memory' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -144,6 +147,9 @@ export default withMermaid({
           ] },
           { text: '第七部分 · 限定进程', items: [
             { text: '12 沙箱', link: '/zh/chapters/12-sandbox' }
+          ] },
+          { text: '第八部分 · 记住用户', items: [
+            { text: '13 用户记忆', link: '/zh/chapters/13-user-memory' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

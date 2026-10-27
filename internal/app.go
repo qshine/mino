@@ -12,6 +12,7 @@ import (
 	"github.com/qshine/mino/internal/agent"
 	"github.com/qshine/mino/internal/gateway"
 	"github.com/qshine/mino/internal/mcp"
+	"github.com/qshine/mino/internal/memory"
 	"github.com/qshine/mino/internal/sandbox"
 	"github.com/qshine/mino/internal/tools"
 )
@@ -104,7 +105,11 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 	if err != nil {
 		return err
 	}
-	available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit()}
+	memories, err := memory.Open(filepath.Join(directory, "memory"))
+	if err != nil {
+		return err
+	}
+	available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit(), tools.NewMemoryView(memories), tools.NewMemorySave(memories)}
 	servers, err := mcp.Load(filepath.Join(directory, "mcp.json"))
 	if err != nil {
 		return fmt.Errorf("%w. Fix it, or manage servers with mino mcp", err)
@@ -126,7 +131,7 @@ func runChat(ctx context.Context, cli *gateway.CLI, output io.Writer) (err error
 		return err
 	}
 	defer func() { err = errors.Join(err, session.Close()) }()
-	runner, err := agent.NewSessionManager(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions, ContextWindow: cfg.ContextWindow, ProjectDirectory: bash.Directory()}, session, available)
+	runner, err := agent.NewSessionManager(agent.Options{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey, Model: cfg.Model, Instructions: instructions, ContextWindow: cfg.ContextWindow, ProjectDirectory: bash.Directory(), Memory: memories}, session, available)
 	if err != nil {
 		return err
 	}

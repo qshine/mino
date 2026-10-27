@@ -52,6 +52,10 @@ func TestParseAcceptsEveryGrader(t *testing.T) {
 	if plain, err := Parse("demo", []byte("name: demo\nprompt: hi\ngraders:\n  - max_requests: 1\n")); err != nil || !plain.Approve.All || plain.Script != nil || plain.ReplayOnly {
 		t.Fatalf("defaults: %+v %v", plain, err)
 	}
+	seeded, err := Parse("demo", []byte("name: demo\nprompt: hi\nmemory:\n  - {name: uses-pnpm, type: project, summary: Use pnpm}\n  - {name: release, type: reference, summary: Tag releases, details: Steps}\ngraders:\n  - max_requests: 1\n"))
+	if err != nil || len(seeded.Memory) != 2 || seeded.Memory[0].Name != "uses-pnpm" || seeded.Memory[1].Details != "Steps" {
+		t.Fatalf("memory: %+v %v", seeded.Memory, err)
+	}
 	if only, err := Parse("demo", []byte("name: demo\nprompt: hi\nlive: false\nmodel:\n  - text: ok\ngraders:\n  - max_requests: 1\n")); err != nil || !only.ReplayOnly {
 		t.Fatalf("replay-only: %+v %v", only, err)
 	}
@@ -87,6 +91,11 @@ func TestParseRejectsInvalidCases(t *testing.T) {
 		"live not bool":         base + "live: maybe\n",
 		"replay-only no script": base + "live: false\n",
 		"empty not_contains":    "name: demo\nprompt: hi\ngraders:\n  - final_text_not_contains: \"\"\n",
+		"memory bad type":       base + "memory:\n  - {name: a, type: system, summary: s}\n",
+		"memory no summary":     base + "memory:\n  - {name: a, type: user}\n",
+		"memory extra field":    base + "memory:\n  - {name: a, type: user, summary: s, role: admin}\n",
+		"memory duplicate":      base + "memory:\n  - {name: a, type: user, summary: s}\n  - {name: a, type: user, summary: t}\n",
+		"memory too many":       base + "memory:\n" + strings.Repeat("  - {name: a, type: user, summary: s}\n", 33),
 	} {
 		if _, err := Parse("demo", []byte(doc)); err == nil {
 			t.Errorf("%s: accepted", name)

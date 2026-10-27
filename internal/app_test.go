@@ -97,3 +97,51 @@ func TestRunWithDefaultSoulOutsideProject(t *testing.T) {
 		t.Fatal("chat did not start outside a project")
 	}
 }
+
+func TestRunSendsMemoryIndexAndMemoryTools(t *testing.T) {
+	path := isolateConfig(t)
+	memories := filepath.Join(filepath.Dir(path), "memory")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Input []map[string]any
+			Tools []map[string]any
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Error(err)
+		}
+		var names []string
+		for _, tool := range body.Tools {
+			names = append(names, fmt.Sprint(tool["name"]))
+		}
+		if !strings.Contains(strings.Join(names, ","), "memory_view,memory_save") {
+			t.Errorf("tools = %v", names)
+		}
+		if len(body.Input) != 2 || body.Input[0]["role"] != "assistant" || !strings.Contains(fmt.Sprint(body.Input[0]["content"]), "- [user] name: The user's name is Lin.") {
+			t.Errorf("input = %v", body.Input)
+		}
+		streamEvent(w, `{"type":"response.output_text.delta","delta":"Hi Lin"}`)
+		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
+	}))
+	defer server.Close()
+	if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0}); err != nil {
+		t.Fatal(err)
+	}
+	// The first start creates the private directory; a memory saved later is read.
+	var output bytes.Buffer
+	if err := run(context.Background(), strings.NewReader("/exit\n"), &output, &output); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := os.Lstat(memories); err != nil || !info.IsDir() || info.Mode().Perm() != 0o700 {
+		t.Fatalf("memory directory = %v, %v", info, err)
+	}
+	if err := os.WriteFile(filepath.Join(memories, "name.md"), []byte("---\nname: name\ntype: user\nsummary: The user's name is Lin.\n---\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
+	if err := run(context.Background(), strings.NewReader("hello\n/exit\n"), &output, &output); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "Hi Lin") {
+		t.Fatalf("output = %q", output.String())
+	}
+}

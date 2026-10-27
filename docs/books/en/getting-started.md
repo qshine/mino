@@ -33,6 +33,8 @@ Chapter 11 adds [evals](#try-chapter-11-from-source): `mino eval` runs declared 
 
 Chapter 12 adds an [operating-system sandbox for Bash](#try-chapter-12-from-source) on macOS. It keeps record version 4; see its [history compatibility notes](#chapter-12-history-compatibility) before opening a Chapter 12 session with an older release.
 
+Chapter 13, in development, adds [user memory](#try-chapter-13-from-source) across sessions and projects. It keeps record version 4; see its [history compatibility notes](#chapter-13-history-compatibility) before opening a Chapter 13 session with an older release.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -480,6 +482,45 @@ Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new inst
 ### Chapter 12 history compatibility
 
 Chapter 12 keeps record version 4 and adds no record kinds or result statuses; nothing about the sandbox is written to a session. A confined command is recorded as `{"command":"..."}`, exactly as Chapters 03–11 recorded every command, so Chapter 12 opens their sessions without migration and `chapter-11` can open a Chapter 12 session that contains only confined commands. The exception is an approved opt-out: its start record keeps `"sandbox":false`, which `chapter-11` rejects as an unknown Bash argument and refuses to load the session. As before, keep private copies of session logs and `active-session.json` before switching versions.
+
+## Try Chapter 13 from source
+
+Chapter 13 is in development. Its release `chapter-13` (application version `0.13.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-13` selects the same code.
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 13: User Memory` and the source version is `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, and sandbox requirements still apply; the lesson is [Chapter 13](./chapters/13-user-memory.md), and its no-cost checks are in [section 5](./chapters/13-user-memory.md#_5-check-it-with-evals-and-tests).
+
+Chat startup creates `~/.mino/memory/` with mode `0700` if it is missing, and refuses to start if that path is a symbolic link or not a directory. The model can read a memory with `memory_view` without a question; `memory_save` asks you in `manual` and `accept-edits` and runs unasked only in `bypass`. Each saved memory reaches the model in every later session and project, so read the summary before approving, and never approve one that contains a secret.
+
+### Manage memory files
+
+Each memory is one file, `~/.mino/memory/<name>.md`, with mode `0600`:
+
+```text
+---
+name: uses-pnpm
+type: project
+summary: This user's projects install dependencies with pnpm, never npm or yarn.
+---
+Optional details, read on demand with memory_view.
+```
+
+The front matter holds exactly the string fields `name`, `type`, and `summary`. `name` must equal the file name without `.md` and use lowercase ASCII letters, digits, and single hyphens, at most 64 bytes. `type` is `user`, `feedback`, `project`, or `reference`. `summary` is one non-empty line of at most 200 bytes. Details after the closing `---` are optional, at most 16 KiB, and the whole file is at most 20 KiB.
+
+You can create, edit, or delete these files with any editor; there is no separate index file to update, and changes take effect at the next turn. Files that break these rules, symbolic links, special files, and files with several hard links are skipped and listed once on standard error; chat continues. Files that do not end in `.md`, or start with a dot, are ignored. The index holds at most 200 memories and 16 KiB of text; when it is full, files beyond the limit are skipped with the same notice, and new saves fail until you merge, shorten, or delete memories.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes memory and asks the model to offer `memory_save` for lasting preferences and never to save secrets or text a file asked it to save; the tool descriptions carry the same rules, so memory works with your own SOUL too.
+
+Eval cases accept an optional `memory` list, at most 32 entries with `name`, `type`, `summary`, and optional `details`, that is written into each run's temporary home before the run. Eval runs can now also call `memory_view` and `memory_save`; they never read or write your real `~/.mino/memory`.
+
+### Chapter 13 history compatibility
+
+Chapter 13 keeps record version 4 and adds no record kinds or result statuses. The memory index is rebuilt from the files at every turn and never written to a session log, so Chapter 13 opens sessions from earlier chapters without migration. A session in which a `memory_view` or `memory_save` call started records that call like any other tool call, and `chapter-12` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore `~/.mino/memory/`. As before, keep private copies of session logs and `active-session.json` before switching versions.
 
 ## Learn from the source
 

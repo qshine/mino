@@ -10,7 +10,7 @@ next:
 
 Mino is a project to build an agent from scratch in Go. This book follows it as each chapter adds one capability. Starting with a terminal conversation, you trace what the model receives and what the program handles, then check the result and its limits for yourself.
 
-**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md) · [Chapter 11: Evals](./chapters/11-evals.md) · [Chapter 12: Sandbox](./chapters/12-sandbox.md). Chapters 01–12 are released; the latest is available in `chapter-12` (version `0.12.0`). Chapters 13–15 are planned in the [chapter roadmap](./plan-todo-chapters.md).
+**Ready to read:** [Chapter 01: A terminal conversation](./chapters/01-terminal-chat.md) · [Chapter 02: JSONL conversation history](./chapters/02-jsonl-history.md) · [Chapter 03: The Agent loop and Bash](./chapters/03-tools-and-bash.md) · [Chapter 04: Recovering tool turns](./chapters/04-recovering-tool-turns.md) · [Chapter 05: Multiple sessions](./chapters/05-jsonl-sessions.md) · [Chapter 06: Context compaction](./chapters/06-context-compaction.md) · [Chapter 07: Skills](./chapters/07-skills.md) · [Chapter 08: File tools](./chapters/08-file-tools.md) · [Chapter 09: MCP tools](./chapters/09-mcp.md) · [Chapter 10: Guardrails](./chapters/10-guardrails.md) · [Chapter 11: Evals](./chapters/11-evals.md) · [Chapter 12: Sandbox](./chapters/12-sandbox.md). Chapters 01–12 are released; the latest is available in `chapter-12` (version `0.12.0`). [Chapter 13: User memory](./chapters/13-user-memory.md) is in development, with release `chapter-13` (version `0.13.0`) being prepared; Chapters 14–15 are planned in the [chapter roadmap](./plan-todo-chapters.md).
 
 ## About the author
 
@@ -58,6 +58,7 @@ Chapters 01–10 were released on **2026-10-21** as `chapter-01` through `chapte
 | [10 Guardrails](./chapters/10-guardrails.md) | How are actual permissions enforced as one policy in code? |
 | [11 Evals](./chapters/11-evals.md) | How do you check repeatably whether a change to the SOUL, a tool description, or the loop changed what the Agent does? |
 | [12 Sandbox](./chapters/12-sandbox.md) | How can the kernel, rather than your reading of a command, bound what an approved Bash command may touch? |
+| [13 User memory](./chapters/13-user-memory.md) (in development) | How does a fact you told Mino in one session reach the next one, as data rather than an instruction? |
 
 ## Read alongside the code
 

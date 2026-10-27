@@ -14,6 +14,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/qshine/mino/internal/memory"
 	"github.com/qshine/mino/internal/skills"
 	"gopkg.in/yaml.v3"
 )
@@ -24,6 +25,7 @@ const (
 	maxGraders      = 32
 	maxSteps        = 16
 	maxSeededFiles  = 64
+	maxSeededMemory = 32
 	maxSeedBytes    = 64 << 10
 	maxTextBytes    = 16 << 10
 	maxPatternBytes = 1 << 10
@@ -38,6 +40,7 @@ type Case struct {
 	Runs                                    int
 	ReplayOnly                              bool // live: false; the case asserts a program path a real model would not take
 	Workspace                               Workspace
+	Memory                                  []memory.Memory // saved before the run, as earlier sessions would have
 	Script                                  []Step
 	Graders                                 []Grader
 }
@@ -79,6 +82,19 @@ func (a *Approval) UnmarshalYAML(node *yaml.Node) error {
 
 type Workspace struct {
 	Files map[string]string `yaml:"files"`
+}
+
+// seededMemory is one entry of a case's memory list. Details are optional, as
+// they are for memory_save.
+type seededMemory struct{ memory.Memory }
+
+func (m *seededMemory) UnmarshalYAML(node *yaml.Node) error {
+	var raw struct{ Name, Type, Summary, Details string }
+	if err := strictDecode(node, &raw, "name", "type", "summary", "details"); err != nil {
+		return err
+	}
+	m.Memory = memory.Memory{Name: raw.Name, Type: raw.Type, Summary: raw.Summary, Details: raw.Details}
+	return m.Validate()
 }
 
 // Step is one scripted model response: either final text or one tool call.
@@ -288,16 +304,17 @@ func loadFile(path string) (Case, error) {
 // the declared name must match so reports and filters agree with the file.
 func Parse(name string, data []byte) (Case, error) {
 	var raw struct {
-		Name         string    `yaml:"name"`
-		Description  string    `yaml:"description"`
-		Prompt       string    `yaml:"prompt"`
-		Instructions string    `yaml:"instructions"`
-		Approve      *Approval `yaml:"approve"`
-		Runs         int       `yaml:"runs"`
-		Live         *bool     `yaml:"live"`
-		Workspace    Workspace `yaml:"workspace"`
-		Model        []Step    `yaml:"model"`
-		Graders      []Grader  `yaml:"graders"`
+		Name         string         `yaml:"name"`
+		Description  string         `yaml:"description"`
+		Prompt       string         `yaml:"prompt"`
+		Instructions string         `yaml:"instructions"`
+		Approve      *Approval      `yaml:"approve"`
+		Runs         int            `yaml:"runs"`
+		Live         *bool          `yaml:"live"`
+		Workspace    Workspace      `yaml:"workspace"`
+		Memory       []seededMemory `yaml:"memory"`
+		Model        []Step         `yaml:"model"`
+		Graders      []Grader       `yaml:"graders"`
 	}
 	decoder := yaml.NewDecoder(strings.NewReader(string(data)))
 	decoder.KnownFields(true)
@@ -309,6 +326,9 @@ func Parse(name string, data []byte) (Case, error) {
 		c.Approve = *raw.Approve
 	}
 	c.ReplayOnly = raw.Live != nil && !*raw.Live
+	for _, m := range raw.Memory {
+		c.Memory = append(c.Memory, m.Memory)
+	}
 	if err := c.validate(name); err != nil {
 		return Case{}, err
 	}
@@ -349,6 +369,16 @@ func (c Case) validate(stem string) error {
 		if !validText(content, maxSeedBytes) {
 			return fmt.Errorf("workspace file %q must be UTF-8 text of at most 64 KiB", path)
 		}
+	}
+	if len(c.Memory) > maxSeededMemory {
+		return fmt.Errorf("memory seeds at most %d entries", maxSeededMemory)
+	}
+	seen := map[string]bool{}
+	for _, m := range c.Memory {
+		if seen[m.Name] {
+			return fmt.Errorf("memory %q is listed twice", m.Name)
+		}
+		seen[m.Name] = true
 	}
 	if c.ReplayOnly && len(c.Script) == 0 {
 		return errors.New("a replay-only case (live: false) needs a model script")

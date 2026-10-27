@@ -17,7 +17,8 @@ model API experience is needed.
 **Current progress:** This snapshot contains Chapters 01–12, release
 `chapter-12` (application version `0.12.0`).
 Chapters 01–12 are released, tagged `chapter-01` through `chapter-12` with
-application versions `0.1.0` through `0.12.0`; Chapters 13–15 are planned.
+application versions `0.1.0` through `0.12.0`; Chapter 13 is in development and
+Chapters 14–15 are planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -36,6 +37,8 @@ Chapter 11 adds evals: `mino eval` runs declared cases through the Agent loop an
 them with deterministic checks.
 Chapter 12 adds an OS sandbox: on macOS, Bash commands run under a Seatbelt profile that
 confines writes and blocks the network and protected paths.
+Chapter 13 (in development) adds user memory: one file per memory in `~/.mino/memory/`,
+with every memory's one-line summary shown to the model each turn.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -399,6 +402,23 @@ Chapter 11. Eval cases run confined too; the three `sandbox-*` cases in `evals/`
 without a sandbox. The sandbox does not limit reads of unprotected files, does not
 confine `http` MCP servers, and is not a security boundary against a hostile command
 run with `sandbox: false`.
+
+## User memory (Chapter 13, in development)
+
+Mino remembers lasting facts and preferences across sessions and projects. Each memory
+is one Markdown file in `~/.mino/memory/`: front matter with `name`, `type` (`user`,
+`feedback`, `project`, or `reference`), and a one-line `summary` of at most 200 bytes,
+then optional details. At the start of every turn Mino builds an index of all summaries
+and sends it before the conversation as an assistant message labelled as data, not
+instructions, so most memories need no extra request; the model reads a memory marked
+`(+details)` with `memory_view`, which needs no approval. Ask Mino to remember something
+and it calls `memory_save`, which shows the name, summary, and details and asks for your
+approval in `manual` and `accept-edits` modes (only `bypass` skips the question), because
+a saved memory reaches every later session in every project. The index is never written
+to session history; a memory saved now appears from the next turn. To change or forget a
+memory, edit or delete its file. Files Mino cannot use are skipped with a notice. The
+index holds at most 200 memories and 16 KiB. See
+[Chapter 13](docs/books/en/chapters/13-user-memory.md).
 
 ## Version and updates
 

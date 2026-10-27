@@ -1,0 +1,12 @@
+name: memory-save
+description: A lasting preference is saved through memory_save after approval.
+prompt: Please remember for future sessions that I want every answer in Chinese. Save it as a memory.
+approve: [memory_save]
+model:
+  - call: {tool: memory_save, arguments: {name: prefers-chinese, type: feedback, summary: Answer in Chinese in every session., details: "", mode: create}}
+  - text: Saved. I will answer in Chinese from now on.
+    expect_input_contains: Saved memory prefers-chinese
+graders:
+  - tool_called: memory_save
+  - result_status: {call: 1, status: completed}
+  - tool_not_called: bash

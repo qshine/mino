@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/qshine/mino/internal/agent"
+	"github.com/qshine/mino/internal/memory"
 	"github.com/qshine/mino/internal/sandbox"
 	"github.com/qshine/mino/internal/tools"
 )
@@ -107,13 +108,20 @@ func RunCase(ctx context.Context, c Case, o Options, run int) (RunResult, error)
 		if err != nil {
 			return err
 		}
-		available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit()}
+		memories, err := memory.Open(filepath.Join(home, ".mino", "memory"))
+		if err != nil {
+			return err
+		}
+		if err := seedMemory(memories, c.Memory); err != nil {
+			return err
+		}
+		available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit(), tools.NewMemoryView(memories), tools.NewMemorySave(memories)}
 		session, err := agent.OpenSession(sessionDir, available)
 		if err != nil {
 			return err
 		}
 		defer session.Close()
-		a, err := agent.New(agent.Options{BaseURL: baseURL, APIKey: apiKey, Model: model, Instructions: instructions, ProjectDirectory: bash.Directory()}, session, available)
+		a, err := agent.New(agent.Options{BaseURL: baseURL, APIKey: apiKey, Model: model, Instructions: instructions, ProjectDirectory: bash.Directory(), Memory: memories}, session, available)
 		if err != nil {
 			return err
 		}
@@ -158,6 +166,18 @@ func seed(workspace string, files map[string]string) error {
 		}
 		if err := os.WriteFile(full, []byte(content), 0600); err != nil {
 			return fmt.Errorf("Cannot seed %s: %w", path, err)
+		}
+	}
+	return nil
+}
+
+// seedMemory writes the case's memories into the run's own home, as earlier
+// sessions would have saved them.
+func seedMemory(store *memory.Store, memories []memory.Memory) error {
+	for _, m := range memories {
+		path := filepath.Join(store.Dir(), memory.FileName(m.Name))
+		if err := os.WriteFile(path, []byte(memory.Format(m)), 0600); err != nil {
+			return fmt.Errorf("Cannot seed memory %s: %w", m.Name, err)
 		}
 	}
 	return nil

@@ -22,6 +22,34 @@ replaced by three permission modes selected with `/mode`. Earlier chapters and t
 releases are unchanged. A `~/.mino/policy.json` left by the first 0.10.0 release is
 now ignored.
 
+## [Unreleased]
+
+### Added
+
+- Chapter 13 user memory: `internal/memory` stores one Markdown file per memory in
+  `~/.mino/memory/` (front matter `name`, `type`, `summary`, then optional details).
+  At the start of every turn Mino renders an index of every memory's one-line summary
+  and sends it as the first input item, an assistant message labelled as data rather
+  than instructions, merged with any context summary. The index is never written to
+  history and is empty when nothing is remembered.
+- `memory_view` reads one memory's full file without approval. `memory_save` creates
+  or overwrites one memory after the user approves the shown content; it asks in
+  `manual` and `accept-edits` modes and is unasked only in `bypass`. Saves are atomic
+  and fail if the file changed after approval or the index is full (200 entries or
+  16 KiB).
+- Unusable memory files are skipped and reported once as a notice instead of stopping
+  chat.
+- Eval cases accept a `memory` list seeded into each run's home; new replay cases
+  `memory-recall`, `memory-save`, and `memory-injection-denied`.
+- The default `SOUL.md` explains memory; existing `~/.mino/SOUL.md` files are not
+  changed, so the tool descriptions carry the same rules.
+
+### Compatibility
+
+- History stays v4, but `chapter-12` and earlier cannot open a session in which a
+  `memory_view` or `memory_save` call started; they report a started call for an
+  unavailable tool.
+
 ## [0.12.0] - 2026-10-26
 
 ### Added

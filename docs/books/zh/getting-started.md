@@ -33,6 +33,8 @@ next:
 
 第十二章在 macOS 上为 Bash 加入[操作系统沙箱](#从源码体验第十二章)。它沿用记录版本 4；用旧版本打开第十二章的会话之前，请阅读[历史兼容性说明](#第十二章的历史兼容性)。
 
+第十三章正在开发，加入跨会话、跨项目的[用户记忆](#从源码体验第十三章)。它沿用记录版本 4；用旧版本打开第十三章的会话之前，请阅读[历史兼容性说明](#第十三章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -480,6 +482,45 @@ cd /path/to/your/project
 ### 第十二章的历史兼容性
 
 第十二章沿用记录版本 4，没有新增记录类型或结果状态，沙箱的任何信息都不会写入会话。受限命令记录为 `{"command":"..."}`，与第三章到第十一章记录每条命令的方式完全相同，所以第十二章无需迁移即可打开它们的会话，`chapter-11` 也能打开只包含受限命令的第十二章会话。例外是获批的选择退出：它的启动记录保留 `"sandbox":false`，`chapter-11` 会把它当作未知的 Bash 参数而拒绝加载该会话。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
+
+## 从源码体验第十三章
+
+第十三章正在开发。它的发布标签 `chapter-13`（程序版本 `0.13.0`）正在准备，因此还没有可安装的包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-13` 会选中同一份代码。
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 13: User Memory`，源码版本为 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP、安全防护和沙箱要求继续适用；正文见[第十三章](./chapters/13-user-memory.md)，免费的检查见[第 5 节](./chapters/13-user-memory.md#_5-用评测和测试检查它)。
+
+聊天启动时，如果 `~/.mino/memory/` 不存在，会以权限 `0700` 创建它；如果该路径是符号链接或不是目录，则拒绝启动。模型可以用 `memory_view` 读取一条记忆而不经询问；`memory_save` 在 `manual` 和 `accept-edits` 下会询问你，只有 `bypass` 下不询问。每条保存的记忆都会在之后每个会话、每个项目中提供给模型，所以批准前请读一遍摘要，也不要批准包含秘密的记忆。
+
+### 管理记忆文件
+
+每条记忆是一个文件 `~/.mino/memory/<name>.md`，权限为 `0600`：
+
+```text
+---
+name: uses-pnpm
+type: project
+summary: This user's projects install dependencies with pnpm, never npm or yarn.
+---
+Optional details, read on demand with memory_view.
+```
+
+文件头恰好包含字符串字段 `name`、`type` 和 `summary`。`name` 必须等于去掉 `.md` 的文件名，使用小写 ASCII 字母、数字和单个连字符，最多 64 字节。`type` 取 `user`、`feedback`、`project` 或 `reference`。`summary` 是一行非空文字，最多 200 字节。结尾 `---` 之后的细节可选，最多 16 KiB，整个文件最多 20 KiB。
+
+你可以用任何编辑器创建、修改或删除这些文件；没有需要同步更新的索引文件，改动在下一轮生效。违反这些规则的文件、符号链接、特殊文件和有多个硬链接的文件会被跳过，并在标准错误中列出一次；聊天继续进行。不以 `.md` 结尾、或以点开头的文件会被忽略。索引最多容纳 200 条记忆、16 KiB 文本；索引满时，超出上限的文件会以同样的提示被跳过，新的保存会失败，直到你合并、缩短或删除记忆。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 介绍了记忆，要求模型在遇到长期偏好时主动提出用 `memory_save` 保存，并且永远不要保存秘密，也不要因为文件要求而保存内容；工具描述包含同样的规则，所以使用你自己的 SOUL 时记忆同样可用。
+
+评测用例可以加入可选的 `memory` 列表，最多 32 条，每条包含 `name`、`type`、`summary` 和可选的 `details`，会在每次运行前写入这次运行的临时主目录。评测运行现在也可以调用 `memory_view` 和 `memory_save`；它们从不读写你真实的 `~/.mino/memory`。
+
+### 第十三章的历史兼容性
+
+第十三章沿用记录版本 4，没有新增记录类型或结果状态。记忆索引每一轮都从文件重建，从不写入会话日志，所以第十三章无需迁移即可打开之前各章的会话。如果某个会话中有 `memory_view` 或 `memory_save` 调用已经开始，它会像其他工具调用一样被记录，`chapter-12` 会以 `History contains a started call for an unavailable tool` 拒绝加载这样的会话。旧版本会忽略 `~/.mino/memory/`。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
 
 ## 从源码学习
 

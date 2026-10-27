@@ -85,7 +85,7 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 12: Sandbox")
+	fmt.Fprintln(c.output, "Mino - Chapter 13: User Memory")
 	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval in manual mode; /mode accept-edits skips it for file writes and /mode bypass for every call. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		fmt.Fprint(c.output, "\nYou> ")
