@@ -147,3 +147,33 @@ func TestNewRejectsBadInput(t *testing.T) {
 		t.Error("accepted a relative home")
 	}
 }
+
+// ~/.mino holds the API key and conversations. It sits under a writable
+// temporary directory here, so the denial must win over the allowance.
+func TestMinoDataDirectoryIsBlocked(t *testing.T) {
+	if !Available() {
+		t.Skip("sandbox-exec is unavailable on this system")
+	}
+	root, home := t.TempDir(), t.TempDir()
+	data := filepath.Join(home, ".mino")
+	if err := os.Mkdir(data, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(data, "config.json"), []byte(`{"api_key":"secret"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	s, err := New(root, home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, _ := run(t, s, s.Root(), `cat "`+data+`/config.json"; echo "read=$?"; ls "`+data+`" >/dev/null 2>&1; echo "list=$?"; touch "`+data+`/new" 2>/dev/null; echo "write=$?"; cat "`+home+`/missing" 2>/dev/null; touch "`+home+`/sibling"; echo "home=$?"`)
+	if strings.Contains(out, "secret") || !strings.Contains(out, "read=1") || strings.Contains(out, "list=0") || strings.Contains(out, "write=0") || !strings.Contains(out, "home=0") {
+		t.Fatalf("output:\n%s", out)
+	}
+	if _, err := os.Stat(filepath.Join(data, "new")); err == nil {
+		t.Fatal("the sandbox wrote inside ~/.mino")
+	}
+	if !strings.Contains(s.Summary(), "~/.mino blocked") {
+		t.Fatalf("summary: %s", s.Summary())
+	}
+}

@@ -22,7 +22,7 @@ Beyond the commands listed in `AGENTS.md`:
 
 - `internal/app.go` is the composition root. `runCLI` routes `mino mcp ...` to `runMCP` (`internal/mcp_command.go`) and `version`/`update` to `gateway.CLI.Command`. Everything else goes to `runChat`, which runs these steps in order:
   1. Load or prompt the config, then load `~/.mino/SOUL.md`.
-  2. Build Bash (`tools.NewBash(cwd, home)`), confine it with `sandbox.New(bash.Directory(), home)` when `sandbox.Available()` (otherwise print the unavailable notice), then the file tools (`tools.NewFiles`, rooted at the Bash directory), `skill_view`, and the memory tools over `memory.Open(~/.mino/memory)`.
+  2. Build Bash (`tools.NewBash(cwd, home)`), confine it with `sandbox.New(bash.Directory(), home)` when `sandbox.Available()` (otherwise print the unavailable notice), then the file tools (`tools.NewFiles`, rooted at the Bash directory), `skill_view`, the memory tools over `memory.Open(~/.mino/memory)`, and `agent.NewSpawnTool()`.
   3. Load `~/.mino/mcp.json` (`mcp.Load`), connect the MCP servers (`mcp.Connect`) and append their tools.
   4. Open `agent.OpenSessions(~/.mino, tools)`, wrap it in `agent.NewSessionManager` (its `Options.Memory` is the same store), then hand control to `gateway.CLI.Run`.
 
@@ -33,6 +33,7 @@ Beyond the commands listed in `AGENTS.md`:
   - `session.go`: `Session` and the history record state machine (`historyState.apply`), which validates every record on load and on append; memory changes only after write and sync succeed. Replay calls `Prepare` on recorded arguments; an `mcp_` tool that is no longer configured is replaced with `mcp.Unavailable`, which never executes.
   - `history.go`: JSONL file opening, locking, private permissions, tail recovery, and directory sync. `OpenSession` opens the single conversation in `sessions/` the way Chapters 02–04 did; tests use it.
   - `sessions.go` / `session_commands.go`: multi-session store (`OpenSessions`, which adopts a lone pointer-less session) and slash commands.
+  - `delegate.go`: `spawn_agent` (Chapter 14). `runCall` hands it to `Agent.delegate` after the synced `tool_start`; children are full Agents over their own logs in `sessions/<id>.agents/`, run through a concurrency pool, and reach the gateway only through `childInteraction`, which serializes confirmations.
   - `compact.go`: context budget estimate and summary compaction; `frontInput` merges the memory index and the summary into the first assistant input item.
 - `internal/tools/`: SDK-independent `Tool` interface (`Definition`, `Prepare`, `Execute`), which the Agent translates to and from Responses types.
   - Some `Call` fields are set only by trusted tool code, never decoded from model arguments: `ReadOnly` and `Target` feed the policy, and `Expect` is the inspected-content digest that `Execute` rechecks. This is how authorization reaches the Agent.

@@ -26,7 +26,8 @@ Servers are saved in ~/.mino/mcp.json (mode 0600) and connect when chat starts.
 Header and environment values are entered without echo and never shown again.
 --bearer stores an Authorization: Bearer header from a hidden token prompt.
 --sandbox runs a stdio server in the OS sandbox: writes only under its cwd,
-temporary and cache directories, protected paths blocked, network allowed.`
+temporary and cache directories, protected paths and ~/.mino blocked, network
+allowed.`
 
 // runMCP manages ~/.mino/mcp.json. It never connects to a server: connection
 // status is reported when chat starts.

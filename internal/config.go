@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/qshine/mino/internal/agent"
 )
 
 const configLocation = "~/.mino/config.json"
@@ -18,6 +20,8 @@ type config struct {
 	APIKey        string `json:"api_key"`
 	Model         string `json:"model"`
 	ContextWindow int    `json:"context_window,omitempty"`
+	// MaxConcurrentSubagents is optional; zero uses the default of 3.
+	MaxConcurrentSubagents int `json:"max_concurrent_subagents,omitempty"`
 }
 
 func loadConfig(prompt func(label, fallback string, secret bool) (string, error)) (config, error) {
@@ -38,6 +42,9 @@ func loadConfig(prompt func(label, fallback string, secret bool) (string, error)
 		_ = json.Unmarshal(data, &fields)
 		if string(fields["context_window"]) == "null" || cfg.ContextWindow < 0 {
 			return config{}, fmt.Errorf("context_window in %s must be a non-negative integer", configLocation)
+		}
+		if string(fields["max_concurrent_subagents"]) == "null" {
+			return config{}, subagentsError()
 		}
 		if err := os.Chmod(path, 0600); err != nil {
 			return config{}, fmt.Errorf("Failed to secure config file permissions: %w", err)
@@ -100,6 +107,9 @@ func (c *config) validate() error {
 	if c.ContextWindow < 0 {
 		return fmt.Errorf("context_window in %s must be a non-negative integer", configLocation)
 	}
+	if c.MaxConcurrentSubagents < 0 || c.MaxConcurrentSubagents > agent.MaxSubagentConcurrency {
+		return subagentsError()
+	}
 	if c.APIKey == "" {
 		return fmt.Errorf("api_key must not be empty in %s", configLocation)
 	}
@@ -111,6 +121,10 @@ func (c *config) validate() error {
 	}
 	c.BaseURL = strings.TrimRight(c.BaseURL, "/")
 	return nil
+}
+
+func subagentsError() error {
+	return fmt.Errorf("max_concurrent_subagents in %s must be an integer from 1 to %d", configLocation, agent.MaxSubagentConcurrency)
 }
 
 func validateBaseURL(baseURL string) error {

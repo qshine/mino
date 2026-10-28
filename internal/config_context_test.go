@@ -80,3 +80,29 @@ func TestContextWindowStartupUsesLocalSettings(t *testing.T) {
 		})
 	}
 }
+
+func TestMaxConcurrentSubagentsConfiguration(t *testing.T) {
+	for _, value := range []string{"", "0", "1", "10", "11", "-1", "null", `"3"`} {
+		t.Run("value="+value, func(t *testing.T) {
+			path := isolateConfig(t)
+			if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+				t.Fatal(err)
+			}
+			data := `{"base_url":"https://example.com/v1","api_key":"test","model":"test"`
+			if value != "" {
+				data += `,"max_concurrent_subagents":` + value
+			}
+			if err := os.WriteFile(path, []byte(data+"}"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			cfg, err := loadConfig(nil)
+			valid := value == "" || value == "0" || value == "1" || value == "10"
+			if valid != (err == nil) {
+				t.Fatalf("valid=%v err=%v", valid, err)
+			}
+			if value == "10" && cfg.MaxConcurrentSubagents != 10 {
+				t.Fatalf("cfg=%+v", cfg)
+			}
+		})
+	}
+}

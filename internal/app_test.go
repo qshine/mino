@@ -44,7 +44,7 @@ func TestRunUsesSoulInsteadOfProjectInstructions(t *testing.T) {
 				streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 			}))
 			defer server.Close()
-			if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0}); err != nil {
+			if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0, 0}); err != nil {
 				t.Fatal(err)
 			}
 			if custom {
@@ -86,7 +86,7 @@ func TestRunReportsStartupErrors(t *testing.T) {
 
 func TestRunWithDefaultSoulOutsideProject(t *testing.T) {
 	isolateConfig(t)
-	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0}); err != nil {
+	if err := saveConfig(config{"https://api.openai.com/v1", "fake-key", "test-model", 0, 0}); err != nil {
 		t.Fatal(err)
 	}
 	var output bytes.Buffer
@@ -123,7 +123,7 @@ func TestRunSendsMemoryIndexAndMemoryTools(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed"}}`)
 	}))
 	defer server.Close()
-	if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0}); err != nil {
+	if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0, 0}); err != nil {
 		t.Fatal(err)
 	}
 	// The first start creates the private directory; a memory saved later is read.

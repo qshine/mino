@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–13 章，对应发布版本 `chapter-13`（程序版本 `0.13.0`）。
-第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14–15 章规划中。
+**当前进度：**本快照包含第 01–14 章，最新发布版本为 `chapter-13`（程序版本 `0.13.0`）。
+第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14 章正在 `main` 上开发（计划标签 `chapter-14`，版本 `0.14.0`），第 15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -25,6 +25,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 11 章加入评测：`mino eval` 用声明式用例驱动 Agent 循环，并用确定性检查评分。
 第 12 章加入操作系统沙箱：在 macOS 上，Bash 命令在 Seatbelt 配置下运行，写入受限，网络和受保护路径被阻断。
 第 13 章加入用户记忆：每条记忆是 `~/.mino/memory/` 下的一个文件，每轮都会把所有记忆的一行摘要交给模型。
+第 14 章加入子 Agent：`spawn_agent` 把最多 10 个委派任务交给并行的子 Agent，只取回它们的最终文本。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -297,7 +298,7 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 `mino mcp add NAME --sandbox --cwd DIR -- COMMAND` 让 stdio MCP 服务在同一配置下运行，允许网络，写入限定在其 `cwd` 内；
 要求沙箱但无法受限的服务会被报告为不可用，而不是不受限地启动。没有 `sandbox-exec` 的系统（Linux，或将来移除它的 macOS）会在聊天启动时打印提示，
 确认界面显示 `Sandbox: unavailable`，Bash 的行为与第 11 章相同。评测用例同样在沙箱内运行；`evals/` 中的三个 `sandbox-*` 用例在没有沙箱时会失败。
-沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不是针对以 `sandbox: false` 运行的恶意命令的安全边界。
+沙箱不限制对未受保护文件的读取，不约束 `http` MCP 服务，也不是针对以 `sandbox: false` 运行的恶意命令的安全边界。从第 14 章起，沙箱配置还会阻止读写 `~/.mino`，那里保存着 API key、会话和记忆。
 
 ## 用户记忆（第 13 章）
 
@@ -308,6 +309,15 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 在 `manual` 和 `accept-edits` 模式下都要你批准（只有 `bypass` 不询问），因为保存的记忆会进入以后每个项目的每个会话。
 索引从不写入会话历史；现在保存的记忆从下一轮开始出现。要修改或忘掉一条记忆，直接编辑或删除对应文件。无法使用的文件会被跳过并给出提示。
 索引最多容纳 200 条记忆、16 KiB。详见[第 13 章](docs/books/zh/chapters/13-user-memory.md)。
+
+## 子 Agent（第 14 章）
+
+第 14 章正在 `main` 上开发，尚未发布；请按[从源码体验第十四章](docs/books/zh/getting-started.md#从源码体验第十四章)从源码构建。
+遇到大范围的搜索时，模型可以调用 `spawn_agent`，交出 1 到 10 个自成一体的任务。每个任务在一个子 Agent 中运行：它是独立的 Agent，有自己的上下文、
+`~/.mino/sessions/<session_id>.agents/` 下自己的日志，以及自己的请求与工具调用上限。同时最多运行 3 个（可在 `~/.mino/config.json` 中用
+`max_concurrent_subagents` 设为 1 到 10），父级收到一个结果，包含每个任务的状态和最终文本，共用 48 KiB 的预算，所以子 Agent 读过的文件不会进入父级上下文。
+`spawn_agent` 在 `manual` 和 `accept-edits` 模式下需要批准；每个子 Agent 自己的调用遵循同一模式，逐个询问，并标明来自哪个子 Agent。
+每轮最多启动 16 个子 Agent；子 Agent 不能再启动子 Agent，也不能保存记忆。`/clear` 会一并删除该会话的子 Agent 日志。详见[第 14 章](docs/books/zh/chapters/14-subagents.md)。
 
 ## 版本与升级
 

@@ -35,6 +35,8 @@ next:
 
 第十三章加入跨会话、跨项目的[用户记忆](#从源码体验第十三章)。它沿用记录版本 4；用旧版本打开第十三章的会话之前，请阅读[历史兼容性说明](#第十三章的历史兼容性)。
 
+第十四章（开发中）加入在自己的上下文中工作的[子 Agent](#从源码体验第十四章)。它沿用记录版本 4；用旧版本打开第十四章的会话之前，请阅读[历史兼容性说明](#第十四章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -552,6 +554,48 @@ Some skills in /path/to/project/.agents/skills were not loaded:
 ### 第十三章的历史兼容性
 
 第十三章沿用记录版本 4，没有新增记录类型或结果状态。记忆索引每一轮都从文件重建，从不写入会话日志，所以第十三章无需迁移即可打开之前各章的会话。如果某个会话中有 `memory_view` 或 `memory_save` 调用已经开始，它会像其他工具调用一样被记录，`chapter-12` 会以 `History contains a started call for an unavailable tool` 拒绝加载这样的会话。旧版本会忽略 `~/.mino/memory/`。由于技能简介改为按字符计数，如果会话保存的目录中有超过 1,024 字节的简介，仍按字节计数的 `chapter-12` 及更早版本也会拒绝加载该会话。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
+
+## 从源码体验第十四章
+
+第十四章正在开发中。它的发布标签 `chapter-14`（程序版本 `0.14.0`）正在准备，所以还没有可安装的包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-14` 会选中同一份代码。
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 14: Subagents`；发布之后，安装的发布版显示版本 `0.14.0`，源码构建显示 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP、安全防护、沙箱和记忆要求继续适用；正文见[第十四章](./chapters/14-subagents.md)，免费的检查见[第 5 节](./chapters/14-subagents.md#_5-用评测和测试检查它)。
+
+模型现在可以用 1 到 10 个任务调用 `spawn_agent`。这次调用在 `manual` 和 `accept-edits` 下会询问你，只有 `bypass` 下不询问；批准它并不批准子 Agent 所做的任何事。每个子 Agent 自己的工具调用遵循会话的权限模式，需要批准的调用逐个询问，第一个字段 `Subagent` 写明它来自哪个任务。一轮最多启动 16 个子 Agent。每个子 Agent 都发送自己的模型请求，所以一次委派的请求数可能远多于普通的一轮。
+
+子 Agent 的日志保存在 `~/.mino/sessions/<session-id>.agents/<child-id>.jsonl`，目录权限为 `0700`，文件为 `0600`。`/sessions` 不列出它们，`/resume` 也打不开它们；`/clear` 会把它们连同会话历史一起删除。
+
+### 配置子 Agent 并发数 {#配置子-agent-并发数}
+
+默认最多同时运行 3 个子 Agent。`~/.mino/config.json` 中可选的 `max_concurrent_subagents` 字段可以改变这个数：取 1 到 10 的整数，省略或填写 `0` 时保持默认值。`null`、负数和大于 10 的值会让启动以 `max_concurrent_subagents in ~/.mino/config.json must be an integer from 1 to 10` 停止；字符串和小数同样会被拒绝。首次设置不会询问这个字段。
+
+例如，要让子 Agent 逐个运行，请在现有 JSON 对象中加入下面的字段并重启。这是字段片段，不是完整的替换配置：
+
+```json
+{
+  "max_concurrent_subagents": 1
+}
+```
+
+Mino 不重试失败的模型请求，所以一次限流错误会让那个子 Agent 的任务失败。如果你的服务商限制并发请求数，请调低这个值。`mino eval --live` 使用同一个值；回放运行总是逐个运行子 Agent。
+
+### 沙箱封住 ~/.mino {#沙箱封住-mino}
+
+在带有 `sandbox-exec` 的 macOS 上，受限的 Bash 命令和用 `--sandbox` 添加的 stdio MCP 服务都不能再读写 `~/.mino`，那里存着你的 API Key、会话日志和记忆。`Sandbox` 字段现在显示 `on: writes only inside <project>, temporary and cache directories; protected paths and ~/.mino blocked; no network.`，`mino mcp` 的帮助对 `--sandbox` 也作了同样的说明。`cat ~/.mino/config.json` 这样的受限命令现在会以 `Operation not permitted` 失败；以 `sandbox: false` 批准的命令仍可读取这个目录。如果某个受限 stdio 服务的 `cwd` 位于 `~/.mino` 之内，请把它移到别处：这个服务已经无法使用它。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 介绍了 `spawn_agent` 和对 `~/.mino` 的限制；工具描述也带有关于自成一体任务的同样说明，所以使用你自己的 SOUL 时委派同样可用。
+
+评测运行现在也可以调用 `spawn_agent`，子 Agent 的日志留在这次运行的临时会话目录中。`--live` 报告中的 token 总数包含子 Agent 的请求。
+
+### 第十四章的历史兼容性
+
+第十四章沿用记录版本 4，没有新增记录类型或结果状态。一整批在父级日志里就是一条 `spawn_agent` 开始记录和一个结果，每个子 Agent 的日志都是旁边 `.agents` 目录中的普通会话文件。第十四章无需迁移即可打开之前各章的会话。如果某个会话中有 `spawn_agent` 调用已经开始，它会像其他工具调用一样被记录，`chapter-13` 会以 `History contains a started call for an unavailable tool` 拒绝加载这样的会话。旧版本会忽略 `.agents` 目录，它们的 `/clear` 也会把这些目录留在原处。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
 
 ## 从源码学习
 

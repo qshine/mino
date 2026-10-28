@@ -35,6 +35,7 @@ func Available() bool {
 type Sandbox struct {
 	root     string
 	writable []string
+	private  []string // Mino's own data directory: neither readable nor writable
 	network  bool
 	profile  string
 }
@@ -60,7 +61,13 @@ func New(root, home string) (*Sandbox, error) {
 			writable = append(writable, dir)
 		}
 	}
-	s := &Sandbox{root: root, writable: writable}
+	// ~/.mino holds the API key, conversations, and memories. Commands never need
+	// it, and a command that runs unasked must not be able to read it.
+	private := []string{filepath.Join(home, ".mino")}
+	if dir, err := realDirectory(private[0]); err == nil && dir != private[0] {
+		private = append(private, dir)
+	}
+	s := &Sandbox{root: root, writable: writable, private: private}
 	s.profile = s.render()
 	return s, nil
 }
@@ -83,7 +90,7 @@ func (s *Sandbox) Summary() string {
 	if s.network {
 		network = "network allowed"
 	}
-	return fmt.Sprintf("on: writes only inside %s, temporary and cache directories; protected paths blocked; %s.", s.root, network)
+	return fmt.Sprintf("on: writes only inside %s, temporary and cache directories; protected paths and ~/.mino blocked; %s.", s.root, network)
 }
 
 // Wrap makes cmd run under sandbox-exec with this profile. The profile is passed
@@ -120,6 +127,9 @@ func (s *Sandbox) render() string {
 			operations = "file-write*"
 		}
 		fmt.Fprintf(&b, "(deny %s (regex #\"%s\"))\n", operations, expression)
+	}
+	for _, dir := range s.private {
+		fmt.Fprintf(&b, "(deny file-read* file-write* (subpath %s))\n", quote(dir))
 	}
 	if s.network {
 		b.WriteString("(allow network*)\n")

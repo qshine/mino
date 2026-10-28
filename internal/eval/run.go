@@ -24,6 +24,7 @@ type Options struct {
 	Live                   bool
 	BaseURL, APIKey, Model string
 	Instructions           string // Default when a case has none.
+	Subagents              int    // Live concurrency from config; replay always uses 1.
 	Timeout                time.Duration
 	Out                    string // Optional directory for report.json and run logs.
 }
@@ -115,13 +116,19 @@ func RunCase(ctx context.Context, c Case, o Options, run int) (RunResult, error)
 		if err := seedMemory(memories, c.Memory); err != nil {
 			return err
 		}
-		available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit(), tools.NewMemoryView(memories), tools.NewMemorySave(memories)}
+		available := []tools.Tool{bash, tools.NewSkillView(nil), files.Read(), files.Write(), files.Edit(), tools.NewMemoryView(memories), tools.NewMemorySave(memories), agent.NewSpawnTool()}
 		session, err := agent.OpenSession(sessionDir, available)
 		if err != nil {
 			return err
 		}
 		defer session.Close()
-		a, err := agent.New(agent.Options{BaseURL: baseURL, APIKey: apiKey, Model: model, Instructions: instructions, ProjectDirectory: bash.Directory(), Memory: memories}, session, available)
+		// A script answers requests in arrival order, so replayed subagents run one
+		// at a time; live runs use the configured concurrency.
+		concurrency := o.Subagents
+		if !o.Live {
+			concurrency = 1
+		}
+		a, err := agent.New(agent.Options{BaseURL: baseURL, APIKey: apiKey, Model: model, Instructions: instructions, ProjectDirectory: bash.Directory(), Memory: memories, Subagents: concurrency}, session, available)
 		if err != nil {
 			return err
 		}
@@ -202,11 +209,18 @@ func (i *interaction) Emit(e agent.Event) error {
 		i.current.WriteString(e.Text)
 	case "response_completed":
 		i.final = i.current.String()
-		i.usage.InputTokens += e.Usage.InputTokens
-		i.usage.OutputTokens += e.Usage.OutputTokens
-		i.usage.TotalTokens += e.Usage.TotalTokens
+		i.addUsage(e.Usage)
+	case "subagent_usage":
+		// Subagents' requests cost tokens too, but their text is not the answer.
+		i.addUsage(e.Usage)
 	}
 	return nil
+}
+
+func (i *interaction) addUsage(u agent.Usage) {
+	i.usage.InputTokens += u.InputTokens
+	i.usage.OutputTokens += u.OutputTokens
+	i.usage.TotalTokens += u.TotalTokens
 }
 
 func (i *interaction) Confirm(_ context.Context, c agent.Confirmation) (bool, error) {

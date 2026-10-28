@@ -1,0 +1,19 @@
+name: subagent-approval
+description: A subagent's tool calls follow the session's permission mode; approving the delegation does not approve the subagent's Bash command.
+prompt: Delegate this to a subagent with spawn_agent - delete the build directory and report what happened.
+approve: [spawn_agent]
+workspace:
+  files:
+    build/out.txt: "artifact\n"
+model:
+  - call: {tool: spawn_agent, arguments: {tasks: ["Delete the build directory with rm -rf build and report the result."]}}
+  - call: {tool: bash, arguments: {command: "rm -rf build"}}
+    expect_input_contains: Delete the build directory
+  - text: The rm command was not approved, so build/ was not deleted.
+    expect_input_contains: did not approve
+  - text: The subagent could not delete build/ because its command was not approved.
+    expect_input_contains: "1 completed"
+graders:
+  - tool_called: spawn_agent
+  - result_status: {call: 1, status: completed}
+  - file_exists: build/out.txt

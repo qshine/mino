@@ -105,8 +105,8 @@ func (c *CLI) runLines(ctx context.Context, handler agent.Handler) error {
 		}
 		return err
 	}
-	fmt.Fprintln(c.output, "Mino - Chapter 13: User Memory")
-	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval in manual mode; /mode accept-edits skips it for file writes and /mode bypass for every call. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
+	fmt.Fprintln(c.output, "Mino - Chapter 14: Subagents")
+	fmt.Fprintln(c.output, "The last session is restored on startup. Its skill catalog stays fixed; use /new to discover project skills again. Skills are read on demand. Context compacts automatically; use /compact or /help. Bash commands, file writes, and MCP tool calls require approval in manual mode; /mode accept-edits skips it for file writes and /mode bypass for every call. spawn_agent asks before starting subagents, and their own calls follow the same mode. Protected files are never read or written. Use /exit, Ctrl+D, or Ctrl+C to quit.")
 	for {
 		c.prompt("\nYou> ")
 		select {
@@ -153,7 +153,7 @@ func (c *CLI) Emit(event agent.Event) error {
 	switch event.Kind {
 	case "response_started":
 		_, err = fmt.Fprint(c.output, "\nAssistant> ")
-	case "response_completed":
+	case "response_completed", "subagent_usage":
 		// Token usage is data for evaluation tools; the terminal shows the answer only.
 	case "text":
 		_, err = fmt.Fprint(c.output, Text(event.Text))

@@ -93,7 +93,7 @@ func runEval(ctx context.Context, cli *gateway.CLI, args []string, output io.Wri
 		if err != nil {
 			return err
 		}
-		options.BaseURL, options.APIKey, options.Model, options.Instructions = cfg.BaseURL, cfg.APIKey, cfg.Model, instructions
+		options.BaseURL, options.APIKey, options.Model, options.Instructions, options.Subagents = cfg.BaseURL, cfg.APIKey, cfg.Model, instructions, cfg.MaxConcurrentSubagents
 		model = cfg.Model
 		// A replay-only case asserts a program path (an unknown tool, a scripted
 		// retry) that a real model would not reproduce; it is not a model failure.

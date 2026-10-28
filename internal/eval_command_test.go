@@ -118,7 +118,7 @@ func TestEvalCommandLiveUsesConfiguredModel(t *testing.T) {
 		streamEvent(w, `{"type":"response.completed","response":{"status":"completed","usage":{"input_tokens":40,"output_tokens":6,"total_tokens":46}}}`)
 	}))
 	defer server.Close()
-	if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0}); err != nil {
+	if err := saveConfig(config{server.URL + "/v1", "test-key", "test-model", 0, 0}); err != nil {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()

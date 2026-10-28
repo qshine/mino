@@ -97,6 +97,9 @@ export default withMermaid({
           { text: 'Part VIII · Remember the user', items: [
             { text: '13 User memory', link: '/chapters/13-user-memory' }
           ] },
+          { text: 'Part IX · Delegate work', items: [
+            { text: '14 Subagents', link: '/chapters/14-subagents' }
+          ] },
           { text: 'Maintain the book', collapsed: true, items: [
             { text: 'Writing and updates', link: '/maintaining-the-book' },
             { text: 'Application releases', link: '/releases' }
@@ -150,6 +153,9 @@ export default withMermaid({
           ] },
           { text: '第八部分 · 记住用户', items: [
             { text: '13 用户记忆', link: '/zh/chapters/13-user-memory' }
+          ] },
+          { text: '第九部分 · 委派工作', items: [
+            { text: '14 子 Agent', link: '/zh/chapters/14-subagents' }
           ] },
           { text: '维护这本书', collapsed: true, items: [
             { text: '写作与更新流程', link: '/zh/maintaining-the-book' },

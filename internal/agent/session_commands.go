@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -218,7 +220,7 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if m.runner == nil {
 			return errors.New("Select a session before clearing it")
 		}
-		approved, err := i.Confirm(ctx, Confirmation{Kind: "clear", SessionID: m.store.id, Warning: "Clear this session's saved history? This does not undo executed commands or delete recovery copies or manual backups."})
+		approved, err := i.Confirm(ctx, Confirmation{Kind: "clear", SessionID: m.store.id, Warning: "Clear this session's saved history, including its subagent logs? This does not undo executed commands or delete recovery copies or manual backups."})
 		if err != nil {
 			return err
 		}
@@ -291,6 +293,13 @@ func (s *Sessions) clear() error {
 	old := s.current
 	s.current = next
 	if err := old.Close(); err != nil {
+		return &StorageError{err}
+	}
+	// Subagent logs belong to the cleared conversation and go with it.
+	if err := os.RemoveAll(strings.TrimSuffix(s.path(s.id), ".jsonl") + ".agents"); err != nil {
+		return &StorageError{err}
+	}
+	if err := s.syncDir(filepath.Dir(s.path(s.id))); err != nil {
 		return &StorageError{err}
 	}
 	return nil

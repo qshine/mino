@@ -14,10 +14,11 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–13, release
+**Current progress:** This snapshot contains Chapters 01–14; the latest release is
 `chapter-13` (application version `0.13.0`).
 Chapters 01–13 are released, tagged `chapter-01` through `chapter-13` with
-application versions `0.1.0` through `0.13.0`; Chapters 14–15 are planned.
+application versions `0.1.0` through `0.13.0`; Chapter 14 is in development on `main`
+(planned `chapter-14`, version `0.14.0`), and Chapter 15 is planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -38,6 +39,8 @@ Chapter 12 adds an OS sandbox: on macOS, Bash commands run under a Seatbelt prof
 confines writes and blocks the network and protected paths.
 Chapter 13 adds user memory: one file per memory in `~/.mino/memory/`,
 with every memory's one-line summary shown to the model each turn.
+Chapter 14 adds subagents: `spawn_agent` runs up to 10 delegated tasks in parallel child
+Agents and returns only their final texts.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -401,7 +404,8 @@ notice at startup, confirmations show `Sandbox: unavailable`, and Bash behaves a
 Chapter 11. Eval cases run confined too; the three `sandbox-*` cases in `evals/` fail
 without a sandbox. The sandbox does not limit reads of unprotected files, does not
 confine `http` MCP servers, and is not a security boundary against a hostile command
-run with `sandbox: false`.
+run with `sandbox: false`. From Chapter 14 the profile also blocks reading and writing
+`~/.mino`, which holds the API key, conversations, and memories.
 
 ## User memory (Chapter 13)
 
@@ -419,6 +423,21 @@ to session history; a memory saved now appears from the next turn. To change or 
 memory, edit or delete its file. Files Mino cannot use are skipped with a notice. The
 index holds at most 200 memories and 16 KiB. See
 [Chapter 13](docs/books/en/chapters/13-user-memory.md).
+
+## Subagents (Chapter 14)
+
+Chapter 14 is in development on `main` and not yet released; build it from source as
+described in [Try Chapter 14 from source](docs/books/en/getting-started.md#try-chapter-14-from-source).
+For a broad search, the model can call `spawn_agent` with 1 to 10 self-contained tasks.
+Each task runs in a subagent: a separate Agent with its own context, its own log under
+`~/.mino/sessions/<session_id>.agents/`, and its own request and tool-call limits. At
+most 3 run at once (`max_concurrent_subagents` in `~/.mino/config.json`, 1 to 10), and
+the parent gets back one result with each task's status and final text, sharing a
+48 KiB budget, so the files the subagents read never enter its context. `spawn_agent`
+asks for approval in `manual` and `accept-edits` modes; each subagent's own calls follow
+the same mode and ask one at a time, labelled with the subagent. A turn may start at most
+16 subagents; subagents cannot start subagents or save memories. `/clear` also deletes a
+session's subagent logs. See [Chapter 14](docs/books/en/chapters/14-subagents.md).
 
 ## Version and updates
 

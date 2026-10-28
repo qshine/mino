@@ -35,6 +35,8 @@ Chapter 12 adds an [operating-system sandbox for Bash](#try-chapter-12-from-sour
 
 Chapter 13 adds [user memory](#try-chapter-13-from-source) across sessions and projects. It keeps record version 4; see its [history compatibility notes](#chapter-13-history-compatibility) before opening a Chapter 13 session with an older release.
 
+Chapter 14, in development, adds [subagents](#try-chapter-14-from-source) that work in their own context. It keeps record version 4; see its [history compatibility notes](#chapter-14-history-compatibility) before opening a Chapter 14 session with an older release.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -552,6 +554,48 @@ Widths are approximate for some emoji sequences, and resizing the window while y
 ### Chapter 13 history compatibility
 
 Chapter 13 keeps record version 4 and adds no record kinds or result statuses. The memory index is rebuilt from the files at every turn and never written to a session log, so Chapter 13 opens sessions from earlier chapters without migration. A session in which a `memory_view` or `memory_save` call started records that call like any other tool call, and `chapter-12` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore `~/.mino/memory/`. Because skill descriptions are now counted in characters, a session whose saved catalog holds a description longer than 1,024 bytes is also rejected by `chapter-12` and earlier, which still count bytes. As before, keep private copies of session logs and `active-session.json` before switching versions.
+
+## Try Chapter 14 from source
+
+Chapter 14 is in development. Its release `chapter-14` (application version `0.14.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-14` selects the same code.
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 14: Subagents`; once the release is published, an installed release reports version `0.14.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, sandbox, and memory requirements still apply; the lesson is [Chapter 14](./chapters/14-subagents.md), and its no-cost checks are in [section 5](./chapters/14-subagents.md#_5-check-it-with-evals-and-tests).
+
+The model can now call `spawn_agent` with 1 to 10 tasks. The call asks you in `manual` and `accept-edits` and runs unasked only in `bypass`; approving it does not approve anything the subagents do. Each subagent's own tool calls follow the session's permission mode, and those that need approval ask one at a time, with a first `Subagent` field naming the task. A turn can start at most 16 subagents. Each subagent sends its own model requests, so one delegation can make many more requests than an ordinary turn.
+
+Subagent logs are kept at `~/.mino/sessions/<session-id>.agents/<child-id>.jsonl`, with mode `0700` for the directory and `0600` for the files. `/sessions` does not list them and `/resume` cannot open them; `/clear` deletes them with the session's history.
+
+### Configure subagent concurrency
+
+At most 3 subagents run at once by default. The optional `max_concurrent_subagents` field in `~/.mino/config.json` changes that: an integer from 1 to 10, where omission or `0` keeps the default. `null`, negative numbers, and values above 10 stop startup with `max_concurrent_subagents in ~/.mino/config.json must be an integer from 1 to 10`; strings and fractions are rejected too. Setup does not prompt for this field.
+
+For example, to run one subagent at a time, add the following field to the existing JSON object and restart. This is a field excerpt, not a replacement configuration:
+
+```json
+{
+  "max_concurrent_subagents": 1
+}
+```
+
+Mino does not retry failed model requests, so a rate-limit error fails that subagent's task. If your provider limits concurrent requests, lower this value. `mino eval --live` uses the same value; replay runs always run subagents one at a time.
+
+### The sandbox blocks ~/.mino
+
+On macOS with `sandbox-exec`, sandboxed Bash commands and stdio MCP servers added with `--sandbox` can no longer read or write `~/.mino`, which holds your API key, session logs, and memories. The `Sandbox` field now reads `on: writes only inside <project>, temporary and cache directories; protected paths and ~/.mino blocked; no network.`, and `mino mcp` help says the same for `--sandbox`. A sandboxed command such as `cat ~/.mino/config.json` now fails with `Operation not permitted`; a command approved with `sandbox: false` can still read the directory. If a sandboxed stdio server's `cwd` is inside `~/.mino`, move it elsewhere: the server can no longer use it.
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes `spawn_agent` and the `~/.mino` restriction; the tool description carries the same guidance about self-contained tasks, so delegation works with your own SOUL too.
+
+Eval runs can now call `spawn_agent`, and their subagents' logs stay in the run's temporary session directory. Token totals in `--live` reports include the subagents' requests.
+
+### Chapter 14 history compatibility
+
+Chapter 14 keeps record version 4 and adds no record kinds or result statuses. A whole batch is one `spawn_agent` start and one result in the parent's log, and each subagent's log is an ordinary session file in the `.agents` directory beside it. Chapter 14 opens sessions from earlier chapters without migration. A session in which a `spawn_agent` call started records that call like any other tool call, and `chapter-13` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore the `.agents` directories, and their `/clear` leaves them in place. As before, keep private copies of session logs and `active-session.json` before switching versions.
 
 ## Learn from the source
 

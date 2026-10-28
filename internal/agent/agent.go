@@ -43,10 +43,11 @@ type Interaction interface {
 }
 
 type Event struct {
-	Kind   string // response_started, response_completed, text, tool_result, notice, info
-	Text   string
-	Result tools.Result
-	Usage  Usage // Set on response_completed from the validated response.
+	Kind     string // response_started, response_completed, subagent_usage, text, tool_result, notice, info
+	Text     string
+	ToolName string // Set on tool_result.
+	Result   tools.Result
+	Usage    Usage // Set on response_completed and subagent_usage from the validated response.
 }
 
 // Usage reports the token counts the service attached to one completed response.
@@ -71,18 +72,22 @@ type Options struct {
 	ContextWindow                        int
 	Policy                               *policy.Policy // nil uses a new manual-mode policy
 	Memory                               *memory.Store  // nil sends no memory index
+	Subagents                            int            // subagents running at once; 0 uses DefaultSubagentConcurrency
 }
 
 type Agent struct {
-	session     *Session
-	options     Options
-	api         responses.ResponseService
-	httpClient  *http.Client
-	tools       map[string]tools.Tool
-	definitions []responses.ToolUnionParam
-	memory      string // index rendered at the start of the current turn
-	problems    string // last memory problems shown, to avoid repeating them every turn
-	skipped     string // skills this Agent's scan left out, shown once
+	session      *Session
+	options      Options
+	api          responses.ResponseService
+	httpClient   *http.Client
+	tools        map[string]tools.Tool
+	available    []tools.Tool // as supplied, for building subagents
+	instructions string       // startup instructions before the skill catalog
+	definitions  []responses.ToolUnionParam
+	memory       string // index rendered at the start of the current turn
+	problems     string // last memory problems shown, to avoid repeating them every turn
+	skipped      string // skills this Agent's scan left out, shown once
+	spawned      int    // subagents started in the current turn
 }
 
 func New(options Options, session *Session, available []tools.Tool) (*Agent, error) {
@@ -98,10 +103,14 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 	if options.Policy == nil {
 		options.Policy = policy.New()
 	}
+	if options.Subagents < 0 || options.Subagents > MaxSubagentConcurrency {
+		return nil, fmt.Errorf("max_concurrent_subagents must be between 1 and %d", MaxSubagentConcurrency)
+	}
 	registry, err := toolRegistry(available)
 	if err != nil {
 		return nil, err
 	}
+	supplied, instructions := available, options.Instructions
 	skipped := ""
 	if options.ProjectDirectory != "" || session.state.skillCatalog != nil {
 		// Bind the injected reader to this session's durable metadata, never to
@@ -130,7 +139,7 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 		registry["skill_view"] = available[viewIndex]
 		options.Instructions += session.state.skillCatalog.Prompt()
 	}
-	a := &Agent{session: session, options: options, tools: registry, skipped: skipped, httpClient: &http.Client{
+	a := &Agent{session: session, options: options, tools: registry, available: supplied, instructions: instructions, skipped: skipped, httpClient: &http.Client{
 		Timeout:       2 * time.Minute,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}}
@@ -227,6 +236,7 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	if err := a.refreshMemory(interaction); err != nil {
 		return a.stopTurn(err)
 	}
+	a.spawned = 0
 	return a.runLoop(ctx, interaction)
 }
 
@@ -393,7 +403,7 @@ func (a *Agent) runLoop(ctx context.Context, interaction Interaction) error {
 			if err := s.append(historyRecord{TurnID: id, Kind: "tool_result", CallID: call.CallID, Result: &result}); err != nil {
 				return &StorageError{fmt.Errorf("Tool result was not reliably saved. The command will not be retried: %w", err)}
 			}
-			if err := interaction.Emit(Event{Kind: "tool_result", Result: result}); err != nil {
+			if err := interaction.Emit(Event{Kind: "tool_result", ToolName: call.Name, Result: result}); err != nil {
 				return a.stopTurn(err)
 			}
 			if ctx.Err() != nil || result.Status == "cancelled" {
@@ -412,6 +422,13 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	prepared, err := tool.Prepare(call.Arguments)
 	if err != nil {
 		return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
+	}
+	_, delegating := tool.(*SpawnTool)
+	if delegating {
+		// The per-turn cap bounds cost before anyone is asked to approve the batch.
+		if args, err := parseSpawnArguments(string(prepared.Arguments)); err == nil && a.spawned+len(args.Tasks) > maxSubagentsPerTurn {
+			return tools.Result{Status: "denied", Output: fmt.Sprintf("This turn has already started %d of at most %d subagents. Finish with what you have, or ask the user to continue in a new turn.", a.spawned, maxSubagentsPerTurn)}, nil
+		}
 	}
 	// One policy decision covers every tool, before inspection reads anything:
 	// a protected file is never opened, even to build a confirmation.
@@ -453,6 +470,9 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	}
 	if err := a.session.append(historyRecord{TurnID: id, Kind: "tool_start", CallID: call.CallID, Name: call.Name, Arguments: prepared.Arguments, CWD: prepared.Directory}); err != nil {
 		return tools.Result{}, &StorageError{err}
+	}
+	if delegating {
+		return a.delegate(ctx, prepared, interaction)
 	}
 	return tool.Execute(ctx, prepared), nil
 }

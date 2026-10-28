@@ -22,6 +22,35 @@ replaced by three permission modes selected with `/mode`. Earlier chapters and t
 releases are unchanged. A `~/.mino/policy.json` left by the first 0.10.0 release is
 now ignored.
 
+## [Unreleased]
+
+### Added
+
+- Chapter 14 subagent delegation: the `spawn_agent` tool takes 1 to 10 tasks and runs
+  each as a child Agent with its own context, its own session log under
+  `~/.mino/sessions/<session_id>.agents/`, its own 8-request and 16-call limits, and
+  its own compaction. Children share the session's permission mode, tools (except
+  `spawn_agent` and `memory_save`), skill catalog, and the turn's memory index, and
+  run at most 3 at a time, or `max_concurrent_subagents` (1 to 10) from
+  `~/.mino/config.json`.
+- The parent receives one tool result with each task's status and final text, in
+  task order, within a shared 48 KiB budget; the subagents' own tool output never
+  enters its context. `spawn_agent` asks in `manual` and `accept-edits` modes, each
+  subagent's calls are checked and confirmed separately, one question at a time and
+  labelled with the subagent, and a turn may start at most 16 subagents. Parent
+  history stays version 4.
+- Eval replay cases `subagent-batch` and `subagent-approval`; replay runs subagents
+  one at a time, and token totals include subagent requests.
+- The default `SOUL.md` explains `spawn_agent`; existing `~/.mino/SOUL.md` files are
+  not changed.
+
+### Changed
+
+- The OS sandbox now blocks reading and writing `~/.mino`, which holds the API key,
+  conversations, and memories, for Bash and sandboxed stdio MCP servers. The
+  confirmation's sandbox line says so.
+- `/clear` also deletes the cleared session's subagent logs.
+
 ## [0.13.0] - 2026-10-27
 
 ### Added
