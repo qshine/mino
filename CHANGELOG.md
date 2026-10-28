@@ -22,7 +22,7 @@ replaced by three permission modes selected with `/mode`. Earlier chapters and t
 releases are unchanged. A `~/.mino/policy.json` left by the first 0.10.0 release is
 now ignored.
 
-## [Unreleased]
+## [0.14.0] - 2026-10-28
 
 ### Added
 

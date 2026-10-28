@@ -146,7 +146,7 @@ Mino 启动时检查 `/usr/bin/sandbox-exec` 是否存在。如果存在，Mino 
 诚实的清单很短，一次说完。
 
 - **仅限 macOS。**配置由 Seatbelt 机制通过 `sandbox-exec` 执行。Apple 把这条命令标为已弃用，这正是第 10 章没有建立在它之上的原因；但它在当前系统上仍然存在，其他终端 Agent 也以同样的方式依赖它，例如 Codex CLI 在其[安全指南](https://developers.openai.com/codex/security)中就把 Seatbelt 策略列为 macOS 上的沙箱。Mino 在启动时检查这个可执行文件。它缺失时，聊天会打印 `Sandbox unavailable on this system: Bash commands run with your account permissions.`，每次确认显示 `Sandbox: "unavailable on this system."`，Bash 的行为与第 11 章完全相同。本章没有 Linux 沙箱。
-- **读取是开放的。**只有那十五个受保护模式被关闭。`config.yaml` 里的令牌、你的浏览器配置，或者任何你账户可读的文件，在沙箱内都可读，并可能作为工具输出到达模型服务。开发中的[第 14 章](./14-subagents.md#_4-2-沙箱现在封住-mino)还会封住 `~/.mino`，届时 `Sandbox` 一行写作 `protected paths and ~/.mino blocked`。
+- **读取是开放的。**只有那十五个受保护模式被关闭。`config.yaml` 里的令牌、你的浏览器配置，或者任何你账户可读的文件，在沙箱内都可读，并可能作为工具输出到达模型服务。[第 14 章](./14-subagents.md#_4-2-沙箱现在封住-mino)还封住了 `~/.mino`，它的 `Sandbox` 一行写作 `protected paths and ~/.mino blocked`。
 - **临时目录和缓存目录可写**，如上所述；而且没有按命令收窄或放宽可写范围的办法。
 - **获批的选择退出不受任何限制。**`sandbox: false` 加上你的 `y`，就是一条拥有你全部权限的第 11 章命令。在 `bypass` 下，它连问都不问。沙箱让受限命令更安全；它不会让 `bypass` 更安全。
 - **它限定范围，不授予权限。**没有任何命令因为处于沙箱内就运行。`manual` 仍对每条命令询问，受保护路径在每种模式下仍对文件工具拒绝，每次批准仍只绑定你看到的那一次调用。

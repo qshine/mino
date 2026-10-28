@@ -10,7 +10,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md) · [第 12 章：沙箱](./chapters/12-sandbox.md) · [第 13 章：用户记忆](./chapters/13-user-memory.md)。第 01–13 章均已发布，最新一章对应 `chapter-13`（版本 `0.13.0`）。[第 14 章：子 Agent](./chapters/14-subagents.md) 正在开发中，发布标签 `chapter-14`（版本 `0.14.0`）正在准备；第 15 章处于规划中，见[章节规划](./plan-todo-chapters.md)。
+**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md) · [第 12 章：沙箱](./chapters/12-sandbox.md) · [第 13 章：用户记忆](./chapters/13-user-memory.md) · [第 14 章：子 Agent](./chapters/14-subagents.md)。第 01–14 章均已发布，最新一章对应 `chapter-14`（版本 `0.14.0`）。第 15 章处于规划中，见[章节规划](./plan-todo-chapters.md)。
 
 ## 关于作者
 
@@ -42,7 +42,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 
 ## 当前可以读到哪里
 
-第 01–10 章于 **2026-10-21** 以 `chapter-01` 至 `chapter-10` 发布，程序版本为 `0.1.0` 至 `0.10.0`；`chapter-10` 于 **2026-10-26** 重新发布，第 11、12 章随后于 **2026-10-26** 以 `chapter-11`（版本 `0.11.0`）和 `chapter-12`（版本 `0.12.0`）发布，第 13 章于 **2026-10-27** 以 `chapter-13`（版本 `0.13.0`）发布。第 10 章把此前的控制统一成一个安全防护决定，并提供由你选择的权限模式；第 11 章用声明好的评测用例衡量 Agent；第 12 章在 macOS 上让每条获批的 Bash 命令都在操作系统沙箱内运行；第 13 章把你告诉 Mino 的事以数据的身份带进之后的会话。各已发布章节注明了实验所需的源码标签。
+第 01–10 章于 **2026-10-21** 以 `chapter-01` 至 `chapter-10` 发布，程序版本为 `0.1.0` 至 `0.10.0`；`chapter-10` 于 **2026-10-26** 重新发布，第 11、12 章随后于 **2026-10-26** 以 `chapter-11`（版本 `0.11.0`）和 `chapter-12`（版本 `0.12.0`）发布，第 13 章于 **2026-10-27** 以 `chapter-13`（版本 `0.13.0`）发布，第 14 章于 **2026-10-28** 以 `chapter-14`（版本 `0.14.0`）发布。第 10 章把此前的控制统一成一个安全防护决定，并提供由你选择的权限模式；第 11 章用声明好的评测用例衡量 Agent；第 12 章在 macOS 上让每条获批的 Bash 命令都在操作系统沙箱内运行；第 13 章把你告诉 Mino 的事以数据的身份带进之后的会话；第 14 章把一次大规模探索交给在自己的上下文中工作的子 Agent。各已发布章节注明了实验所需的源码标签。
 
 | 阶段 | 你要理解的问题 |
 | --- | --- |
@@ -59,11 +59,11 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [11 评测](./chapters/11-evals.md) | 怎样可重复地检查 SOUL、工具描述或循环的一处改动是否改变了 Agent 的行为？ |
 | [12 沙箱](./chapters/12-sandbox.md) | 怎样让内核而不是你对命令的解读，去限定一条获批的 Bash 命令能触及什么？ |
 | [13 用户记忆](./chapters/13-user-memory.md) | 你在一个会话里告诉 Mino 的事，怎样以数据而不是指令的身份进入下一个会话？ |
-| [14 子 Agent](./chapters/14-subagents.md)（开发中） | 一次大规模探索怎样不挤进主对话的上下文，子 Agent 做的事又由谁批准？ |
+| [14 子 Agent](./chapters/14-subagents.md) | 一次大规模探索怎样不挤进主对话的上下文，子 Agent 做的事又由谁批准？ |
 
 ## 如何配合代码阅读
 
-已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。这一版书中最新的第 13 章对应 [chapter-13](https://github.com/qshine/mino/tree/chapter-13)，[源码准备说明](./getting-started.md#从源码体验第十三章)介绍了怎样在本地运行同一份快照。
+已发布章节会注明适用版本，并使用对应的 `chapter-NN` 源码标签。这一版书中最新的第 14 章对应 [chapter-14](https://github.com/qshine/mino/tree/chapter-14)，[源码准备说明](./getting-started.md#从源码体验第十四章)介绍了怎样在本地运行同一份快照。
 
 发布标签使用 `chapter-NN`，程序版本采用 `0.章节.修订号`。例如，补丁标签 `chapter-05.1` 生成版本 `0.5.1`，并更新对应章节的说明，无需新增一章。
 

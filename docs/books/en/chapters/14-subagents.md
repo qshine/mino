@@ -1,6 +1,6 @@
 # Chapter 14: Delegate work to subagents
 
-Applies to **0.14.x** · Source tag **[chapter-14](https://github.com/qshine/mino/tree/chapter-14)** · Application version **0.14.0**, in development and not yet released
+Applies to **0.14.x** · Source and release tag **[chapter-14](https://github.com/qshine/mino/tree/chapter-14)** · Application version **0.14.0**, released **2026-10-28**
 
 Ask Mino three things about a project you do not know well: where the `context_window` setting is read, how its default is computed, and which tests cover it. In Chapter 13 the model would work through all three in one turn. Every file it opened with `read_file`, and every page of `grep` output, would stay in the conversation, and the answer needs perhaps a dozen lines of it. [Chapter 06](./06-context-compaction.md) compaction cannot help: it never summarizes the turn in progress or the two before it. And one turn allows only 16 tool calls, which a broad search can use up before it finds anything.
 

@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–14 章，最新发布版本为 `chapter-13`（程序版本 `0.13.0`）。
-第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14 章正在 `main` 上开发（计划标签 `chapter-14`，版本 `0.14.0`），第 15 章规划中。
+**当前进度：**本快照包含第 01–14 章，对应发布版本 `chapter-14`（程序版本 `0.14.0`）。
+第 01–14 章均已发布，标签为 `chapter-01` 至 `chapter-14`，程序版本对应 `0.1.0` 至 `0.14.0`；第 15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -312,8 +312,7 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 
 ## 子 Agent（第 14 章）
 
-第 14 章正在 `main` 上开发，尚未发布；请按[从源码体验第十四章](docs/books/zh/getting-started.md#从源码体验第十四章)从源码构建。
-遇到大范围的搜索时，模型可以调用 `spawn_agent`，交出 1 到 10 个自成一体的任务。每个任务在一个子 Agent 中运行：它是独立的 Agent，有自己的上下文、
+执行 `mino update chapter-14` 安装第 14 章。遇到大范围的搜索时，模型可以调用 `spawn_agent`，交出 1 到 10 个自成一体的任务。每个任务在一个子 Agent 中运行：它是独立的 Agent，有自己的上下文、
 `~/.mino/sessions/<session_id>.agents/` 下自己的日志，以及自己的请求与工具调用上限。同时最多运行 3 个（可在 `~/.mino/config.json` 中用
 `max_concurrent_subagents` 设为 1 到 10），父级收到一个结果，包含每个任务的状态和最终文本，共用 48 KiB 的预算，所以子 Agent 读过的文件不会进入父级上下文。
 `spawn_agent` 在 `manual` 和 `accept-edits` 模式下需要批准；每个子 Agent 自己的调用遵循同一模式，逐个询问，并标明来自哪个子 Agent。
@@ -324,7 +323,7 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-13   # 安装最新已发布章节
+mino update chapter-14   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -352,6 +351,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 11 章 | `0.11.0` | [`chapter-11`](https://github.com/qshine/mino/releases/tag/chapter-11) |
 | 第 12 章 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
 | 第 13 章 | `0.13.0` | [`chapter-13`](https://github.com/qshine/mino/releases/tag/chapter-13) |
+| 第 14 章 | `0.14.0` | [`chapter-14`](https://github.com/qshine/mino/releases/tag/chapter-14) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。
