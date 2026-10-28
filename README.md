@@ -17,7 +17,7 @@ model API experience is needed.
 **Current progress:** This snapshot contains Chapters 01–13, release
 `chapter-13` (application version `0.13.0`).
 Chapters 01–13 are released, tagged `chapter-01` through `chapter-13` with
-application versions `0.1.0` through `0.13.0`; Chapter 14 is planned.
+application versions `0.1.0` through `0.13.0`; Chapters 14–15 are planned.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.

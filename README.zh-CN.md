@@ -11,7 +11,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
 **当前进度：**本快照包含第 01–13 章，对应发布版本 `chapter-13`（程序版本 `0.13.0`）。
-第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14 章规划中。
+第 01–13 章均已发布，标签为 `chapter-01` 至 `chapter-13`，程序版本对应 `0.1.0` 至 `0.13.0`；第 14–15 章规划中。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
