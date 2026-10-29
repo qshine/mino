@@ -8,7 +8,7 @@ workspace:
     config/port.txt: "port=8080\n"
     config/host.txt: "host=example.test\n"
 model:
-  - call: {tool: spawn_agent, arguments: {tasks: ["Read config/port.txt and report the port.", "Read config/host.txt and report the host."]}}
+  - call: {tool: spawn_agent, arguments: {tasks: [{agent: null, task: "Read config/port.txt and report the port."}, {agent: null, task: "Read config/host.txt and report the host."}]}}
   - call: {tool: read_file, arguments: {path: config/port.txt}}
     expect_input_contains: Read config/port.txt and report the port.
   - text: The port is 8080, in config/port.txt.

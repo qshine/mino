@@ -20,12 +20,60 @@ func writeSkill(t *testing.T, root, name, text string) string {
 	return path
 }
 
+// project leaves out the built-in skills every scan includes.
+func project(c *Catalog) []Entry {
+	var entries []Entry
+	for _, e := range c.Entries {
+		if !e.Builtin {
+			entries = append(entries, e)
+		}
+	}
+	return entries
+}
+
+func TestBuiltinSkillsAndDirectories(t *testing.T) {
+	root := t.TempDir()
+	c, problems, err := Scan(root)
+	if err != nil || len(problems) != 0 || len(c.Entries) != 1 || c.Entries[0].Name != "create-subagent" || !c.Entries[0].Builtin {
+		t.Fatalf("built-ins: %+v, %q, %v", c, problems, err)
+	}
+	body, err := c.View("create-subagent")
+	if err != nil || !strings.Contains(body, ".agents/agents/<name>.md") {
+		t.Fatalf("built-in body: %q, %v", body, err)
+	}
+	if dir, err := c.Dir("create-subagent"); err != nil || dir != "" {
+		t.Fatalf("built-in directory: %q, %v", dir, err)
+	}
+	if !strings.Contains(c.Prompt(), `"builtin":true`) || !strings.Contains(c.Prompt(), "relative to that directory") {
+		t.Fatalf("prompt: %s", c.Prompt())
+	}
+	// A project skill of the same name replaces the built-in one, with a notice.
+	writeSkill(t, root, "create-subagent", "---\nname: create-subagent\ndescription: Project version\n---\nPROJECT_BODY")
+	writeSkill(t, root, "alpha", "---\nname: alpha\ndescription: First\n---\nBody")
+	c, problems, err = Scan(root)
+	if err != nil || len(c.Entries) != 2 || c.Entries[1].Builtin || c.Entries[1].Description != "Project version" {
+		t.Fatalf("override: %+v, %v", c, err)
+	}
+	if len(problems) != 1 || !strings.Contains(problems[0], "built-in skill of this name was not loaded") {
+		t.Fatalf("problems = %q", problems)
+	}
+	if body, err := c.View("create-subagent"); err != nil || !strings.Contains(body, "PROJECT_BODY") {
+		t.Fatalf("project body: %q, %v", body, err)
+	}
+	if dir, err := c.Dir("alpha"); err != nil || dir != filepath.Join(root, ".agents", "skills", "alpha") {
+		t.Fatalf("directory: %q, %v", dir, err)
+	}
+	if _, err := c.Dir("missing"); err == nil {
+		t.Fatal("directory for a skill outside the catalog")
+	}
+}
+
 func TestScanOnlyProjectMetadataAndViewOnDemand(t *testing.T) {
 	root, home := t.TempDir(), t.TempDir()
 	t.Setenv("HOME", home)
 	writeSkill(t, home, "private", "---\nname: private\ndescription: Home only\n---\nPrivate body")
 	c, _, err := Scan(root)
-	if err != nil || len(c.Entries) != 0 {
+	if err != nil || len(project(c)) != 0 {
 		t.Fatalf("missing directory: %v, %v", c, err)
 	}
 	if err := os.MkdirAll(filepath.Join(root, ".agents", "skills", "_support"), 0700); err != nil {
@@ -41,7 +89,7 @@ func TestScanOnlyProjectMetadataAndViewOnDemand(t *testing.T) {
 		t.Fatal(err)
 	}
 	prompt := c.Prompt()
-	if len(c.Entries) != 2 || c.Entries[0].Name != "alpha" || !strings.Contains(prompt, "Review code carefully.") || strings.Contains(prompt, "BODY") || strings.Contains(prompt, "Home only") {
+	if len(project(c)) != 2 || project(c)[0].Name != "alpha" || !strings.Contains(prompt, "Review code carefully.") || strings.Contains(prompt, "BODY") || strings.Contains(prompt, "Home only") {
 		t.Fatalf("catalog: %s", prompt)
 	}
 	if err := os.WriteFile(path, []byte("---\nname: review\ndescription: Changed\n---\nBODY_AFTER"), 0600); err != nil {
@@ -81,8 +129,8 @@ func TestScanSkipsInvalidSkillsAndNamesThem(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(c.Entries) != 1 || c.Entries[0].Name != "alpha" {
-				t.Fatalf("entries = %+v", c.Entries)
+			if len(project(c)) != 1 || project(c)[0].Name != "alpha" {
+				t.Fatalf("entries = %+v", project(c))
 			}
 			if len(problems) != 1 || !strings.HasPrefix(problems[0], "review: ") || !strings.Contains(problems[0], tc.reason) {
 				t.Fatalf("problems = %q, want review and %q", problems, tc.reason)
@@ -96,7 +144,7 @@ func TestScanCountsDescriptionCharacters(t *testing.T) {
 	// 1,024 characters but 3,072 bytes: within the Agent Skills limit.
 	writeSkill(t, root, "chinese", "---\nname: chinese\ndescription: "+strings.Repeat("长", 1024)+"\n---\nBody")
 	c, problems, err := Scan(root)
-	if err != nil || len(problems) != 0 || len(c.Entries) != 1 {
+	if err != nil || len(problems) != 0 || len(project(c)) != 1 {
 		t.Fatalf("entries=%+v problems=%q err=%v", c, problems, err)
 	}
 }
@@ -123,15 +171,15 @@ func TestScanReportsLinkedSkillsAndFullCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(c.Entries) == 0 || len(c.Entries) == 40 || c.Entries[0].Name != "s00" {
-		t.Fatalf("%d entries", len(c.Entries))
+	if len(project(c)) == 0 || len(project(c)) == 40 || project(c)[0].Name != "s00" {
+		t.Fatalf("%d entries", len(project(c)))
 	}
 	joined := strings.Join(problems, "\n")
 	if !strings.Contains(joined, "linked: skipped because the skill directory is a symbolic link") || !strings.Contains(joined, "s39: skipped because the skill catalog is full") || strings.Contains(joined, "README") {
 		t.Fatalf("problems = %q", problems)
 	}
-	if len(problems) != 1+40-len(c.Entries) {
-		t.Fatalf("%d problems for %d entries", len(problems), len(c.Entries))
+	if len(problems) != 1+40-len(project(c)) {
+		t.Fatalf("%d problems for %d entries", len(problems), len(project(c)))
 	}
 	if err := c.Validate(); err != nil {
 		t.Fatal(err)
@@ -166,7 +214,7 @@ func TestSkillFilesStayInsideProjectAndBounded(t *testing.T) {
 	if _, err := c.View("review"); err == nil {
 		t.Fatal("followed file symlink")
 	}
-	if c, problems, err := Scan(root); err != nil || len(c.Entries) != 0 || len(problems) != 1 || !strings.HasPrefix(problems[0], "review: ") {
+	if c, problems, err := Scan(root); err != nil || len(project(c)) != 0 || len(problems) != 1 || !strings.HasPrefix(problems[0], "review: ") {
 		t.Fatalf("scanned file symlink: %+v, %q, %v", c, problems, err)
 	}
 	if err := os.RemoveAll(filepath.Join(root, ".agents")); err != nil {

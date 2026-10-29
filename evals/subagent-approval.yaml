@@ -6,7 +6,7 @@ workspace:
   files:
     build/out.txt: "artifact\n"
 model:
-  - call: {tool: spawn_agent, arguments: {tasks: ["Delete the build directory with rm -rf build and report the result."]}}
+  - call: {tool: spawn_agent, arguments: {tasks: [{agent: null, task: "Delete the build directory with rm -rf build and report the result."}]}}
   - call: {tool: bash, arguments: {command: "rm -rf build"}}
     expect_input_contains: Delete the build directory
   - text: The rm command was not approved, so build/ was not deleted.

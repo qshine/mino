@@ -1,0 +1,26 @@
+name: subagent-role
+description: A task delegated to a project subagent definition gets the role text in its first message and only the tools the definition lists, so a read-only explorer cannot run Bash.
+prompt: Ask the explorer subagent which port config/port.txt sets.
+approve: [spawn_agent, bash]
+live: false
+workspace:
+  files:
+    config/port.txt: "port=8080\n"
+    .agents/agents/explorer.md: "---\nname: explorer\ndescription: Reads project files and reports what it finds. Use for read-only lookups.\ntools: [read_file]\n---\nEXPLORER-ROLE: read files only and answer in one sentence.\n"
+model:
+  - call: {tool: spawn_agent, arguments: {tasks: [{agent: explorer, task: "Report the port that config/port.txt sets."}]}}
+    expect_input_contains: Available project subagents
+  - call: {tool: bash, arguments: {command: "cat config/port.txt"}}
+    expect_input_contains: EXPLORER-ROLE
+  - call: {tool: read_file, arguments: {path: config/port.txt}}
+    expect_input_contains: Unknown tool
+  - text: config/port.txt sets port 8080.
+    expect_input_contains: port=8080
+  - text: The explorer reports that config/port.txt sets port 8080.
+    expect_input_contains: "1 completed"
+graders:
+  - tool_called: spawn_agent
+  - tool_not_called: bash
+  - result_status: {call: 1, status: completed}
+  - final_text_contains: "8080"
+  - max_requests: 2

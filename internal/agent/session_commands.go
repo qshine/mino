@@ -183,7 +183,8 @@ func (m *SessionManager) Handle(ctx context.Context, message string, i Interacti
 		if err != nil {
 			return err
 		}
-		m.runner.skipped = skillNotice(m.options.ProjectDirectory, problems)
+		// New scanned the subagent definitions itself; keep its notice too.
+		m.runner.skipped = skillNotice(m.options.ProjectDirectory, problems) + m.runner.skipped
 		if err := m.showCurrent(i); err != nil {
 			return err
 		}
@@ -277,7 +278,7 @@ func (m *SessionManager) setMode(ctx context.Context, args []string, i Interacti
 
 func (s *Sessions) clear() error {
 	// Clearing conversation history preserves the session's discovery snapshot.
-	data, err := initialSkills(s.current.state.skillCatalog)
+	data, err := initialRecords(s.current.state.skillCatalog, s.current.state.agentCatalog)
 	if err != nil {
 		return err
 	}

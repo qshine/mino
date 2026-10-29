@@ -28,20 +28,21 @@ type Session struct {
 }
 
 type historyRecord struct {
-	Version    int               `json:"v"`
-	Seq        int               `json:"seq"`
-	TurnID     string            `json:"turn_id"`
-	Kind       string            `json:"kind"`
-	Text       string            `json:"text,omitempty"`
-	Output     []json.RawMessage `json:"output,omitempty"`
-	Status     string            `json:"status,omitempty"`
-	CallID     string            `json:"call_id,omitempty"`
-	Name       string            `json:"name,omitempty"`
-	Arguments  json.RawMessage   `json:"arguments,omitempty"`
-	CWD        string            `json:"cwd,omitempty"`
-	Result     *tools.Result     `json:"result,omitempty"`
-	CoveredSeq int               `json:"covered_seq,omitempty"`
-	Skills     *skills.Catalog   `json:"skills,omitempty"`
+	Version    int                  `json:"v"`
+	Seq        int                  `json:"seq"`
+	TurnID     string               `json:"turn_id"`
+	Kind       string               `json:"kind"`
+	Text       string               `json:"text,omitempty"`
+	Output     []json.RawMessage    `json:"output,omitempty"`
+	Status     string               `json:"status,omitempty"`
+	CallID     string               `json:"call_id,omitempty"`
+	Name       string               `json:"name,omitempty"`
+	Arguments  json.RawMessage      `json:"arguments,omitempty"`
+	CWD        string               `json:"cwd,omitempty"`
+	Result     *tools.Result        `json:"result,omitempty"`
+	CoveredSeq int                  `json:"covered_seq,omitempty"`
+	Skills     *skills.Catalog      `json:"skills,omitempty"`
+	Agents     *skills.AgentCatalog `json:"agents,omitempty"`
 }
 
 type pendingTurn struct {
@@ -64,12 +65,17 @@ type historyState struct {
 	coveredSeq   int
 	replayTurns  []replayTurn
 	skillCatalog *skills.Catalog
+	agentCatalog *skills.AgentCatalog
 }
 
 // End is the exclusive item offset; seq is the durable turn_end boundary.
 type replayTurn struct{ seq, end int }
 
 const maxSummaryBytes = 8 << 10
+
+// historyVersion is written on every new record. Version 5 (Chapter 15) adds
+// session_agents; versions 1–4 stay readable, and 0.14 cannot read version 5.
+const historyVersion = 5
 
 func (h *Session) append(records ...historyRecord) error {
 	if h.broken {
@@ -79,7 +85,7 @@ func (h *Session) append(records ...historyRecord) error {
 	next := h.state.clone()
 	for i := range records {
 		r := &records[i]
-		r.Version, r.Seq = 4, h.state.seq+i+1
+		r.Version, r.Seq = historyVersion, h.state.seq+i+1
 		if err := next.apply(*r); err != nil {
 			return fmt.Errorf("Invalid history transition: %w", err)
 		}
@@ -138,7 +144,7 @@ func (p *pendingTurn) unresolved() *pendingCall {
 
 func (s *historyState) apply(r historyRecord) error {
 	invalid := errors.New("invalid history fields or turn order")
-	if r.Version < 1 || r.Version > 4 || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
+	if r.Version < 1 || r.Version > historyVersion || r.Seq != s.seq+1 || !validHistoryID(r.TurnID) {
 		return invalid
 	}
 	toolFields := r.CallID != "" || r.Name != "" || r.Arguments != nil || r.CWD != "" || r.Result != nil
@@ -151,13 +157,16 @@ func (s *historyState) apply(r historyRecord) error {
 	if r.Skills != nil && r.Kind != "session_skills" {
 		return invalid
 	}
+	if r.Agents != nil && r.Kind != "session_agents" {
+		return invalid
+	}
 	if r.Version == 1 && r.Kind != "user_message" && r.Kind != "assistant_message" && r.Kind != "turn_end" {
 		return invalid
 	}
 	p := &s.pending
 	switch r.Kind {
 	case "session_skills":
-		if r.Version != 4 || s.skillCatalog != nil || p.id != "" || s.turns[r.TurnID] || r.Text != "" || r.Status != "" || len(r.Output) != 0 || r.Skills == nil {
+		if r.Version < 4 || s.skillCatalog != nil || p.id != "" || s.turns[r.TurnID] || r.Text != "" || r.Status != "" || len(r.Output) != 0 || r.Skills == nil {
 			return invalid
 		}
 		if err := r.Skills.Validate(); err != nil {
@@ -166,6 +175,17 @@ func (s *historyState) apply(r historyRecord) error {
 		catalog := *r.Skills
 		catalog.Entries = slices.Clone(catalog.Entries)
 		s.skillCatalog = &catalog
+		s.turns[r.TurnID] = true
+	case "session_agents":
+		if r.Version < 5 || s.agentCatalog != nil || p.id != "" || s.turns[r.TurnID] || r.Text != "" || r.Status != "" || len(r.Output) != 0 || r.Agents == nil {
+			return invalid
+		}
+		if err := r.Agents.Validate(); err != nil {
+			return err
+		}
+		catalog := *r.Agents
+		catalog.Entries = slices.Clone(catalog.Entries)
+		s.agentCatalog = &catalog
 		s.turns[r.TurnID] = true
 	case "user_message":
 		if p.id != "" || s.turns[r.TurnID] || !validHistoryText(r.Text) || r.Status != "" || len(r.Output) != 0 {

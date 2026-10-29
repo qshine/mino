@@ -73,14 +73,17 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 	}
 	var turnIDs [2]string
 	lines := bytes.Split(bytes.TrimSpace(data), []byte("\n"))
-	if len(lines) != 7 {
+	if len(lines) != 8 {
 		t.Fatalf("history has %d records", len(lines))
 	}
 	var snapshot map[string]any
-	if err := json.Unmarshal(lines[0], &snapshot); err != nil || snapshot["kind"] != "session_skills" || snapshot["seq"] != float64(1) || snapshot["v"] != float64(4) {
+	if err := json.Unmarshal(lines[0], &snapshot); err != nil || snapshot["kind"] != "session_skills" || snapshot["seq"] != float64(1) || snapshot["v"] != float64(5) {
 		t.Fatalf("missing initial skill catalog: %s", lines[0])
 	}
-	for i, line := range lines[1:] {
+	if err := json.Unmarshal(lines[1], &snapshot); err != nil || snapshot["kind"] != "session_agents" || snapshot["seq"] != float64(2) {
+		t.Fatalf("missing subagent catalog: %s", lines[1])
+	}
+	for i, line := range lines[2:] {
 		var record map[string]any
 		if err := json.Unmarshal(line, &record); err != nil {
 			t.Fatal(err)
@@ -92,7 +95,7 @@ func TestRunRestoresConversationHistory(t *testing.T) {
 		if i%3 == 0 {
 			turnIDs[i/3] = id
 		}
-		if (len(id) != 32 || strings.ToLower(id) != id) || id != turnIDs[i/3] || record["seq"] != float64(i+2) {
+		if (len(id) != 32 || strings.ToLower(id) != id) || id != turnIDs[i/3] || record["seq"] != float64(i+3) {
 			t.Fatalf("invalid turn/order: %s", line)
 		}
 	}

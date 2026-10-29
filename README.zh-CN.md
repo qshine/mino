@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–14 章，对应发布版本 `chapter-14`（程序版本 `0.14.0`）。
-第 01–14 章均已发布，标签为 `chapter-01` 至 `chapter-14`，程序版本对应 `0.1.0` 至 `0.14.0`；第 15 章规划中。
+**当前进度：**本快照包含第 01–15 章，最新发布版本为 `chapter-14`（程序版本 `0.14.0`）。
+第 01–14 章均已发布，标签为 `chapter-01` 至 `chapter-14`，程序版本对应 `0.1.0` 至 `0.14.0`；第 15 章正在 `main` 上开发（计划为 `chapter-15`，版本 `0.15.0`）。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -26,6 +26,7 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 第 12 章加入操作系统沙箱：在 macOS 上，Bash 命令在 Seatbelt 配置下运行，写入受限，网络和受保护路径被阻断。
 第 13 章加入用户记忆：每条记忆是 `~/.mino/memory/` 下的一个文件，每轮都会把所有记忆的一行摘要交给模型。
 第 14 章加入子 Agent：`spawn_agent` 把最多 10 个委派任务交给并行的子 Agent，只取回它们的最终文本。
+第 15 章加入自定义子 Agent：在 `.agents/agents/<name>.md` 中定义角色，带有自己的角色说明和更窄的工具列表，并内置 `create-subagent` 技能。
 Gateway 与 Agent 目录从第 01 章起保持一致。
 详见[章节规划](docs/books/zh/plan-todo-chapters.md)。
 
@@ -317,6 +318,26 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 `max_concurrent_subagents` 设为 1 到 10），父级收到一个结果，包含每个任务的状态和最终文本，共用 48 KiB 的预算，所以子 Agent 读过的文件不会进入父级上下文。
 `spawn_agent` 在 `manual` 和 `accept-edits` 模式下需要批准；每个子 Agent 自己的调用遵循同一模式，逐个询问，并标明来自哪个子 Agent。
 每轮最多启动 16 个子 Agent；子 Agent 不能再启动子 Agent，也不能保存记忆。`/clear` 会一并删除该会话的子 Agent 日志。详见[第 14 章](docs/books/zh/chapters/14-subagents.md)。
+
+## 自定义子 Agent（第 15 章）
+
+第 15 章正在 `main` 上开发，尚未发布；请按[快速开始](docs/books/zh/getting-started.md)从源码构建。项目可以定义可复用的子 Agent 角色，每个角色是 `.agents/agents/` 下的一个 Markdown 文件：
+
+```markdown
+---
+name: explorer
+description: 读取项目文件并报告发现。用于只读查询。
+tools: [read_file, skill_view]
+---
+只读取任务需要的文件，用几句话回答，并附上文件路径。
+```
+
+`name` 必须与文件名一致，`description` 告诉模型何时使用这个角色，可选的 `tools` 列表收窄该子 Agent 拿到的工具（省略则获得子 Agent 的全部工具；不能列出 `spawn_agent` 和 `memory_save`）。
+和技能目录一样，名称、简介和工具列表每个会话只保存一次，重启、`/resume`、`/clear` 和上下文压缩都保留它；`/new` 才重新扫描。
+之后模型用 `spawn_agent` 委派任务，例如 `{"agent": "explorer", "task": "..."}`（通用子 Agent 用 `"agent": null`）。
+角色说明在子 Agent 启动时从文件读取，作为项目指引随任务一起发出；它不会放宽工具、改变权限模式或授予批准。
+内置的 `create-subagent` 技能引导模型和你一起写定义；`skill_view` 现在会告诉模型每个技能所在的目录，让模型能够正确解析技能中的相对路径。
+第 15 章写入 `v: 5` 会话记录，读取版本 1–5；0.14.0 无法读取。详见[第 15 章](docs/books/zh/chapters/15-custom-subagents.md)。
 
 ## 版本与升级
 

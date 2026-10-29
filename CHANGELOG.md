@@ -22,6 +22,46 @@ replaced by three permission modes selected with `/mode`. Earlier chapters and t
 releases are unchanged. A `~/.mino/policy.json` left by the first 0.10.0 release is
 now ignored.
 
+## [Unreleased]
+
+### Added
+
+- Chapter 15 custom subagents: Markdown definitions in the project's
+  `.agents/agents/<name>.md` with YAML `name` (equal to the file name), `description`
+  (at most 1,024 characters), and an optional `tools` list of 1 to 64 tool names that
+  narrows the subagent's tools and never adds one (`spawn_agent` and `memory_save`
+  cannot be listed); the body is the role text. Files are at most 64 KiB, front matter
+  16 KiB, and the catalog 32 KiB; unusable definitions are skipped and named in one
+  notice. Other front-matter keys, such as a model or permission mode, are ignored.
+- The definitions' metadata is saved once per session in a `session_agents` record,
+  kept by restart, `/resume`, `/clear`, and compaction, and scanned again by `/new`;
+  older sessions get one on first use. The catalog is added to the parent's
+  instructions; the role text never is.
+- `spawn_agent` tasks are now `{agent, task}` objects: `agent` names a definition, or is
+  `null` for a general subagent. An unknown name is rejected before confirmation. A
+  role's subagent receives the definition's current body with its task as labelled
+  project guidance and only the listed tools that are available; missing ones are
+  reported in its result, and a definition removed since the session started fails
+  only its own task. Recorded 0.14.0 calls with string tasks still replay.
+- Built-in skills: Mino now embeds a `create-subagent` skill that guides the model in
+  writing a definition with the user. It appears in every skill catalog marked
+  `builtin`; a project skill of the same name replaces it, with a notice.
+- Eval replay case `subagent-role`.
+
+### Changed
+
+- Session history now writes version 5 records and reads versions 1 to 5. Releases
+  up to 0.14.0 cannot read sessions written by this version, and an existing session
+  gets a version 5 `session_agents` record as soon as this version opens or resumes
+  it. A session whose skill catalog was saved by an earlier release has no
+  `create-subagent` skill until `/new`.
+- `skill_view` results start with a header: for a project skill, its directory, the
+  Bash working directory, and the rule that a skill's relative paths are relative to
+  its directory; for a built-in skill, a note that it has no directory. A file too
+  large to return with this header fails instead.
+- The default `SOUL.md` describes built-in skills, the skill directory rule, and
+  project subagents; existing `~/.mino/SOUL.md` files are not changed.
+
 ## [0.14.0] - 2026-10-28
 
 ### Added

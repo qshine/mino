@@ -34,8 +34,20 @@ func TestSkillViewArgumentsAndResult(t *testing.T) {
 		t.Fatalf("prepare: %+v, %v", call, err)
 	}
 	result := view.Execute(context.Background(), call)
-	if result.Status != "completed" || !strings.Contains(result.Output, "Read tests first.") {
+	if result.Status != "completed" || !strings.HasPrefix(result.Output, "Skill: \"review\"\nDirectory: "+dir+"\nBash working directory: "+root+"\n") || !strings.Contains(result.Output, "--- SKILL.md ---\n---\nname: review") || !strings.HasSuffix(result.Output, "Read tests first.") {
 		t.Fatalf("result: %+v", result)
+	}
+	call, _ = view.Prepare(`{"name":"create-subagent"}`)
+	if result := view.Execute(context.Background(), call); result.Status != "completed" || !strings.Contains(result.Output, "Directory: none (built-in") || strings.Contains(result.Output, "Bash working directory") {
+		t.Fatalf("built-in: %+v", result)
+	}
+	// A file within its own 64 KiB limit can still leave no room for the header.
+	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("---\nname: review\ndescription: Review code\n---\n"+strings.Repeat("x", 65490)), 0600); err != nil {
+		t.Fatal(err)
+	}
+	call, _ = view.Prepare(`{"name":"review"}`)
+	if result := view.Execute(context.Background(), call); result.Status != "failed" || !strings.Contains(result.Output, "too large") {
+		t.Fatalf("oversized: %+v", result)
 	}
 	call, err = view.Prepare(`{"name":"missing"}`)
 	if err != nil {

@@ -139,6 +139,21 @@ func New(options Options, session *Session, available []tools.Tool) (*Agent, err
 		registry["skill_view"] = available[viewIndex]
 		options.Instructions += session.state.skillCatalog.Prompt()
 	}
+	// Subagent definitions matter only to an Agent that can delegate, so
+	// children, which never get spawn_agent, neither scan nor list them.
+	if _, delegates := registry[spawnAgentName].(*SpawnTool); delegates && (options.ProjectDirectory != "" || session.state.agentCatalog != nil) {
+		if session.state.agentCatalog == nil {
+			catalog, problems, err := skills.ScanAgents(options.ProjectDirectory)
+			if err != nil {
+				return nil, err
+			}
+			skipped += agentNotice(options.ProjectDirectory, problems)
+			if err := session.append(historyRecord{TurnID: newHistoryID(), Kind: "session_agents", Agents: catalog}); err != nil {
+				return nil, &StorageError{err}
+			}
+		}
+		options.Instructions += session.state.agentCatalog.Prompt()
+	}
 	a := &Agent{session: session, options: options, tools: registry, available: supplied, instructions: instructions, skipped: skipped, httpClient: &http.Client{
 		Timeout:       2 * time.Minute,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
@@ -240,10 +255,6 @@ func (a *Agent) Handle(ctx context.Context, message string, interaction Interact
 	return a.runLoop(ctx, interaction)
 }
 
-// refreshMemory rebuilds the index once per turn, so every request in the turn
-// shares one prefix and a memory saved now appears from the next turn, including
-// after compaction. The index is never written to history. A file Mino cannot
-// use is reported to the user and skipped; it never stops the conversation.
 // skillNotice lists the skills a scan left out. The catalog is frozen per
 // session, so the scan, and this notice, happen once per session.
 func skillNotice(project string, problems []string) string {
@@ -251,6 +262,14 @@ func skillNotice(project string, problems []string) string {
 		return ""
 	}
 	return "Some skills in " + filepath.Join(project, ".agents", "skills") + " were not loaded:\n  " + strings.Join(problems, "\n  ") + "\n"
+}
+
+// agentNotice does the same for subagent definitions, frozen the same way.
+func agentNotice(project string, problems []string) string {
+	if len(problems) == 0 {
+		return ""
+	}
+	return "Some subagent definitions in " + filepath.Join(project, ".agents", "agents") + " were not loaded:\n  " + strings.Join(problems, "\n  ") + "\n"
 }
 
 func (a *Agent) showSkipped(interaction Interaction) error {
@@ -262,6 +281,10 @@ func (a *Agent) showSkipped(interaction Interaction) error {
 	return interaction.Emit(Event{Kind: "notice", Text: text})
 }
 
+// refreshMemory rebuilds the index once per turn, so every request in the turn
+// shares one prefix and a memory saved now appears from the next turn, including
+// after compaction. The index is never written to history. A file Mino cannot
+// use is reported to the user and skipped; it never stops the conversation.
 func (a *Agent) refreshMemory(interaction Interaction) error {
 	if a.options.Memory == nil {
 		return nil
@@ -425,9 +448,16 @@ func (a *Agent) runCall(ctx context.Context, id string, call toolCall, interacti
 	}
 	_, delegating := tool.(*SpawnTool)
 	if delegating {
-		// The per-turn cap bounds cost before anyone is asked to approve the batch.
-		if args, err := parseSpawnArguments(string(prepared.Arguments)); err == nil && a.spawned+len(args.Tasks) > maxSubagentsPerTurn {
+		// The per-turn cap bounds cost before anyone is asked to approve the batch,
+		// and only roles in this session's catalog can be approved.
+		args, err := parseSpawnArguments(string(prepared.Arguments))
+		if err == nil && a.spawned+len(args.Tasks) > maxSubagentsPerTurn {
 			return tools.Result{Status: "denied", Output: fmt.Sprintf("This turn has already started %d of at most %d subagents. Finish with what you have, or ask the user to continue in a new turn.", a.spawned, maxSubagentsPerTurn)}, nil
+		}
+		if err == nil {
+			if err := a.checkRoles(args); err != nil {
+				return tools.Result{Status: "invalid_arguments", Output: err.Error()}, nil
+			}
 		}
 	}
 	// One policy decision covers every tool, before inspection reads anything:

@@ -37,6 +37,8 @@ Chapter 13 adds [user memory](#try-chapter-13-from-source) across sessions and p
 
 Chapter 14 adds [subagents](#try-chapter-14-from-source) that work in their own context. It keeps record version 4; see its [history compatibility notes](#chapter-14-history-compatibility) before opening a Chapter 14 session with an older release.
 
+Chapter 15, in development, adds [project subagent roles](#try-chapter-15-from-source). New records use version 5, which `chapter-14` cannot read; read its [history compatibility notes](#chapter-15-history-compatibility) before using it on existing sessions.
+
 ## Prepare your Mac
 
 Mino supports macOS 13 or later, with packages for Apple Silicon and Intel. The installer selects your architecture. You do not need Go to run a downloaded release.
@@ -597,6 +599,71 @@ Eval runs can now call `spawn_agent`, and their subagents' logs stay in the run'
 ### Chapter 14 history compatibility
 
 Chapter 14 keeps record version 4 and adds no record kinds or result statuses. A whole batch is one `spawn_agent` start and one result in the parent's log, and each subagent's log is an ordinary session file in the `.agents` directory beside it. Chapter 14 opens sessions from earlier chapters without migration. A session in which a `spawn_agent` call started records that call like any other tool call, and `chapter-13` refuses to load such a session with `History contains a started call for an unavailable tool`. Older releases ignore the `.agents` directories, and their `/clear` leaves them in place. As before, keep private copies of session logs and `active-session.json` before switching versions.
+
+## Try Chapter 15 from source
+
+Chapter 15 is in development. Its release `chapter-15` (application version `0.15.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-15` selects the same code.
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+Replace both paths with your own directories. The banner reads `Mino - Chapter 15: Custom Subagents`; once the release is published, an installed release reports version `0.15.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, sandbox, memory, and subagent requirements still apply; the lesson is [Chapter 15](./chapters/15-custom-subagents.md), and its no-cost checks are in [section 6](./chapters/15-custom-subagents.md#_6-check-it-with-evals-and-tests).
+
+`spawn_agent` tasks can now name a project role. Approval works as in Chapter 14: the delegation asks in `manual` and `accept-edits`, and each subagent's own calls follow the session's mode. A role can only narrow a subagent's tools.
+
+### Define a project subagent
+
+Each role is one file, `.agents/agents/<name>.md`, directly in the directory where you start Mino. Mino never reads definitions from parent directories or your home directory. Plain files that do not end in `.md`, and directories, are ignored.
+
+```text
+---
+name: explorer
+description: Reads project files and reports what it finds, with file paths. Use for read-only lookups.
+tools:
+  - read_file
+  - skill_view
+---
+Read only the files the task needs. Answer in a few sentences and give the
+file path for every claim.
+```
+
+- `name` is a YAML string equal to the file name without `.md`, using lowercase ASCII letters, digits, and single hyphens, at most 64 bytes.
+- `description` is a non-empty YAML string of at most 1,024 characters. It is all the parent model learns about when to use the role.
+- `tools` is optional: a YAML list of 1 to 64 distinct tool names, such as `bash`, `read_file`, `write_file`, `edit_file`, `skill_view`, `memory_view`, or an MCP tool's `mcp_<server>_<tool>` name. Omit it to keep every tool a subagent normally has. `spawn_agent` and `memory_save` cannot be listed. A listed tool that is unavailable when the subagent starts is left out and named in that task's result.
+- Other front-matter keys, such as a model or a permission mode written for another tool, are ignored.
+- Everything after the closing `---` is the role text, sent to the role's subagent with each task. It can be empty.
+
+The file is limited to 64 KiB, its front matter must close within 16 KiB, and the serialized catalog, including the project path, to 32 KiB. A definition that breaks these rules, a symbolic link, or one that no longer fits the catalog (taken in name order) is skipped, and one notice names each with its reason, for example:
+
+```text
+Some subagent definitions in /path/to/project/.agents/agents were not loaded:
+  reviewer.md: tools cannot include spawn_agent; subagents never get it
+```
+
+An unusable project directory, or an `.agents` or `.agents/agents` path that is a symbolic link or not a directory, fails discovery, as it does for skills. A missing `.agents/agents` gives an empty catalog.
+
+The names, descriptions, and tool lists are saved once per session and kept across restart, `/resume`, `/clear`, and compaction; only `/new` scans again, and the notice appears only then or when a session first gets its catalog. The role text is read from the file each time a subagent starts. The catalog sends the project path, names, descriptions, and tool lists to the configured model service; keep secrets out of definitions.
+
+### Built-in skills and skill directories
+
+Mino now embeds a built-in skill, `create-subagent`, that guides the model in writing a definition with you. It appears in every newly scanned skill catalog, marked `"builtin":true`; a project skill named `create-subagent` replaces it, with a line in the skill notice. Skill discovery is otherwise unchanged.
+
+`skill_view` results now start with a short header: the skill's name, its absolute directory (or `none` for a built-in skill), the Bash working directory, and the rule that the skill's relative paths are relative to its own directory. Because the header shares the 64 KiB tool output limit, a `SKILL.md` close to 64 KiB now returns `failed` with `SKILL.md is too large to return with its header; keep it below 63 KiB.`
+
+Existing `~/.mino/SOUL.md` files remain untouched. The default SOUL for new installations describes built-in skills, the skill directory rule, and the `agent` field in `spawn_agent` tasks; the tool descriptions carry the same guidance, so roles work with your own SOUL too.
+
+Eval cases can seed definitions like any other file, by listing `.agents/agents/<name>.md` under `workspace.files`.
+
+### Chapter 15 history compatibility
+
+Chapter 15 writes every new record as `v: 5` and reads versions 1–5. The new `session_agents` record holds a session's subagent catalog and exists only at version 5. A session without one gets it as soon as Chapter 15 first uses it, even before its next question, so merely starting chat or resuming a session makes that log unreadable by `chapter-14` and earlier, which stop with an `Invalid history` error at the first version 5 line. `/clear` also rewrites the cleared log at version 5. Subagent logs are written at version 5 too.
+
+Chapter 15 opens sessions from earlier chapters without migration. Their recorded `spawn_agent` tasks, saved as plain strings by `chapter-14`, still replay. A session whose skill catalog was saved by an earlier release keeps that catalog, so it has no built-in `create-subagent` skill until you start a new session with `/new`.
+
+Before switching versions, keep private copies of session logs and `active-session.json`. To roll back, stop Mino, preserve the newer files separately, and restore the pre-upgrade copies; do not relabel version 5 records.
 
 ## Learn from the source
 

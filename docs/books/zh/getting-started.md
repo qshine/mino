@@ -37,6 +37,8 @@ next:
 
 第十四章加入在自己的上下文中工作的[子 Agent](#从源码体验第十四章)。它沿用记录版本 4；用旧版本打开第十四章的会话之前，请阅读[历史兼容性说明](#第十四章的历史兼容性)。
 
+第十五章（开发中）加入[项目子 Agent 角色](#从源码体验第十五章)。新记录使用版本 5，`chapter-14` 无法读取；在已有会话上使用它之前，请阅读[历史兼容性说明](#第十五章的历史兼容性)。
+
 ## 准备一台 Mac
 
 支持 macOS 13 及以上，提供 Apple Silicon 和 Intel 两种安装包。安装器会自动选择对应的版本，不需要你先安装 Go。
@@ -597,6 +599,70 @@ Mino 不重试失败的模型请求，所以一次限流错误会让那个子 Ag
 ### 第十四章的历史兼容性
 
 第十四章沿用记录版本 4，没有新增记录类型或结果状态。一整批在父级日志里就是一条 `spawn_agent` 开始记录和一个结果，每个子 Agent 的日志都是旁边 `.agents` 目录中的普通会话文件。第十四章无需迁移即可打开之前各章的会话。如果某个会话中有 `spawn_agent` 调用已经开始，它会像其他工具调用一样被记录，`chapter-13` 会以 `History contains a started call for an unavailable tool` 拒绝加载这样的会话。旧版本会忽略 `.agents` 目录，它们的 `/clear` 也会把这些目录留在原处。和之前一样，切换版本前请私下备份会话日志与 `active-session.json`。
+
+## 从源码体验第十五章
+
+第十五章正在开发中。它的发布标签 `chapter-15`（程序版本 `0.15.0`）正在准备，所以还没有可安装的包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-15` 会选中同一份代码。
+
+```bash
+go build -o bin/mino ./cmd/mino
+cd /path/to/your/project
+/path/to/mino/bin/mino
+```
+
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 15: Custom Subagents`；发布之后，安装的发布版显示版本 `0.15.0`，源码构建显示 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP、安全防护、沙箱、记忆和子 Agent 要求继续适用；正文见[第十五章](./chapters/15-custom-subagents.md)，免费的检查见[第 6 节](./chapters/15-custom-subagents.md#_6-用评测和测试检查它)。
+
+`spawn_agent` 的任务现在可以指定项目角色。批准方式和第十四章相同：委派本身在 `manual` 和 `accept-edits` 下会询问，每个子 Agent 自己的调用遵循会话的模式。角色只能缩小子 Agent 的工具范围。
+
+### 定义项目子 Agent {#定义项目子-agent}
+
+每个角色是一个文件 `.agents/agents/<name>.md`，直接位于你启动 Mino 的目录下。Mino 从不读取父目录或用户目录中的定义。不以 `.md` 结尾的普通文件和子目录会被忽略。
+
+```text
+---
+name: explorer
+description: 读取项目文件并报告发现，附上文件路径。用于只读的查找。
+tools:
+  - read_file
+  - skill_view
+---
+只读取任务需要的文件。用几句话回答，每个结论都给出文件路径。
+```
+
+- `name` 是一个 YAML 字符串，等于去掉 `.md` 的文件名，由小写 ASCII 字母、数字和单个连字符组成，最多 64 字节。
+- `description` 是非空的 YAML 字符串，最多 1,024 个字符。父级模型对何时使用这个角色的全部了解都来自它。
+- `tools` 可选：一个 YAML 列表，包含 1 到 64 个互不重复的工具名，例如 `bash`、`read_file`、`write_file`、`edit_file`、`skill_view`、`memory_view`，或 MCP 工具的 `mcp_<server>_<tool>` 名称。省略它则保留子 Agent 通常拥有的所有工具。`spawn_agent` 和 `memory_save` 不能列出。子 Agent 启动时不可用的列出工具会被省略，并在该任务的结果中写明。
+- 其他头部键，例如为别的工具写的模型或权限模式，都会被忽略。
+- 结束的 `---` 之后的全部内容是角色文本，每个任务都会把它发给该角色的子 Agent。它可以为空。
+
+文件最大 64 KiB，头部必须在前 16 KiB 内结束，包含项目路径的序列化目录最大 32 KiB。违反这些规则的定义、符号链接，以及（按名称顺序）已经放不进目录的定义都会被跳过，一条提示写明每一个及其原因，例如：
+
+```text
+Some subagent definitions in /path/to/project/.agents/agents were not loaded:
+  reviewer.md: tools cannot include spawn_agent; subagents never get it
+```
+
+项目目录不可用，或 `.agents`、`.agents/agents` 路径是符号链接或不是目录时，发现会失败，和技能一样。`.agents/agents` 不存在时得到空目录。
+
+名称、简介和工具列表每个会话保存一次，在重启、`/resume`、`/clear` 和压缩之后保持不变；只有 `/new` 会重新扫描，提示也只在这时，或会话第一次得到目录时出现。角色文本在每次子 Agent 启动时从文件读取。目录会把项目路径、名称、简介和工具列表发送给配置的模型服务；定义中不要放入秘密信息。
+
+### 内置技能与技能目录
+
+Mino 现在内置一个技能 `create-subagent`，引导模型和你一起编写定义。它出现在每份新扫描的技能目录中，标记为 `"builtin":true`；名为 `create-subagent` 的项目技能会替换它，并在技能提示中写一行说明。技能发现的其他行为不变。
+
+`skill_view` 的结果现在以一段简短的标题开头：技能名称、它的绝对目录（内置技能为 `none`）、Bash 工作目录，以及技能中的相对路径相对于它自己的目录这条规则。由于标题与文件共享 64 KiB 的工具输出上限，接近 64 KiB 的 `SKILL.md` 现在会返回 `failed`，信息为 `SKILL.md is too large to return with its header; keep it below 63 KiB.`。
+
+已有的 `~/.mino/SOUL.md` 保持原样。新安装使用的默认 SOUL 介绍了内置技能、技能目录规则，以及 `spawn_agent` 任务中的 `agent` 字段；工具描述也带有同样的说明，所以使用你自己的 SOUL 时角色同样可用。
+
+评测用例可以像其他文件一样放入定义：在 `workspace.files` 中列出 `.agents/agents/<name>.md`。
+
+### 第十五章的历史兼容性
+
+第十五章把所有新记录写为 `v: 5`，读取版本 1–5。新的 `session_agents` 记录保存会话的子 Agent 目录，只以版本 5 存在。没有这条记录的会话，在第十五章第一次使用它时就会得到一条，不必等到下一次提问；因此仅仅启动聊天或恢复一个会话，就会让这份日志无法被 `chapter-14` 及更早版本读取，它们会在第一行版本 5 记录处以 `Invalid history` 错误停止。`/clear` 也会以版本 5 重写被清空的日志。子 Agent 日志同样以版本 5 写入。
+
+第十五章无需迁移即可打开之前各章的会话。`chapter-14` 以纯字符串保存的 `spawn_agent` 任务仍能回放。由更早版本保存技能目录的会话会保留那份目录，所以在你用 `/new` 开始新会话之前，它没有内置的 `create-subagent` 技能。
+
+切换版本前，请私下备份会话日志与 `active-session.json`。回退时，先停止 Mino，另行保留新版文件，再恢复升级前的备份；不要直接修改版本 5 记录的版本号。
 
 ## 从源码学习
 

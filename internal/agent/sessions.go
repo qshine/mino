@@ -147,7 +147,7 @@ func (s *Sessions) create() error {
 }
 
 func (s *Sessions) createWithSkills(catalog *skills.Catalog) error {
-	data, err := initialSkills(catalog)
+	data, err := initialRecords(catalog, nil)
 	if err != nil {
 		return err
 	}
@@ -158,15 +158,32 @@ func (s *Sessions) createWithSkills(catalog *skills.Catalog) error {
 	return s.resume(id)
 }
 
-func initialSkills(catalog *skills.Catalog) ([]byte, error) {
-	if catalog == nil {
-		return nil, nil
+// initialRecords starts a session file with its frozen discovery snapshot:
+// the skill catalog, then the subagent catalog, each only when present.
+func initialRecords(catalog *skills.Catalog, agents *skills.AgentCatalog) ([]byte, error) {
+	var records []historyRecord
+	if catalog != nil {
+		if err := catalog.Validate(); err != nil {
+			return nil, err
+		}
+		records = append(records, historyRecord{Kind: "session_skills", Skills: catalog})
 	}
-	if err := catalog.Validate(); err != nil {
-		return nil, err
+	if agents != nil {
+		if err := agents.Validate(); err != nil {
+			return nil, err
+		}
+		records = append(records, historyRecord{Kind: "session_agents", Agents: agents})
 	}
-	data, err := json.Marshal(historyRecord{Version: 4, Seq: 1, TurnID: newHistoryID(), Kind: "session_skills", Skills: catalog})
-	return append(data, '\n'), err
+	var data []byte
+	for i, r := range records {
+		r.Version, r.Seq, r.TurnID = historyVersion, i+1, newHistoryID()
+		line, err := json.Marshal(r)
+		if err != nil {
+			return nil, err
+		}
+		data = append(append(data, line...), '\n')
+	}
+	return data, nil
 }
 
 func (s *Sessions) resume(id string) error {

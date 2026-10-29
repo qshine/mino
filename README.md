@@ -14,10 +14,11 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–14, release
+**Current progress:** This snapshot contains Chapters 01–15; the latest release is
 `chapter-14` (application version `0.14.0`).
 Chapters 01–14 are released, tagged `chapter-01` through `chapter-14` with
-application versions `0.1.0` through `0.14.0`; Chapter 15 is planned.
+application versions `0.1.0` through `0.14.0`; Chapter 15 is in development on `main`
+(planned `chapter-15`, version `0.15.0`).
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -40,6 +41,8 @@ Chapter 13 adds user memory: one file per memory in `~/.mino/memory/`,
 with every memory's one-line summary shown to the model each turn.
 Chapter 14 adds subagents: `spawn_agent` runs up to 10 delegated tasks in parallel child
 Agents and returns only their final texts.
+Chapter 15 adds custom subagents: roles defined in `.agents/agents/<name>.md` with their
+own role text and a narrower tool list, and a built-in `create-subagent` skill.
 Gateway and Agent directories are consistent from Chapter 01 onward.
 See the [chapter roadmap](docs/books/en/plan-todo-chapters.md).
 
@@ -435,6 +438,35 @@ asks for approval in `manual` and `accept-edits` modes; each subagent's own call
 the same mode and ask one at a time, labelled with the subagent. A turn may start at most
 16 subagents; subagents cannot start subagents or save memories. `/clear` also deletes a
 session's subagent logs. See [Chapter 14](docs/books/en/chapters/14-subagents.md).
+
+## Custom subagents (Chapter 15)
+
+Chapter 15 is in development on `main` and not yet released; build it from source as
+described in [Getting started](docs/books/en/getting-started.md). A project can define
+reusable subagent roles, one Markdown file each in `.agents/agents/`:
+
+```markdown
+---
+name: explorer
+description: Reads project files and reports what it finds. Use for read-only lookups.
+tools: [read_file, skill_view]
+---
+Read only the files the task needs and answer in a few sentences with file paths.
+```
+
+`name` must match the file name, `description` tells the model when to use the role,
+and the optional `tools` list narrows the tools that subagent gets (omit it for every
+subagent tool; `spawn_agent` and `memory_save` cannot be listed). Like the skill catalog,
+the names, descriptions, and tool lists are saved once per session and kept by restart,
+`/resume`, `/clear`, and compaction; `/new` scans again. The model then delegates with
+`spawn_agent` tasks such as `{"agent": "explorer", "task": "..."}` (or `"agent": null` for
+a general subagent). The role text is read from the file when the subagent starts and
+sent with its task as project guidance; it never widens tools, changes the permission
+mode, or grants approval. A built-in `create-subagent` skill guides the model in writing
+a definition with you, and `skill_view` now tells the model each skill's directory so it
+can resolve a skill's relative paths. Chapter 15 writes `v: 5` session records and reads
+versions 1–5; 0.14.0 cannot read them. See
+[Chapter 15](docs/books/en/chapters/15-custom-subagents.md).
 
 ## Version and updates
 

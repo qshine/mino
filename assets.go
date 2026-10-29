@@ -1,7 +1,8 @@
-// Package assets embeds the installer and default identity for standalone builds.
+// Package assets embeds the installer, default identity, and built-in skills for
+// standalone builds.
 package assets
 
-import _ "embed"
+import "embed"
 
 // InstallerScript keeps updates independent of the checkout and working directory.
 //
@@ -12,3 +13,9 @@ var InstallerScript string
 //
 //go:embed SOUL.md
 var DefaultSoul string
+
+// BuiltinSkills holds the skills bundled with Mino, one skills/<name>/SKILL.md
+// each. A project skill of the same name replaces one.
+//
+//go:embed skills
+var BuiltinSkills embed.FS

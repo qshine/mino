@@ -10,7 +10,7 @@ next:
 
 Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程记录它逐章增加能力的过程。你会从终端问答开始，看清模型收到什么、程序负责什么，再亲手检验每一步的结果和边界。
 
-**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md) · [第 12 章：沙箱](./chapters/12-sandbox.md) · [第 13 章：用户记忆](./chapters/13-user-memory.md) · [第 14 章：子 Agent](./chapters/14-subagents.md)。第 01–14 章均已发布，最新一章对应 `chapter-14`（版本 `0.14.0`）。第 15 章处于规划中，见[章节规划](./plan-todo-chapters.md)。
+**当前可读：**[第 01 章：与模型对话](./chapters/01-terminal-chat.md) · [第 02 章：JSONL 对话历史](./chapters/02-jsonl-history.md) · [第 03 章：Agent 循环与 Bash](./chapters/03-tools-and-bash.md) · [第 04 章：恢复中断的工具调用](./chapters/04-recovering-tool-turns.md) · [第 05 章：多会话](./chapters/05-jsonl-sessions.md) · [第 06 章：上下文压缩](./chapters/06-context-compaction.md) · [第 07 章：Skills](./chapters/07-skills.md) · [第 08 章：文件工具](./chapters/08-file-tools.md) · [第 09 章：MCP 工具](./chapters/09-mcp.md) · [第 10 章：安全防护](./chapters/10-guardrails.md) · [第 11 章：评测](./chapters/11-evals.md) · [第 12 章：沙箱](./chapters/12-sandbox.md) · [第 13 章：用户记忆](./chapters/13-user-memory.md) · [第 14 章：子 Agent](./chapters/14-subagents.md)。第 01–14 章均已发布，最新一章对应 `chapter-14`（版本 `0.14.0`）。[第 15 章：自定义子 Agent](./chapters/15-custom-subagents.md)正在开发中，发布标签 `chapter-15`（版本 `0.15.0`）正在准备；[章节规划](./plan-todo-chapters.md)记录了每一章的状态。
 
 ## 关于作者
 
@@ -60,6 +60,7 @@ Mino 是一个用 Go 从零构建 Agent（智能体）的项目，这本教程�
 | [12 沙箱](./chapters/12-sandbox.md) | 怎样让内核而不是你对命令的解读，去限定一条获批的 Bash 命令能触及什么？ |
 | [13 用户记忆](./chapters/13-user-memory.md) | 你在一个会话里告诉 Mino 的事，怎样以数据而不是指令的身份进入下一个会话？ |
 | [14 子 Agent](./chapters/14-subagents.md) | 一次大规模探索怎样不挤进主对话的上下文，子 Agent 做的事又由谁批准？ |
+| [15 自定义子 Agent](./chapters/15-custom-subagents.md)（开发中） | 项目怎样给子 Agent 可复用的角色和更窄的工具，却不给它们更多权限？ |
 
 ## 如何配合代码阅读
 

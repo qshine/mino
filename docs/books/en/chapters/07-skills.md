@@ -62,7 +62,7 @@ This snapshot covers skills. SOUL remains loaded once per process startup; editi
 
 ## 3. Read the body without granting new authority
 
-`skill_view` accepts a catalog name, not a path. Mino reads only that named project's `SKILL.md`, checks the file boundary, and requires non-empty UTF-8 text of at most 64 KiB. It does not automatically load referenced files or run scripts from the skill directory. Missing, rejected, or unreadable files produce a failed tool result that the model can see.
+`skill_view` accepts a catalog name, not a path. Mino reads only that named project's `SKILL.md`, checks the file boundary, and requires non-empty UTF-8 text of at most 64 KiB. It does not automatically load referenced files or run scripts from the skill directory. Missing, rejected, or unreadable files produce a failed tool result that the model can see. In this chapter the result is the file alone, so the model does not learn where the skill's own files are, while Bash runs in the project root. Since version 0.15.0 the result starts with a header naming the skill's directory, and the catalog also includes a built-in skill; see [Chapter 15](./15-custom-subagents.md#_4-2-skill-view-names-the-skill-s-directory).
 
 The read uses the file as it exists **at call time**. If you edit the review steps after starting a session, a new `skill_view` call sees those edits, although the discovery description remains unchanged. The saved result records what that call actually returned. Restarting replays that saved result without reading the file again; a later, newly requested call performs a fresh read.
 
