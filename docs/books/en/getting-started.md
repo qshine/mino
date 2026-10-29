@@ -9,7 +9,7 @@ next:
 
 # Setup and installation
 
-This page prepares the `chapter-14` release (application version `0.14.0`), published on 2026-10-28. It covers the book up to Chapter 14; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
+This page prepares the `chapter-15` release (application version `0.15.0`), published on 2026-10-29. It covers the book up to Chapter 15; the [chapter roadmap](./plan-todo-chapters.md) lists what each chapter adds. Use the tag named in each lesson when running its experiments.
 
 Chapter 02 [saves one conversation locally](#local-history-in-chapter-02) and restores it at startup.
 
@@ -37,7 +37,7 @@ Chapter 13 adds [user memory](#try-chapter-13-from-source) across sessions and p
 
 Chapter 14 adds [subagents](#try-chapter-14-from-source) that work in their own context. It keeps record version 4; see its [history compatibility notes](#chapter-14-history-compatibility) before opening a Chapter 14 session with an older release.
 
-Chapter 15, in development, adds [project subagent roles](#try-chapter-15-from-source). New records use version 5, which `chapter-14` cannot read; read its [history compatibility notes](#chapter-15-history-compatibility) before using it on existing sessions.
+Chapter 15 adds [project subagent roles](#try-chapter-15-from-source). New records use version 5, which `chapter-14` cannot read; read its [history compatibility notes](#chapter-15-history-compatibility) before using it on existing sessions.
 
 ## Prepare your Mac
 
@@ -50,10 +50,10 @@ The repository and release downloads are public. Installation uses macOS's `curl
 Run this in Bash or zsh:
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-14 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-15 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-This command fetches the current installer from `main` and selects `chapter-14`. Omit `-- chapter-14` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
+This command fetches the current installer from `main` and selects `chapter-15`. Omit `-- chapter-15` to install the latest published release instead. The installer downloads the macOS package and checksum file from one resolved release tag.
 
 The installer verifies the package's SHA-256 checksum and executable version before replacing `~/.mino/bin/mino`, and configures your terminal's command search path. Installation creates `~/.mino`; the configuration file is created after you complete setup on first launch.
 
@@ -93,10 +93,10 @@ After installing a chapter-tag release, you can check the numeric version and se
 
 ```bash
 mino version
-mino update chapter-14
+mino update chapter-15
 ```
 
-`mino update` without an argument selects the latest release. The updated installer also accepts `0.14.0` or `v0.14.0` as aliases for `chapter-14`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
+`mino update` without an argument selects the latest release. The updated installer also accepts `0.15.0` or `v0.15.0` as aliases for `chapter-15`. Download or verification failures preserve the existing executable. Releases installed before 2026-10-21 use the earlier chapter numbering; see [republished releases](./releases.md#republished-releases). See the [release and patch rules](./releases.md#version-policy) for version numbers.
 
 ## Mino identity
 
@@ -602,15 +602,16 @@ Chapter 14 keeps record version 4 and adds no record kinds or result statuses. A
 
 ## Try Chapter 15 from source
 
-Chapter 15 is in development. Its release `chapter-15` (application version `0.15.0`) is being prepared, so there is no installable package yet; until the tag is published, build the current source from the repository root and start it in a project directory. Once the tag exists, `git checkout chapter-15` selects the same code.
+Chapter 15 is available as the [chapter-15 release](https://github.com/qshine/mino/releases/tag/chapter-15), with application version `0.15.0`, published on 2026-10-29; an installed `mino` can already delegate to project subagent roles. To run the matching source, select its tag from the repository root, build, and start the executable in a project directory:
 
 ```bash
+git checkout chapter-15
 go build -o bin/mino ./cmd/mino
 cd /path/to/your/project
 /path/to/mino/bin/mino
 ```
 
-Replace both paths with your own directories. The banner reads `Mino - Chapter 15: Custom Subagents`; once the release is published, an installed release reports version `0.15.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, sandbox, memory, and subagent requirements still apply; the lesson is [Chapter 15](./chapters/15-custom-subagents.md), and its no-cost checks are in [section 6](./chapters/15-custom-subagents.md#_6-check-it-with-evals-and-tests).
+Replace both paths with your own directories. The banner reads `Mino - Chapter 15: Custom Subagents`; an installed release reports version `0.15.0`, while a source build reports `dev`. Existing Go, Responses tool, compaction, skill, file-tool, MCP, guardrail, sandbox, memory, and subagent requirements still apply; the lesson is [Chapter 15](./chapters/15-custom-subagents.md), and its no-cost checks are in [section 6](./chapters/15-custom-subagents.md#_6-check-it-with-evals-and-tests).
 
 `spawn_agent` tasks can now name a project role. Approval works as in Chapter 14: the delegation asks in `manual` and `accept-edits`, and each subagent's own calls follow the session's mode. A role can only narrow a subagent's tools.
 
@@ -667,12 +668,12 @@ Before switching versions, keep private copies of session logs and `active-sessi
 
 ## Learn from the source
 
-To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-14`, and run from its directory:
+To run or change the source, use Go 1.27.1 or a newer compatible toolchain. Clone the repository, select `chapter-15`, and run from its directory:
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-14
+git checkout chapter-15
 go run ./cmd/mino
 ```
 

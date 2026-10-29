@@ -10,8 +10,8 @@ Mino 是面向 Agent 入门者的分章教程，使用 Go 和 OpenAI Responses A
 
 **在线阅读：**[中文教程](https://qshine.github.io/mino/zh/) · [English book](https://qshine.github.io/mino/)
 
-**当前进度：**本快照包含第 01–15 章，最新发布版本为 `chapter-14`（程序版本 `0.14.0`）。
-第 01–14 章均已发布，标签为 `chapter-01` 至 `chapter-14`，程序版本对应 `0.1.0` 至 `0.14.0`；第 15 章正在 `main` 上开发（计划为 `chapter-15`，版本 `0.15.0`）。
+**当前进度：**本快照包含第 01–15 章，对应发布版本 `chapter-15`（程序版本 `0.15.0`）。
+第 01–15 章均已发布，标签为 `chapter-01` 至 `chapter-15`，程序版本对应 `0.1.0` 至 `0.15.0`。
 第 01 章实现流式终端问答。
 第 02 章加入 JSONL 对话历史和重启恢复。
 第 03 章加入逐次批准的 Bash 执行与 Agent 循环。
@@ -321,7 +321,7 @@ live 模式衡量的是模型，CI 永不运行它；标为 `live: false` 的用
 
 ## 自定义子 Agent（第 15 章）
 
-第 15 章正在 `main` 上开发，尚未发布；请按[快速开始](docs/books/zh/getting-started.md)从源码构建。项目可以定义可复用的子 Agent 角色，每个角色是 `.agents/agents/` 下的一个 Markdown 文件：
+执行 `mino update chapter-15` 安装第 15 章。项目可以定义可复用的子 Agent 角色，每个角色是 `.agents/agents/` 下的一个 Markdown 文件：
 
 ```markdown
 ---
@@ -344,7 +344,7 @@ tools: [read_file, skill_view]
 ```bash
 mino version             # 查看当前版本
 mino update              # 安装最新发布版本
-mino update chapter-14   # 安装最新已发布章节
+mino update chapter-15   # 安装最新已发布章节
 ```
 
 Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05` 对应 `mino 0.5.0`，`chapter-10` 对应 `mino 0.10.0`。
@@ -373,6 +373,7 @@ Git 标签采用 `chapter-NN`，程序版本保留 `0.N.0`；例如 `chapter-05`
 | 第 12 章 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
 | 第 13 章 | `0.13.0` | [`chapter-13`](https://github.com/qshine/mino/releases/tag/chapter-13) |
 | 第 14 章 | `0.14.0` | [`chapter-14`](https://github.com/qshine/mino/releases/tag/chapter-14) |
+| 第 15 章 | `0.15.0` | [`chapter-15`](https://github.com/qshine/mino/releases/tag/chapter-15) |
 
 推送 `main` 会触发 CI；推送章节标签会运行检查，生成两种 Mac 架构的安装包并发布校验文件。
 从源码运行时显示 `dev`。2026-10-21 的重新发布经所有者授权，后续修复发布新补丁标签，不覆盖已发布内容。

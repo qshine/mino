@@ -9,7 +9,7 @@ next:
 
 # 准备与安装
 
-本页准备于 2026-10-28 发布的 `chapter-14`（程序版本 `0.14.0`）；覆盖本书到第 14 章为止的内容，各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
+本页准备于 2026-10-29 发布的 `chapter-15`（程序版本 `0.15.0`）；覆盖本书到第 15 章为止的内容，各章新增的能力见[章节规划](./plan-todo-chapters.md)。运行各章实验时，请使用该章注明的标签。
 
 第二章把[一段对话保存在本地](#第二章的本地历史)，并在启动时恢复。
 
@@ -37,7 +37,7 @@ next:
 
 第十四章加入在自己的上下文中工作的[子 Agent](#从源码体验第十四章)。它沿用记录版本 4；用旧版本打开第十四章的会话之前，请阅读[历史兼容性说明](#第十四章的历史兼容性)。
 
-第十五章（开发中）加入[项目子 Agent 角色](#从源码体验第十五章)。新记录使用版本 5，`chapter-14` 无法读取；在已有会话上使用它之前，请阅读[历史兼容性说明](#第十五章的历史兼容性)。
+第十五章加入[项目子 Agent 角色](#从源码体验第十五章)。新记录使用版本 5，`chapter-14` 无法读取；在已有会话上使用它之前，请阅读[历史兼容性说明](#第十五章的历史兼容性)。
 
 ## 准备一台 Mac
 
@@ -50,10 +50,10 @@ next:
 在 Bash 或 zsh 中运行：
 
 ```bash
-mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-14 && export PATH="$HOME/.mino/bin:$PATH"
+mino_installer="$(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/qshine/mino/main/install.sh)" && bash -c "$mino_installer" -- chapter-15 && export PATH="$HOME/.mino/bin:$PATH"
 ```
 
-此命令从 `main` 获取当前安装器，并选择 `chapter-14`。省略 `-- chapter-14` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
+此命令从 `main` 获取当前安装器，并选择 `chapter-15`。省略 `-- chapter-15` 即可安装最新发布版。安装器从同一个已确定的发布标签下载 macOS 安装包和校验文件。
 
 安装器校验下载包的 SHA-256 和程序版本后，才替换 `~/.mino/bin/mino`，并设置终端的查找路径。首次安装会创建 `~/.mino`，配置文件会在首次启动填写完成后创建。
 
@@ -93,10 +93,10 @@ Mino 会发送有序的 `input` 列表，并请求 `reasoning.encrypted_content`
 
 ```bash
 mino version
-mino update chapter-14
+mino update chapter-15
 ```
 
-不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.14.0` 或 `v0.14.0`，两者都指向 `chapter-14`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
+不带参数的 `mino update` 选择最新发布版。新版安装器也接受 `0.15.0` 或 `v0.15.0`，两者都指向 `chapter-15`。下载或校验失败时保留现有程序。2026-10-21 之前安装的版本沿用旧的章节编号，见[重新发布的版本](./releases.md#重新发布的版本)；版本号规则见[发布与补丁规则](./releases.md#版本规则)。
 
 ## Mino 的身份
 
@@ -602,15 +602,16 @@ Mino 不重试失败的模型请求，所以一次限流错误会让那个子 Ag
 
 ## 从源码体验第十五章
 
-第十五章正在开发中。它的发布标签 `chapter-15`（程序版本 `0.15.0`）正在准备，所以还没有可安装的包；在标签发布之前，请在仓库根目录构建当前源码，再到一个项目目录里启动它。标签发布后，`git checkout chapter-15` 会选中同一份代码。
+第十五章已随 [chapter-15](https://github.com/qshine/mino/releases/tag/chapter-15) 发布，程序版本为 `0.15.0`，发布于 2026-10-29；已安装的 `mino` 已经能把任务委派给项目子 Agent 角色。若要运行对应的源码，请在仓库根目录选中它的标签、构建，再到一个项目目录里启动程序：
 
 ```bash
+git checkout chapter-15
 go build -o bin/mino ./cmd/mino
 cd /path/to/your/project
 /path/to/mino/bin/mino
 ```
 
-把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 15: Custom Subagents`；发布之后，安装的发布版显示版本 `0.15.0`，源码构建显示 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP、安全防护、沙箱、记忆和子 Agent 要求继续适用；正文见[第十五章](./chapters/15-custom-subagents.md)，免费的检查见[第 6 节](./chapters/15-custom-subagents.md#_6-用评测和测试检查它)。
+把两个路径替换为你自己的目录。横幅显示 `Mino - Chapter 15: Custom Subagents`；安装的发布版显示版本 `0.15.0`，源码构建显示 `dev`。既有的 Go、Responses 工具、压缩、Skills、文件工具、MCP、安全防护、沙箱、记忆和子 Agent 要求继续适用；正文见[第十五章](./chapters/15-custom-subagents.md)，免费的检查见[第 6 节](./chapters/15-custom-subagents.md#_6-用评测和测试检查它)。
 
 `spawn_agent` 的任务现在可以指定项目角色。批准方式和第十四章相同：委派本身在 `manual` 和 `accept-edits` 下会询问，每个子 Agent 自己的调用遵循会话的模式。角色只能缩小子 Agent 的工具范围。
 
@@ -666,12 +667,12 @@ Mino 现在内置一个技能 `create-subagent`，引导模型和你一起编写
 
 ## 从源码学习
 
-若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-14`，在仓库目录运行：
+若要运行或修改源码，需要 Go 1.27.1 或更高的兼容工具链。克隆仓库后，选择 `chapter-15`，在仓库目录运行：
 
 ```bash
 git clone https://github.com/qshine/mino.git
 cd mino
-git checkout chapter-14
+git checkout chapter-15
 go run ./cmd/mino
 ```
 

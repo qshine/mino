@@ -14,11 +14,10 @@ model API experience is needed.
 
 **Read online:** [English book](https://qshine.github.io/mino/) · [简体中文教程](https://qshine.github.io/mino/zh/)
 
-**Current progress:** This snapshot contains Chapters 01–15; the latest release is
-`chapter-14` (application version `0.14.0`).
-Chapters 01–14 are released, tagged `chapter-01` through `chapter-14` with
-application versions `0.1.0` through `0.14.0`; Chapter 15 is in development on `main`
-(planned `chapter-15`, version `0.15.0`).
+**Current progress:** This snapshot contains Chapters 01–15, release
+`chapter-15` (application version `0.15.0`).
+Chapters 01–15 are released, tagged `chapter-01` through `chapter-15` with
+application versions `0.1.0` through `0.15.0`.
 Chapter 01 introduces streaming terminal conversations.
 Chapter 02 adds JSONL conversation history and restart recovery.
 Chapter 03 adds individually approved Bash calls and the Agent loop.
@@ -441,8 +440,7 @@ session's subagent logs. See [Chapter 14](docs/books/en/chapters/14-subagents.md
 
 ## Custom subagents (Chapter 15)
 
-Chapter 15 is in development on `main` and not yet released; build it from source as
-described in [Getting started](docs/books/en/getting-started.md). A project can define
+Install `chapter-15` with `mino update chapter-15`. A project can define
 reusable subagent roles, one Markdown file each in `.agents/agents/`:
 
 ```markdown
@@ -473,7 +471,7 @@ versions 1–5; 0.14.0 cannot read them. See
 ```bash
 mino version             # Show the installed version
 mino update              # Install the latest published release
-mino update chapter-14   # Install the latest published chapter
+mino update chapter-15   # Install the latest published chapter
 ```
 
 Git tags use `chapter-NN`; binaries keep `0.N.0`. For example, `chapter-05` reports
@@ -506,6 +504,7 @@ history; failed downloads or verification leave the existing executable in place
 | Chapter 12 | `0.12.0` | [`chapter-12`](https://github.com/qshine/mino/releases/tag/chapter-12) |
 | Chapter 13 | `0.13.0` | [`chapter-13`](https://github.com/qshine/mino/releases/tag/chapter-13) |
 | Chapter 14 | `0.14.0` | [`chapter-14`](https://github.com/qshine/mino/releases/tag/chapter-14) |
+| Chapter 15 | `0.15.0` | [`chapter-15`](https://github.com/qshine/mino/releases/tag/chapter-15) |
 
 A push to `main` runs CI. A chapter tag runs checks, builds both macOS packages,
 and publishes their checksums. Source builds report `dev`. The 2026-10-21

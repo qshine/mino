@@ -1,6 +1,6 @@
 # Chapter 15: Give subagents project roles
 
-Applies to **0.15.x** · Source tag **[chapter-15](https://github.com/qshine/mino/tree/chapter-15)** · Application version **0.15.0**, in development and not yet released
+Applies to **0.15.x** · Source and release tag **[chapter-15](https://github.com/qshine/mino/tree/chapter-15)** · Application version **0.15.0**, released **2026-10-29**
 
 Look again at the first task in [Chapter 14](./14-subagents.md)'s opening batch: "Use read_file only." That sentence is a request to a model. The child that received it still had Bash, `write_file`, and every MCP tool, and nothing in the program kept it from using them. Each delegation also starts from nothing: if your project wants a careful explorer that cites a file path for every claim, the model has to write that role into every task again, in its own words.
 
